@@ -1,0 +1,8 @@
+{
+  "main": "app.php",
+  "auto-redeploy": true,
+  "author": "Leng Sheng Hong",
+  "licenses": ["The Apache Software License Version 2.0"],  
+  "keywords": ["PHP", "web", "mvc", "http","load balance","cluster","session","api","REST","OrientDB"],
+  "homepage": "http://doophp.com"
+}

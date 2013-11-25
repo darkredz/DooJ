@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+        <title>DooJ - REST API Discovery</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <!-- jQuery + jQuery template support -->
+        <script type="text/javascript" src="lib/jquery-latest.min.js"></script>
+        <script type="text/javascript" src="lib/jquery.tmpl.js"></script>
+
+        <!-- Bootstrap -->
+        <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+        <link type="text/css" href="lib/bootstrap/css/bootstrap-responsive.css" rel="stylesheet" />
+        <script type="text/javascript" src="lib/bootstrap/js/bootstrap.js"></script>
+
+        <!-- Alpaca -->
+        <script type="text/javascript" src="lib/alpaca/alpaca.js"></script>
+        <link type="text/css" href="lib/alpaca/alpaca.css" rel="stylesheet" />
+
+        <!-- Alpaca support for Bootstrap -->
+        <link type="text/css" href="lib/alpaca/alpaca-bootstrap.css" rel="stylesheet" />
+
+        <!-- Custom Files -->
+        <script type="text/javascript" src="form.js"></script>
+
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Quicksand" />
+        <link rel="stylesheet" type="text/css" href="lib/pretty-json.css" />
+
+        <!-- lib -->
+        <script type="text/javascript" src="lib/underscore-min.js" ></script>
+        <script type="text/javascript" src="lib/backbone-min.js" ></script>
+
+        <!-- pretty JSON v 0.1  -->
+        <script type="text/javascript" src="lib/pretty-json-min.js" ></script>
+
+
+    </head>
+    <body>
+
+    <div class="container">
+
+        <div class="page-header">
+            <h1>DooJ - REST API Discovery</h1>
+            <p class="lead">Choose an API resource along with an action to test</p>
+            <!-- Single button -->
+            <div id="resource-list" class="btn-group">
+                <button type="button" class="btn btn-primary dropdown-toggle" style="width:128px;" data-toggle="dropdown">
+                    Resource <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                    <li><a href="#">Action</a></li>
+                    <li><a href="#">Another action</a></li>
+                    <li><a href="#">Something else here</a></li>
+                </ul>
+            </div>
+
+            <div id="action-list" class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle" style="width:168px;" data-toggle="dropdown">
+                    Action <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                    <li class="divider"></li>
+                    <li><a href="#">Select a resource first</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="row-fluid">
+            <div class="span12">
+
+                <div id="form"></div>
+
+            </div>
+        </div>
+
+        <div id="form-bottom-buttons" class="row-fluid" style="display:none;margin-left:20px;height:58px;margin-bottom:20px;">
+            <button type="submit" class="btn btn-default" onclick="$('#form > form').submit()">Submit</button>
+            <button type="reset" class="btn btn-default" onclick="$('#form > form')[0].reset();">Reset</button>
+        </div>
+
+    </div>
+
+    <div id="result-cont" style="display:block;width:680px;height:230px;overflow:scroll;margin-left:108px;"></div>
+
+    </body>
+</html>
