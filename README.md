@@ -19,9 +19,35 @@ DooJ - doophp on steroids. Runs on JVM, event-driven, non-blocking I/O realtime 
 7. Run server: ./server.sh -conf server.json
 
 Test it in browser! http://localhost:8888/
-> Hello! It works!
+` Hello! It works!`
 
+##Basics
+###Routing
+Create your routes in protected/config/routes.conf.php
 
+http://localhost/ matches
+`$route['*']['/'] = array('MainController', 'index');`
+
+http://localhost/hello matches
+`$route['*']['/hello'] = array('MainController', 'hello');`
+
+http://localhost/doophp redirects to http://doophp.com
+`$route['*']['/doophp'] = array('redirect', 'http://doophp.com/');`
+
+http://localhost/doophp redirects to http://doophp.com with 301 HTTP status
+`$route['*']['/doophp'] = array('redirect', 'http://doophp.com/', 301);`
+
+http://localhost/news/1234 getNews() method can get the parameter by `$this->params['id']`
+  $route['*']['/news/:id'] = array('NewsController', 'getNews');
+  class NewsController extends DooController {
+    public function getNews(){
+        echo $this->params['id'];
+    }
+  }
+
+More on routing: 
+http://doophp.com/doc/guide/basic/routes
+http://doophp.com/demos/uri_routing/index.php/example
 
 
 
