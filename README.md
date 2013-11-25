@@ -26,24 +26,28 @@ Test it in browser! http://localhost:8888/
 Create your routes in protected/config/routes.conf.php
 
 http://localhost/ matches
-`$route['*']['/'] = array('MainController', 'index');`
+```$route['*']['/'] = array('MainController', 'index');```
 
 http://localhost/hello matches
-`$route['*']['/hello'] = array('MainController', 'hello');`
+```$route['*']['/hello'] = array('MainController', 'hello');```
 
 http://localhost/doophp redirects to http://doophp.com
-`$route['*']['/doophp'] = array('redirect', 'http://doophp.com/');`
+```$route['*']['/doophp'] = array('redirect', 'http://doophp.com/');```
 
 http://localhost/doophp redirects to http://doophp.com with 301 HTTP status
-`$route['*']['/doophp'] = array('redirect', 'http://doophp.com/', 301);`
+```$route['*']['/doophp'] = array('redirect', 'http://doophp.com/', 301);```
 
 http://localhost/news/1234 getNews() method can get the parameter by `$this->params['id']`
+```
   $route['*']['/news/:id'] = array('NewsController', 'getNews');
+  
+  //controller class
   class NewsController extends DooController {
     public function getNews(){
         echo $this->params['id'];
     }
   }
+```
 
 More on routing: 
 http://doophp.com/doc/guide/basic/routes
