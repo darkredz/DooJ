@@ -19,10 +19,13 @@ DooJ - doophp on steroids. Runs on JVM, event-driven, non-blocking I/O realtime 
 7. Run server: ./server.sh -conf server.json
 
 Test it in browser! http://localhost:8888/
-> Hello! It works!
+` Hello! It works!`
 
+See [Routing](https://github.com/darkredz/DooJ/wiki/Routing)
 
+See [Auto Routing](https://github.com/darkredz/DooJ/wiki/Auto-Routing)
 
+More to write...
 
 
 
