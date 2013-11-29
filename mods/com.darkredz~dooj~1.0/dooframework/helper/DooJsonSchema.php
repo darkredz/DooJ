@@ -59,7 +59,6 @@
  * </code>
  *
  * @author Leng Sheng Hong <darkredz@gmail.com>
- * @version $Id: DooValidator.php 1000 2013-10-30 01:54:22
  * @package doo.helper
  * @since 2.0
  */

@@ -119,28 +119,71 @@ class DooEventBusApp {
      */
     public $route;
 
+
     public function trace($obj){
         if($this->conf->DEBUG_ENABLED){
-            $this->logger->info( var_export($obj, true) );
+            $this->logger->debug( var_export($obj, true) );
         }
     }
 
     public function logInfo($msg){
-        if($this->conf->DEBUG_ENABLED){
-            $this->logger->info( $msg );
-        }
+        $this->logger->info( $msg );
     }
 
     public function logError($msg){
-        if($this->conf->DEBUG_ENABLED){
-            $this->logger->error( $msg );
-        }
+        $this->logger->error( $msg );
     }
 
     public function logDebug($msg){
         if($this->conf->DEBUG_ENABLED){
             $this->logger->debug( $msg );
         }
+    }
+
+    public function parseQueryString( $str ){
+        $params = [];
+
+        //ensure that the dots are not converted to underscores
+        parse_str( $str, $params );
+
+        if(strpos($str, '.') === false){
+            return $params;
+        }
+
+        $separator = '&';
+
+        // go through $params and ensure that the dots are not converted to underscores
+        $args = explode( $separator, $str );
+        foreach ( $args as $arg ) {
+            $parts = explode( '=', $arg, 2 );
+            if ( !isset( $parts[1] ) ) {
+                $parts[1] = null;
+            }
+
+            if ( substr_count( $parts[0], '[' ) === 0 ) {
+                $key = $parts[0];
+            }
+            else {
+                $key = substr( $parts[0], 0, strpos( $parts[0], '[' ) );
+            }
+
+            $paramKey = str_replace( '.', '_', $key );
+            if ( isset( $params[$paramKey] ) && strpos( $paramKey, '_' ) !== false ){
+                $newKey = '';
+                for ( $i = 0; $i < strlen( $paramKey ); $i++ ){
+                    $newKey .= ( $paramKey{$i} === '_' && $key{$i} === '.' ) ? '.' : $paramKey{$i};
+                }
+
+                $keys = array_keys( $params );
+                if ( ( $pos = array_search( $paramKey, $keys ) ) !== false ){
+                    $keys[$pos] = $newKey;
+                }
+                $values = array_values( $params );
+                $params = array_combine( $keys, $values );
+            }
+        }
+
+        return $params;
     }
 
     /**
@@ -167,7 +210,12 @@ class DooEventBusApp {
 
         $fullpath = explode('/', $this->request->absoluteUri);
 
-        $this->_GET = $this->request->params();
+//        $this->_GET = $this->request->params();
+        $this->_GET = [];
+        if(strpos($this->request->uri,'?')!==false){
+            $this->_GET = $this->parseQueryString( explode('?',$this->request->uri,2)[1] );  //$this->request->params()->map;
+        }
+
         $headers = $this->request->headers;
 
         $contentType = $headers["Content-Type"];
@@ -195,10 +243,10 @@ class DooEventBusApp {
         }
         else{
             if(empty($contentType) || stripos($contentType, 'application/x-www-form-urlencoded') !== false || stripos($contentType, 'multipart/form-data') !== false ){
-                parse_str($this->request->body, $this->_POST);
+                $this->_POST = $this->parseQueryString($this->request->body);
             }
             else{
-                $this->_POST = [];
+                $this->_POST = $this->request->body;
             }
             $this->processRequest();
         }
@@ -904,7 +952,8 @@ class DooEventBusApp {
             elseif(is_string($code)){
                 //Controller return the redirect location, it sends 302 Found
                 // DooUriRouter::redirect($code, false);
-                $this->statusCode = $code;
+                $this->statusCode = 302;
+                $this->setHeader('Location', $code);
             }
             elseif(is_array($code)){
                 //Controller return array('/some/routes/here', 'internal')

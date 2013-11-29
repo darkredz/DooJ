@@ -59,8 +59,8 @@ class DooApiController extends DooController {
 
     protected function getApiInput(){
         $field = array_keys($this->{$this->actionField});
-        $method = strtolower($this->app->_SERVER['REQUEST_METHOD']);
-        if($method == 'get' || $method == 'delete' || $method == 'head'){
+        $method = strtoupper($this->app->_SERVER['REQUEST_METHOD']);
+        if($method == 'GET' || $method == 'DELETE' || $method == 'HEAD'){
             $input = $this->getKeyParams($field);
         }
         else{
@@ -68,7 +68,7 @@ class DooApiController extends DooController {
         }
 
         if($this->app->conf->DEBUG_ENABLED){
-            $this->app->logInfo('Request input:');
+            $this->app->logInfo($method . ' Request input:');
             $this->app->trace($input);
         }
 

@@ -18,24 +18,24 @@
  * @package doo.db.orientdb
  * @since 2.0
  */
-
-import com.orientechnologies.orient.object.db.OObjectDatabaseTx;
-import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
-import com.orientechnologies.orient.core.record.impl.ODocument;
-import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
-import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
-import com.orientechnologies.orient.core.db.document.ODatabaseDocumentPool;
-import com.orientechnologies.orient.core.metadata.schema.OType;
-import com.orientechnologies.orient.core.command.OCommandResultListener;
-import com.orientechnologies.orient.core.id.ORecordId;
-import com.orientechnologies.orient.core.sql.OCommandSQL;
-import com.orientechnologies.orient.core.intent.OIntentMassiveInsert;
-import com.orientechnologies.orient.core.storage.OStorage;
-import com.orientechnologies.orient.core.tx.OTransaction;
-
-import com.doophp.db.orientdb.AsyncQueryCallback;
-import com.doophp.db.orientdb.QueryExecutor;
-import com.doophp.db.orientdb.Transaction;
+//
+//import com.orientechnologies.orient.object.db.OObjectDatabaseTx;
+//import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx;
+//import com.orientechnologies.orient.core.record.impl.ODocument;
+//import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery;
+//import com.orientechnologies.orient.core.sql.query.OSQLAsynchQuery;
+//import com.orientechnologies.orient.core.db.document.ODatabaseDocumentPool;
+//import com.orientechnologies.orient.core.metadata.schema.OType;
+//import com.orientechnologies.orient.core.command.OCommandResultListener;
+//import com.orientechnologies.orient.core.id.ORecordId;
+//import com.orientechnologies.orient.core.sql.OCommandSQL;
+//import com.orientechnologies.orient.core.intent.OIntentMassiveInsert;
+//import com.orientechnologies.orient.core.storage.OStorage;
+//import com.orientechnologies.orient.core.tx.OTransaction;
+//
+//import com.doophp.db.orientdb.AsyncQueryCallback;
+//import com.doophp.db.orientdb.QueryExecutor;
+//import com.doophp.db.orientdb.Transaction;
 
 class DooOrientDbModel{
 
@@ -243,7 +243,7 @@ class DooOrientDbModel{
     public function query($sql, $params=null, $fetchPlan=null){
 
         if($this->_debug){
-            Vertx::logger()->info('SQL: ' . $sql);
+            Vertx::logger()->debug('SQL: ' . $sql);
         }
 
         $query = new OSQLSynchQuery($sql);
@@ -451,7 +451,7 @@ class DooOrientDbModel{
             $sql = $this->buildSql(&$query);
 
             if($this->_debug && !empty($query)){
-                Vertx::logger()->info('SQL params: ' . var_export($query, true));
+                Vertx::logger()->debug('SQL params: ' . var_export($query, true));
             }
 
             $rs = $this->query( $sql, $query, $fetchPlan );
@@ -483,7 +483,7 @@ class DooOrientDbModel{
             $sql = $this->buildSql($params);
 
             if($this->_debug){
-                Vertx::logger()->info('SQL params: ' . var_export($params, true));
+                Vertx::logger()->debug('SQL params: ' . var_export($params, true));
             }
 
             $rs = $this->query($sql, $params, $fetchPlan);
@@ -498,7 +498,7 @@ class DooOrientDbModel{
                 $sql = $this->buildSql(&$query);
 
                 if($this->_debug && !empty($query)){
-                    Vertx::logger()->info('SQL params: ' . var_export($query, true));
+                    Vertx::logger()->debug('SQL params: ' . var_export($query, true));
                 }
 
                 $rs = $this->query( $sql, $query, $fetchPlan );
@@ -812,7 +812,7 @@ class DooOrientDbModel{
                 if(is_object($v)){
                     $cls = get_class($v);
     //                $ref = new ReflectionClass($v);
-    //                Vertx::logger()->info("$k =parent= ". $ref->getParentClass()->getName());
+    //                Vertx::logger()->debug("$k =parent= ". $ref->getParentClass()->getName());
                     if($cls != 'com.orientechnologies.orient.core.record.impl.ODocument'){
                         $this->_doc->field($k, $v->doc(), constant("DooOrientDbModel::$cnst"));
                         return;
@@ -824,7 +824,7 @@ class DooOrientDbModel{
                     foreach($v as $itm){
                         if(is_object($itm)){
                             $cls = get_class($itm);
-                            if($itm != 'com.orientechnologies.orient.core.record.impl.ODocument'){
+                            if($cls != 'com.orientechnologies.orient.core.record.impl.ODocument'){
                                 $list->add($itm->doc());
                             }else{
                                 $list->add($itm);
@@ -984,31 +984,66 @@ class DooOrientDbModel{
         $this->command('ALTER CLASS '. $this->_class .' STRICTMODE false');
     }
 
+    public function addLink($field, $arr){
+
+        $list = new java('java.util.ArrayList');
+
+        foreach($arr as $itm){
+            if(is_object($itm)){
+                $cls = get_class($itm);
+                if($cls != 'com.orientechnologies.orient.core.record.impl.ODocument'){
+                    $list->add($itm->doc());
+                }else{
+                    $list->add($itm);
+                }
+            }
+        }
+
+        if(!empty($this->{$field})){
+            $arr = $this->{$field};
+            foreach($arr as $itm){
+                if(is_object($itm)){
+                    $cls = get_class($itm);
+                    if($cls != 'com.orientechnologies.orient.core.record.impl.ODocument'){
+                        $list->add($itm->doc());
+                    }else{
+                        $list->add($itm);
+                    }
+                }
+            }
+        }
+
+        $this->_doc->field($field, $list, DooOrientDbModel::TYPE_LINKLIST);
+    }
     public function testLinkFind(){
         //organizer -> products -> productType.name
         return $this->query("select flatten(products) from organizer where products contains (type.name = 'Cap')");
     }
 
-    public static function _convertToDateTime($dateTime){
+    public static function _toDateTime($dateTime){
         if(is_string($dateTime)){
             $dateTime = strtotime($dateTime);
         }
         return date('Y-m-d H:i:s', $dateTime);
     }
 
-    public static function _convertToDate($dateTime){
+    public static function _toDate($dateTime){
         if(is_string($dateTime)){
             $dateTime = strtotime($dateTime);
         }
         return date('Y-m-d', $dateTime);
     }
 
-    public function convertToDateTime($dateTime){
-        return self::_convertToDateTime($dateTime);
+    public function toDateTime($dateTime){
+        return self::_toDateTime($dateTime);
     }
 
-    public function convertToDate($dateTime){
-        return self::_convertToDate($dateTime);
+    public function toDate($dateTime){
+        return self::_toDate($dateTime);
+    }
+
+    public function now(){
+        return self::_toDateTime(time());
     }
 
     public function startMassiveInsert(){
