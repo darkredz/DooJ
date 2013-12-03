@@ -289,9 +289,8 @@ class DooController {
         }
 
         if($this->async){
-            $data = ob_get_contents();
-            ob_end_clean();
-            $this->endReq($data);
+            $output = ob_get_clean();
+            $this->endReq($output);
         }
     }
 
@@ -448,19 +447,23 @@ class DooController {
      * @return mixed
      */
     public function getKeyParam($key, $urldecode=true){
-        if(!empty($this->params) && in_array($key, $this->params)){
+        if(!empty($this->params)){
+            $idx = array_search($key, $this->params);
 
-            if($urldecode){
-                $params = implode(' * ', $this->params);
-                $params = explode(' * ', urldecode($params));
-                $valueIndex = array_search($key, $params) + 1;
-                if($valueIndex<sizeof($params))
-                    return $params[$valueIndex];
+            if($idx !== false && $idx%2===0){
+
+                if($urldecode){
+                    $params = implode(' * ', $this->params);
+                    $params = explode(' * ', urldecode($params));
+                    $valueIndex = array_search($key, $params) + 1;
+                    if($valueIndex<sizeof($params))
+                        return $params[$valueIndex];
+                }
+
+                $valueIndex = array_search($key, $this->params) + 1;
+                if($valueIndex<sizeof($this->params))
+                    return $this->params[$valueIndex];
             }
-
-            $valueIndex = array_search($key, $this->params) + 1;
-            if($valueIndex<sizeof($this->params))
-                return $this->params[$valueIndex];
         }
     }
     
@@ -723,6 +726,13 @@ class DooController {
      * @param string $enc Encoding, default is UTF-8
      */
     public function replyReq($msg, $enc='UTF-8'){
+
+        //auto set response status if not set
+        if($this->app->statusCode && !$this->request->response->statusCode){
+            $this->app->request->response->statusCode = $this->app->statusCode;
+            $this->app->request->response->statusMessage = $this->app->httpCodes[$this->app->statusCode];
+        }
+
         if($this->app->request->response->chunked==false)
             $this->app->request->response->chunked = true;
         $this->app->request->response->write($msg, $enc);
