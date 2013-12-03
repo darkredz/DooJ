@@ -1,7 +1,7 @@
 var section = '';
 var func = '';
 var resources;
-var apiKey = 'PUT YOUR API KEY HERE';
+var apiKey = "PUT YOUR API KEY";
 
 $(document).ready(function() {
 
@@ -47,7 +47,7 @@ function selectAction(event){
         type: 'POST',
         beforeSend: function (request)
         {
-            request.setRequestHeader("Authority", "MEMZB91J0P84702MIEHh77YEGB9KKE");
+            request.setRequestHeader("Authority", apiKey);
         },
         url: '/api/api-form/schema/'+ section +'/' + func,
         success: onApiTestSelected
