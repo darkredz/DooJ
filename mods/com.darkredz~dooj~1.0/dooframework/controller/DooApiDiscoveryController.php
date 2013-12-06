@@ -1,14 +1,21 @@
 <?php
 /**
- * Created by IntelliJ IDEA.
- * User: leng
- * Date: 11/21/13
- * Time: 11:35 PM
- * To change this template use File | Settings | File Templates.
+ * DooApiDiscoveryController class file.
+ *
+ * @author Leng Sheng Hong <darkredz@gmail.com>
+ * @link http://www.doophp.com/
+ * @copyright Copyright &copy; 2009-2013 Leng Sheng Hong
+ * @license http://www.doophp.com/license-v2
  */
 
 
-
+/**
+ * DooApiDiscoveryController enables easy discovery of all available api methods and its required field schema in a module
+ *
+ * @author Leng Sheng Hong <darkredz@gmail.com>
+ * @package doo.controller
+ * @since 2.0
+ */
 class DooApiDiscoveryController extends DooController {
 
     public $namespace;
@@ -54,6 +61,18 @@ class DooApiDiscoveryController extends DooController {
         $this->endReq( json_encode($classes) );
     }
 
+    protected function getDocComment($str, $annotate){
+        $matches = array();
+        preg_match('/\*\s+\@'. $annotate .'\s+([^\n\r\*]+)/', $str, $matches);
+//            preg_match_all('/\*\s+\@([a-zA-Z0-9\_]+)\s+([^\n\r]+)/m', $doc, $matches);
+
+        if (isset($matches[1])) {
+            return trim($matches[1]);
+        }
+
+        return '';
+    }
+
     public function schema(){
         $section = $this->params[0];
 //        $sectionClass = __NAMESPACE__ .'\\' . ucfirst($section) . 'Controller';
@@ -83,10 +102,26 @@ class DooApiDiscoveryController extends DooController {
                 return 422;
             }
 
+            $actionType = 'ALL';
+
+            if(isset($fieldData['_method'])){
+                $actionType = $fieldData['_method'];
+                unset($fieldData['_method']);
+            }
+
             //generate JSON schema to use for automated JS form
             $schema = DooJsonSchema::convert($fieldData);
+
+            $method = new ReflectionMethod($sectionClass, $func);
+            $doc = $method->getDocComment();
+            $desc = $this->getDocComment($doc, 'explain');
+
             $schema['title'] = 'Resource ' . ucfirst($section);
             $schema['description'] = 'Action ' . $func;
+
+            if($desc){
+                $schema['description'] .= ': '. $actionType . ' - '. $desc;
+            }
 
             $json = ['schema' => $schema];
 

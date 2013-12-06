@@ -1,12 +1,21 @@
 <?php
 /**
- * Created by IntelliJ IDEA.
- * User: leng
- * Date: 10/26/13
- * Time: 2:47 PM
- * To change this template use File | Settings | File Templates.
+ * DooApiController class file.
+ *
+ * @author Leng Sheng Hong <darkredz@gmail.com>
+ * @link http://www.doophp.com/
+ * @copyright Copyright &copy; 2009-2013 Leng Sheng Hong
+ * @license http://www.doophp.com/license-v2
  */
 
+
+/**
+ * DooApiController is the root class of all classes to provide an API interface through REST or eventbus
+ *
+ * @author Leng Sheng Hong <darkredz@gmail.com>
+ * @package doo.controller
+ * @since 2.0
+ */
 class DooApiController extends DooController {
 
     /**
@@ -21,14 +30,6 @@ class DooApiController extends DooController {
 
 
     public function beforeRun($resource, $action){
-        $exclude = ['getFieldSchema','getFieldRules','getApiInput','validateInput','sendResult','sendError'];
-
-        if( in_array($action, $exclude) ) {
-            $this->setContentType("json");
-            $this->app->statusCode = 404;
-            $this->endReq( '{"error":"Method Not Found"}' );
-            return 404;
-        }
 
         if($this->app->request->headers['Authority'] != $this->apiKey){
             $this->setContentType('json');
@@ -39,6 +40,14 @@ class DooApiController extends DooController {
 
         $this->action = $action;
         $this->actionField = 'field' . ucfirst($this->action);
+        $allowMethod = $this->{$this->actionField}['_method'];
+
+        if($allowMethod && strtoupper($allowMethod) != strtoupper($this->app->_SERVER['REQUEST_METHOD'])){
+            $this->setContentType("json");
+            $this->app->statusCode = 404;
+            $this->endReq( '{"error":"Method Not Found"}' );
+            return;
+        }
     }
 
     protected function getFieldSchema(){
@@ -50,6 +59,7 @@ class DooApiController extends DooController {
         $rules = [];
         $field = $this->{$this->actionField};
         foreach($field as $fname => $p){
+            if($fname == '_method') continue;
             if(isset($p[1])){
                 $rules[$fname] = $p[1];
             }

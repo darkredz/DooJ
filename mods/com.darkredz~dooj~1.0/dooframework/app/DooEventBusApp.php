@@ -120,6 +120,82 @@ class DooEventBusApp {
     public $route;
 
 
+    public function init($message, $config){
+        //msg format
+        /*
+            {
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Accept-Language": "en-US"
+                },
+                "absoluteUri": "http://xxxxx" or "ws://asdasd"
+                "uri": "/dev/test-query-async",
+                "method": "GET",
+                "body": <Post content>
+            }
+
+        */
+        $json = $message->body();
+
+        if(empty($json)){
+            $message->reply(['status' => 'error', 'value'=>'empty message body']);
+            return false;
+        }
+
+        if(is_string($json)){
+            $json = json_decode($json, true);
+        }
+
+        if(is_array($json) == false){
+            $message->reply(['status' => 'error', 'value'=>'invalid message body']);
+            return false;
+        }
+
+        if(empty($json['method'])){
+            $message->reply(['status' => 'error', 'value'=>'Missing method']);
+            return false;
+        }
+
+        if(empty($json['uri'])){
+            $message->reply(['status' => 'error', 'value'=>'Missing uri']);
+            return false;
+        }
+
+//    Vertx::logger()->info( var_export($json, true) );
+
+        $request = new DooEventBusRequest();
+        $request->absoluteUri    = $json['absoluteUri'];
+        $request->uri            = $json['uri'];
+        $request->method         = $json['method'];
+        $request->body           = $json['body'];
+        $request->remoteAddress  = $json['remoteAddress'];
+
+        if(!empty($json['headers'])){
+            $request->headers = json_decode($json['headers'],true);
+        }
+
+        $response = new DooEventBusResponse();
+        $response->statusCode = 200;
+        $response->statusMessage = 'OK';
+        $response->replyHeaders = [];
+        $response->replyOutput = '';
+        $response->ebMessage = $message;
+
+        $request->response = $response;
+
+        $conf = new DooConfig();
+        $conf->set($config);
+        $response->debug = $conf->DEBUG_ENABLED;
+
+        $this->request = $request;
+        $this->conf = $conf;
+
+        if($conf->DEBUG_ENABLED){
+            Vertx::logger()->info( 'Request: ' . var_export($json, true) );
+        }
+        return true;
+    }
+
     public function trace($obj){
         if($this->conf->DEBUG_ENABLED){
             $this->logger->debug( var_export($obj, true) );
@@ -191,11 +267,13 @@ class DooEventBusApp {
      * @param array $route
      * @param $request
      */
-    public function exec($conf, $route, $request){
+    public function exec($conf, $route, $message){
 
-        $this->conf = $conf;
+        if( $this->init($message, $conf) == false ){
+            return false;
+        }
+
         $this->route = $route;
-        $this->request = $request;
         $logger = Vertx::logger();
         $this->logger = $logger;
 
@@ -242,8 +320,19 @@ class DooEventBusApp {
             $this->processRequest();
         }
         else{
-            if(empty($contentType) || stripos($contentType, 'application/x-www-form-urlencoded') !== false || stripos($contentType, 'multipart/form-data') !== false ){
+            if(empty($contentType) || stripos($contentType, 'application/x-www-form-urlencoded') !== false){
                 $this->_POST = $this->parseQueryString($this->request->body);
+            }
+            else if(stripos($contentType, 'multipart/form-data') !== false ){
+                //parse multipart body to get parameters
+                preg_match_all('/([\-]{3,}[a-zA-Z0-9]+\s?\n)Content\-Disposition\: form\-data\; name\=\"([a-zA-Z0-9\-\_]+)\"\s?\n([^\-]+)/', $this->request->body, $matches);
+                $psize = sizeof($matches);
+
+                if($psize == 4){
+                    for($i=0; $i < $psize; $i++){
+                        $this->_POST[$matches[2][$i]] = trim($matches[3][$i]);
+                    }
+                }
             }
             else{
                 $this->_POST = $this->request->body;

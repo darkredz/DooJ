@@ -256,24 +256,40 @@ class DooWebApp{
 //             $logger->info('$contentType = ' . $contentType);
 
              $isJSON = $contentType != null && strpos($contentType, "application/json")!==false;
-             $isMULTIPART = $contentType != null && strpos($contentType, "multipart/form-data")!==false;
-             $isURLENCODEC = $contentType != null && strpos($contentType, "application/x-www-form-urlencoded")!==false;
-             $buffer = (!$isMULTIPART && !$isURLENCODEC) ? new Vertx\Buffer(0) : null;
+             $isMultipart = $contentType != null && strpos($contentType, "multipart/form-data")!==false;
+             $isUrlencoded = $contentType != null && strpos($contentType, "application/x-www-form-urlencoded")!==false;
+             $buffer = (!$isMultipart && !$isUrlencoded) ? new Vertx\Buffer(0) : null;
 
              $this->request->expectMultiPart(true);
 
              $body = new Vertx\Buffer();
+
+//             $logger->info('$isMultipart = ' . $isMultipart);
 
              // enable the parsing at Vert.x level
              $this->request->dataHandler(function($buffer) use ($body){
                  $body->appendBuffer($buffer);
              });
 
+             $this->_POST = [];
              $app = &$this;
 
-             $this->request->endHandler(function() use ($body, $app, $contentType) {
+             $this->request->endHandler(function() use ($body, $app, $contentType, $isMultipart) {
+//                 $app->logger->info('$body = ' . $body->toString());
+
                  if($body->length > 0){
-                     if(empty($contentType) || stripos($contentType, 'application/x-www-form-urlencoded') !== false || stripos($contentType, 'multipart/form-data') !== false ){
+                     if($isMultipart){
+                         //parse multipart body to get parameters
+                         preg_match_all('/([\-]{3,}[a-zA-Z0-9]+\s?\n)Content\-Disposition\: form\-data\; name\=\"([a-zA-Z0-9\-\_]+)\"\s?\n([^\-]+)/', $body->toString(), $matches);
+                         $psize = sizeof($matches);
+
+                         if($psize == 4){
+                             for($i=0; $i < $psize; $i++){
+                                $app->_POST[$matches[2][$i]] = trim($matches[3][$i]);
+                             }
+                         }
+                     }
+                     else if(empty($contentType) || stripos($contentType, 'application/x-www-form-urlencoded') !== false ){
                          $app->_POST = $this->parseQueryString($body->toString());
                      }
                      else{
@@ -288,8 +304,33 @@ class DooWebApp{
     protected function processRequest(){
         //if proxy enable, send request to other servers
         if(isset($this->proxy)){
-            $this->sendProxyRequest();
-            return;
+            //forward all if there's only one address (proxy is a string)
+            if(is_string($this->proxy)){
+                $this->sendProxyRequest($this->proxy);
+                return;
+            }
+            else if(is_array($this->proxy)){
+                $uri = $this->request->uri;
+                if(strpos($uri,'?')!==false){
+                    $uri = explode('?', $uri,2)[0];
+                }
+
+                foreach($this->proxy as $regex => $address){
+                    if(preg_match('/'. $regex .'/', $uri)){
+                        if($this->conf->DEBUG_ENABLED){
+                            $this->logInfo("Proxy $regex to $address");
+                        }
+
+                        $this->sendProxyRequest($address);
+                        return;
+                    }
+                }
+
+                if($this->proxy['_others']){
+                    $this->sendProxyRequest($this->proxy['_others']);
+                    return;
+                }
+            }
         }
 
         //if async mode, do not end http request response in this method. end it manually in controller methods
@@ -311,7 +352,7 @@ class DooWebApp{
         }
     }
 
-    public function sendProxyRequest(){
+    public function sendProxyRequest($addr){
         $headers = $this->request->headers->map;
         $headers = json_encode($headers);
         //msg format
@@ -337,7 +378,7 @@ class DooWebApp{
 
         $msg['body'] = $this->_POST;
 
-        Vertx::eventBus()->sendWithTimeout($this->proxy, $msg, $this->proxyTimeout, function($reply, $error){
+        Vertx::eventBus()->sendWithTimeout($addr, $msg, $this->proxyTimeout, function($reply, $error){
             if (!$error) {
                 $res = $reply->body();
 

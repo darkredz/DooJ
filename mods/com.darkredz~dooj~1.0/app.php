@@ -115,84 +115,12 @@ $server->requestHandler(function($request) use ($config, $route) {
 
 
 Vertx::eventBus()->registerHandler('myapp.web', function($message) use ($config, $route) {
-//msg format
-    /*
-        {
-            "headers": {
-                "Content-Type": "application/json",
-                "Accept-Language": "en-US"
-            },
-            "absoluteUri": "http://xxxxx" or "ws://asdasd"
-            "uri": "/dev/test-query-async",
-            "method": "GET",
-            "body": <Post content>
-        }
-
-    */
-
-//    Vertx::logger()->info('Incoming request');
-//    Vertx::logger()->info($message->body());
-
-    $json = $message->body();
-
-    if(empty($json)){
-        $message->reply(['status' => 'error', 'value'=>'empty message body']);
-        return;
-    }
-
-    if(is_string($json)){
-        $json = json_decode($json, true);
-    }
-
-    if(is_array($json) == false){
-        $message->reply(['status' => 'error', 'value'=>'invalid message body']);
-        return;
-    }
-
-    if(empty($json['method'])){
-        $message->reply(['status' => 'error', 'value'=>'Missing method']);
-        return;
-    }
-
-    if(empty($json['uri'])){
-        $message->reply(['status' => 'error', 'value'=>'Missing uri']);
-        return;
-    }
-
-//    Vertx::logger()->info( var_export($json, true) );
-
-    $request = new DooEventBusRequest();
-    $request->absoluteUri    = $json['absoluteUri'];
-    $request->uri            = $json['uri'];
-    $request->method         = $json['method'];
-    $request->body           = $json['body'];
-    $request->remoteAddress  = $json['remoteAddress'];
-
-    if(!empty($json['headers'])){
-        $request->headers = json_decode($json['headers'],true);
-    }
-
-    $response = new DooEventBusResponse();
-    $response->statusCode = 200;
-    $response->statusMessage = 'OK';
-    $response->replyHeaders = [];
-    $response->replyOutput = '';
-    $response->ebMessage = $message;
-
-    $request->response = $response;
-
-    $conf = new DooConfig();
-    $conf->set($config);
-    $response->debug = $conf->DEBUG_ENABLED;
-
-    if($conf->DEBUG_ENABLED){
-        Vertx::logger()->info( 'Request: ' . var_export($json, true) );
-    }
 
     $app = new DooEventBusApp();
 
-    //hook function that would be executed when the request is ended
+    //hook to close db conn when app ends, (non-async mode)
     $app->endCallback = function($app){
+//        Vertx::logger()->info('==== ended ---- '. $app->_SERVER['URI_REQUEST']);
         if(isset($app->db)){
             Vertx::logger()->info($app->db);
             Vertx::logger()->info('DB CLOSE');
@@ -201,5 +129,6 @@ Vertx::eventBus()->registerHandler('myapp.web', function($message) use ($config,
         }
     };
 
-    $app->exec($conf, $route, $request);
+    $app->exec($config, $route, $message);
 });
+
