@@ -78,6 +78,10 @@ class DooJsonSchema {
                 'required' => true,
             ];
 
+            if(isset($p[2])){
+                $schemaProp[$fname]['description'] = $p[2];
+            }
+
             if($p[1]){
                 foreach($p[1] as $rule){
                     if($rule=='optional' || $rule[0]=='optional'){
