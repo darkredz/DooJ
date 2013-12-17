@@ -65,7 +65,7 @@ class DooConfig{
      * Set session secret for the app
      * @var string
      */
-    public $SESSION_SECRET = 'xEfE51QWdop06YtrvB29mkl';
+    public $SESSION_SECRET = 'xEfE51QWdop06';
 
     /**
      * Enable session cluster to store in Redis server. Settings:
