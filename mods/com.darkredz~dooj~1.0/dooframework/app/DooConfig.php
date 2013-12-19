@@ -53,7 +53,6 @@ class DooConfig{
      */
     public $COOKIE_DOMAIN;
 
-
     /**
      * Enable session support for the app. Turn off by default
      * @var bool
@@ -97,6 +96,10 @@ class DooConfig{
      * @since 2.0
      */
     public $WEB_STATIC_PATH;
+
+    public $WEB_STATIC_ETAG = false;
+    public $WEB_STATIC_INCLUDE_LAST_MODIFIED = false;
+    public $WEB_STATIC_CACHE_CONTROL_EXPIRY;
 
     /**
      * Name of the protected folder where all the application scripts located. Default 'protected/'

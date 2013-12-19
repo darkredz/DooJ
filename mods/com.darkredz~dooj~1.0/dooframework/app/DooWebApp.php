@@ -199,6 +199,8 @@ class DooWebApp{
          $fullpath = explode('/', $this->request->absoluteUri);
          $lastpart = $fullpath[sizeof($fullpath)-1];
 
+         $headers = $this->request->headers;
+
          //serve static files
          if(isset($conf->WEB_STATIC_PATH)) {
              if (strpos($lastpart, '.') !== false ){
@@ -206,6 +208,30 @@ class DooWebApp{
                  $file = $conf->WEB_STATIC_PATH . $file;
 
                  if(file_exists($file)){
+                     if($conf->WEB_STATIC_INCLUDE_LAST_MODIFIED){
+                         $lastModified = filemtime($file);
+                         $lastModified = gmdate("D, d M Y H:i:s", $lastModified)." GMT";
+                         $this->request->response->putHeader('Last-Modified', $lastModified);
+                     }
+
+                     if($conf->WEB_STATIC_ETAG){
+                         $etag = md5_file($file);
+
+                         if(trim($headers['If-None-Match']) == '"'.$etag.'"') {
+                             $this->request->response->statusCode = 304;
+                             $this->request->response->statusMessage = $this->httpCodes[304];
+                             $this->request->response->end();
+                             return;
+                         }
+
+                         $this->request->response->putHeader('Etag', '"'.$etag.'"');
+                     }
+
+                     if(isset($conf->WEB_STATIC_CACHE_CONTROL_EXPIRY)){
+                         $this->request->response->putHeader('Cache-Control', "public, max-age=". $conf->WEB_STATIC_CACHE_CONTROL_EXPIRY);
+                         $this->request->response->putHeader('Expires', gmdate("D, d M Y H:i:s", time() + $conf->WEB_STATIC_CACHE_CONTROL_EXPIRY)." GMT");
+                     }
+
                      $this->request->response->sendFile($file);
                      return;
                  }
@@ -216,8 +242,6 @@ class DooWebApp{
          if(strpos($this->request->uri,'?')!==false){
              $this->_GET = $this->parseQueryString( explode('?',$this->request->uri,2)[1] );  //$this->request->params()->map;
          }
-
-         $headers = $this->request->headers;
 
          $contentType = $headers["Content-Type"];
          $this->_SERVER['CONTENT_TYPE'] = $contentType;
