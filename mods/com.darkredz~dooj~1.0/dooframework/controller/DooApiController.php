@@ -18,9 +18,6 @@
  */
 class DooApiController extends DooController {
 
-    /**
-     * @var string Language for this session
-     */
     public $lang = 'en_US';
     public $async = true;
     public $action;

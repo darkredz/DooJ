@@ -479,6 +479,7 @@ class Doo{
 		$class['DooUrlBuilder']      = 'helper/DooUrlBuilder';
         $class['DooValidator']       = 'helper/DooValidator';
         $class['DooJsonSchema']      = 'helper/DooJsonSchema';
+        $class['DooApiCaller']       = 'helper/DooApiCaller';
 
         //logging
 		$class['DooLog'] = 'logging/DooLog';

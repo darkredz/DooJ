@@ -36,6 +36,7 @@ class DooEventBusApp {
     public $endCallbackData;
     public $async = false;
     public $ended = false;
+    public $httpClients;
 
     /**
      * @var DooVertxSessionManager
@@ -996,6 +997,12 @@ class DooEventBusApp {
             $this->conf->PROTECTED_FOLDER = $tmp;
         }
         return $result;
+    }
+
+
+    public function redirect($url){
+        $this->throwHeader($url);
+        $this->end();
     }
 
     /**

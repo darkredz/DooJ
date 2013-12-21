@@ -53,7 +53,8 @@ class DooApiDiscoveryController extends DooController {
                 $m = strtolower(preg_replace('/([a-z])([A-Z])/', '$1-$2', $m));
             }
 
-            $fname = strtolower(substr($fname, 0, -10));
+            $fname = substr($fname, 0, -10);
+            $fname = strtolower(preg_replace('/([a-z])([A-Z])/', '$1-$2', $fname));
             $classes[$fname] = array_values($methods);
         }
 
@@ -76,6 +77,7 @@ class DooApiDiscoveryController extends DooController {
     public function schema(){
         $section = $this->params[0];
 //        $sectionClass = __NAMESPACE__ .'\\' . ucfirst($section) . 'Controller';
+        $section = preg_replace( '/-(.?)/e',"strtoupper('$1')", strtolower($section));
         $sectionClass = $this->namespace .'\\' . ucfirst($section) . 'Controller';
         $func = $this->params[1];
 

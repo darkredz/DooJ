@@ -34,6 +34,7 @@ class DooWebApp{
     public $proxy;
     public $proxyTimeout = 15000;
     public $ended = false;
+    public $httpClients;
 
     /**
      * @var DooVertxSessionManager
