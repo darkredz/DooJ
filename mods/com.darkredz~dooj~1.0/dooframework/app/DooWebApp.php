@@ -538,8 +538,17 @@ class DooWebApp{
             $domain = ' domain=' . $this->conf->COOKIE_DOMAIN .';';
         }
 
+        $httpOnly = '';
+        $secure = '';
+        if($this->conf->COOKIE_HTTP_ONLY){
+            $httpOnly = ' HttpOnly;';
+        }
+        if($this->conf->COOKIE_SECURE){
+            $secure = ' Secure;';
+        }
+
         foreach($cookieArr as $k=>$v){
-            $cookies[] = "$k=$v; path=$path;". $expires . $domain;
+            $cookies[] = "$k=$v; path=$path;". $expires . $domain . $httpOnly. $secure;
         }
 
         $this->request->response->putHeader('Set-Cookie', $cookies);

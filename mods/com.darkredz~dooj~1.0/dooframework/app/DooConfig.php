@@ -54,6 +54,19 @@ class DooConfig{
     public $COOKIE_DOMAIN;
 
     /**
+     * Force cookie to be retrieved via HTTP only
+     * @var bool
+     */
+    public $COOKIE_HTTP_ONLY;
+
+    /**
+     * Force cookie to use secure mode (for HTTPS server)
+     * @var bool
+     */
+    public $COOKIE_SECURE;
+
+
+    /**
      * Enable session support for the app. Turn off by default
      * @var bool
      * @since 2.0
