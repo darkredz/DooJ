@@ -17,35 +17,54 @@
  * @since 2.0
  */
 trait DooApiCaller {
-    public $apiAddress = 'myapp.api';
-    public $apiKey = '';
-    public $apiUrlRoot = 'http://localhost/';
-    public $apiContentType = 'application/x-www-form-urlencoded';
-    public $apiTimeout = 30000;
+    protected $_apiAddress = 'myapp.api';
+    protected $_apiKey = '';
+    protected $_apiUrlRoot = 'http://localhost/';
+    protected $_apiContentType = 'application/x-www-form-urlencoded';
+    protected $_apiTimeout = 30000;
 
-    function apiGet($uri, callable $callback) {
+    protected function setApiAddress($v){
+        $this->_apiAddress = $v;
+    }
+
+    protected function setApiKey($v){
+        $this->_apiKey = $v;
+    }
+
+    protected function setApiUrlRoot($v){
+        $this->_apiUrlRoot = $v;
+    }
+
+    protected function setApiContentType($v){
+        $this->_apiContentType = $v;
+    }
+
+    protected function setTimeout($v){
+        $this->_apiTimeout = $v;
+    }
+
+    protected function apiGet($uri, callable $callback) {
         $this->apiCall($uri, 'GET', null, $callback);
     }
 
-    function apiPost($uri, $body, callable $callback) {
+    protected function apiPost($uri, $body, callable $callback) {
         $this->apiCall($uri, 'POST', $body, $callback);
     }
 
-    function apiCall($uri, $method, $body, callable $callback){
-
-        if($this->apiContentType == 'application/x-www-form-urlencoded' && is_array($body)){
+    protected function apiCall($uri, $method, $body, callable $callback){
+        if($this->_apiContentType == 'application/x-www-form-urlencoded' && is_array($body)){
             $body = \http_build_query($body);
         }
-        else if($this->apiContentType == 'application/json' && is_array($body)){
+        else if($this->_apiContentType == 'application/json' && is_array($body)){
             $body = \json_encode($body);
         }
 
-        $headers = ['Authority' => $this->apiKey, "Content-Type" => $this->apiContentType];
+        $headers = ['Authority' => $this->_apiKey, "Content-Type" => $this->_apiContentType];
         $headers = json_encode($headers);
 
         $msg = [
             'headers'        => $headers,
-            'absoluteUri'    => $this->apiUrlRoot . $uri,
+            'absoluteUri'    => $this->_apiUrlRoot . $uri,
             'uri'            => $uri,
             'method'         => $method,
             'remoteAddress'  => $this->app->conf->SERVER_ID,
@@ -55,7 +74,7 @@ trait DooApiCaller {
             $msg['body'] = $body;
         }
 
-        \Vertx::eventBus()->sendWithTimeout($this->apiAddress, $msg, $this->apiTimeout, function($reply, $error) use ($callback){
+        \Vertx::eventBus()->sendWithTimeout($this->_apiAddress, $msg, $this->_apiTimeout, function($reply, $error) use ($callback){
             if (!$error) {
                 $res = $reply->body();
 

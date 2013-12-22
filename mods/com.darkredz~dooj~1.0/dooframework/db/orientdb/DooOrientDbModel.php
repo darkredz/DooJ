@@ -262,8 +262,8 @@ class DooOrientDbModel{
     /**
      * Query database in async mode. Results are pass into callbacks. example:  $callback = new AsyncQueryCallback($rsFunc, $endFunc);
      * @param string $sql SQL statement
-     * @param function $rsFunc Result handler callback function which will be executed on every record result
-     * @param function $endFunc Callback function when the query is done
+     * @param callable $rsFunc Result handler callback function which will be executed on every record result
+     * @param callable $endFunc Callback function when the query is done
      * @param array $params Associative array for prepared query if need. example: $params['name'] = 'leng';  select from user where name = :name
      * @param string $fetchPlan set fetch plan if needed, eg. "*:-1" for all nested links
      */
@@ -289,6 +289,8 @@ class DooOrientDbModel{
         $orderStr = '';
         $limitStr = '';
         $skipStr = '';
+
+        $select = $queryParam['_select'];
 
         foreach($queryParam as $field=>$v){
             if(strpos($field, '_') === 0){
@@ -429,7 +431,12 @@ class DooOrientDbModel{
         //if cluster is set, use cluster to select
         $class = (empty($this->_useCluster)) ? $this->_class : 'cluster:' . $this->_useCluster;
 
-        $sql = "SELECT FROM $class". $paramStr . $orderStr . $skipStr . $limitStr;
+        if($select){
+            $sql = "SELECT $select FROM $class". $paramStr . $orderStr . $skipStr . $limitStr;
+        }
+        else{
+            $sql = "SELECT FROM $class". $paramStr . $orderStr . $skipStr . $limitStr;
+        }
 
         return $sql;
     }
@@ -467,6 +474,35 @@ class DooOrientDbModel{
         }
 
         return $rs;
+    }
+
+
+    public function findAsync($query, $rsFunc, $endFunc, $fetchPlan="*:-1"){
+        if(is_string($query)){
+
+            if($this->_debug){
+                Vertx::logger()->debug('SQL: ' . $query);
+            }
+
+            $this->queryAsync($query, $rsFunc, $endFunc, null, $fetchPlan);
+        }
+        else if(is_array($query)){
+
+            $sql = $this->buildSql(&$query);
+
+            if($this->_debug && !empty($query)){
+                Vertx::logger()->debug('SQL params: ' . var_export($query, true));
+            }
+
+            if($this->_debug){
+                Vertx::logger()->debug('SQL: ' . $sql);
+            }
+
+            $this->queryAsync($sql, $rsFunc, $endFunc, $query, $fetchPlan);
+        }
+        else if($query==null){
+            $this->queryAsync('select from '. $this->_class, $rsFunc, $endFunc, null, $fetchPlan);
+        }
     }
 
     /**
