@@ -21,7 +21,9 @@ class ArrMock {
     protected $lastMethod;
     protected $lastStaticMethod;
     protected $lastArgs;
-    
+    public $varDumpException = false;
+    public $ignoreNonExistentMethod = false;
+
     /**
      * Prevent direct object creation of ArrMock
      */
@@ -31,9 +33,13 @@ class ArrMock {
      * Prevent object cloning of ArrMock
      */
     final private function  __clone(){}
-    
+
     /**
      * This must be the first call to create the Mock Object
+     * @param string $className
+     * @param null $staticAttr
+     * @return ArrMock
+     * @throws Exception
      */
     public static function create( $className = 'AnonClass', $staticAttr = null ){
         if(empty($className) || !is_string($className)){
@@ -48,7 +54,14 @@ class ArrMock {
                 $staticAttrStr .= 'public static $' . $attr .';';
             }
         }
-        
+
+//        if(strpos($className,'\\') !== false){
+//            $parts = explode('\\', $className);
+//            $className = $parts[sizeof($parts)-1];
+//            array_pop($parts);
+//            $namespace = 'namespace ' . implode('\\', $parts) .';';
+//        }
+
         eval(<<<EOF
 class $className extends ArrMock{
     public static \$staticMethods = array();
@@ -128,7 +141,15 @@ class $className extends ArrMock{
                 return \$handler(\$arguments);
             }
         }
-        throw new Exception("Call to undefined static method ". __CLASS__ ."::\$name()");
+
+        if(\$this->ignoreNonExistentMethod!=true){
+            if(\$this->varDumpException){
+                var_dump("Call to undefined method ". \$this->selfClassName ."::\$name()");
+            }
+            else{
+                throw new Exception("Call to undefined method ". \$this->selfClassName ."::\$name()");
+            }
+        }
     }
 }
 EOF
@@ -152,7 +173,7 @@ EOF
         $this->lastMethod = $this->lastArgs = null;   //reset   
         return $this;
     }
-    
+
     public function args(){
         if( isset($this->lastMethod) || isset($this->lastStaticMethod) ){
             $args = func_get_args();
@@ -161,7 +182,7 @@ EOF
         }
         return $this;
     }
-    
+
     public function handle($func){            
         if(isset($this->lastMethod)){            
             $this->methods[$this->lastMethod]['handler'] = $func;
@@ -231,16 +252,16 @@ EOF
             $args = var_export($arguments, true);
             if( isset( $this->methods[$name][$args] ) ){
                 $ret = &$this->methods[$name][$args];
-                
+
                 if( !isset($ret['count']) )
                     $ret['count'] = 0;
 
                 $count = $ret['count']++;
                 $retLength = sizeof($ret['returns']);
-                
+
                 if( $count >= $retLength )
                     $count = $retLength - 1;
-                    
+
                 return $ret['returns'][ $count ];
             }
             else if( !empty($this->methods[$name]['handler']) ){
@@ -250,8 +271,15 @@ EOF
                 return $this->methods[$name]['handler']($arguments);
             }
         }
-        
-        throw new Exception("Call to undefined method ". $this->selfClassName ."::$name()");
+
+        if($this->ignoreNonExistentMethod!=true){
+            if($this->varDumpException){
+                var_dump("Call to undefined method ". $this->selfClassName ."::$name()");
+            }
+            else{
+                throw new Exception("Call to undefined method ". $this->selfClassName ."::$name()");
+            }
+        }
     }
     
     protected function calcTotalCalls( $methodsList, $method, $args ){

@@ -27,8 +27,13 @@ class ArrBDDSpec{
      * Specifications. Write specs in prepare()
      * @var array 
      */
-    public $specs;    
-    
+    public $specs;
+
+    /**
+     * @var DooEventBusApp|DooWebApp
+     */
+    public $app;
+
     /**
      * Prepare the specs
      * <code>
@@ -48,6 +53,10 @@ class ArrBDDSpec{
      * </code>
      */
     public function prepare(){}
+
+    public function getMockFile($pathToBddMockFile){
+        return $this->app->conf->SITE_PATH . $this->app->conf->PROTECTED_FOLDER . 'bdd_mock/' . $pathToBddMockFile .'.php';
+    }
     
     /**
      * Returns the section name

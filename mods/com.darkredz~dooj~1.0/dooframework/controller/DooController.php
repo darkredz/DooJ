@@ -421,7 +421,7 @@ class DooController {
         } elseif(getenv('REMOTE_ADDR') && strcasecmp(getenv('REMOTE_ADDR'), 'unknown')) {
             return getenv('REMOTE_ADDR');
         } elseif(isset($this->app->_SERVER['REMOTE_ADDR']) && $this->app->_SERVER['REMOTE_ADDR'] && strcasecmp($this->app->_SERVER['REMOTE_ADDR'], 'unknown')) {
-            return $this->app->_SERVER['REMOTE_ADDR'];
+            return $this->app->_SERVER['REMOTE_ADDR']->toString();
         }
     }
 
@@ -701,7 +701,13 @@ class DooController {
         if($output===true){
 			if($setJSONContentType===true)
 				$this->setContentType('json', $encoding);
-            echo $rs;
+
+            if(!$this->async){
+                echo $rs;
+            }
+            else{
+                $this->endReq($rs);
+            }
 		}
         return $rs;
     }

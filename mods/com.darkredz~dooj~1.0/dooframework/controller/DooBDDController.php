@@ -34,11 +34,11 @@
  * @package doo.controller
  * @since 1.5
  */
-
-Doo::loadCore('helper/DooFile');
-Doo::loadCore('controller/DooController');
-Doo::loadCore('ext/ArrBDD/ArrBDD');
-Doo::loadCore('ext/ArrBDD/ArrBDDSpec');
+//
+//Doo::loadCore('helper/DooFile');
+//Doo::loadCore('controller/DooController');
+//Doo::loadCore('ext/ArrBDD/ArrBDD');
+//Doo::loadCore('ext/ArrBDD/ArrBDDSpec');
 
 class DooBDDController extends DooController{
     /**
@@ -82,7 +82,7 @@ class DooBDDController extends DooController{
      * @return string
      */
     protected function getScenarioPath(){
-        return Doo::conf()->SITE_PATH . Doo::conf()->PROTECTED_FOLDER . 'bdd_scenario';
+        return $this->app->conf->SITE_PATH . $this->app->conf->PROTECTED_FOLDER . 'bdd_scenario';
     }
 
     /**
@@ -110,6 +110,7 @@ class DooBDDController extends DooController{
             $cls = $cls[0];
 
             $obj = new $cls;
+            $obj->app = &$this->app;
             $section = $obj->getSectionName();
             
             if(empty($section)){
@@ -162,7 +163,7 @@ class DooBDDController extends DooController{
      */
     protected function saveResult($path=null, $flatten=true){
         if($path===null){
-            $path = Doo::conf()->SITE_PATH . Doo::conf()->PROTECTED_FOLDER . 'bdd_result/';
+            $path = $this->app->conf->SITE_PATH . $this->app->conf->PROTECTED_FOLDER . 'bdd_result/';
         }
         
         if($flatten){
