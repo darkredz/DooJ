@@ -302,7 +302,7 @@ class DooEventBusApp {
         $this->_SERVER['CONTENT_LENGTH'] = $headers["Content-Length"];
 
         $this->_SERVER['DOCUMENT_ROOT']	 = getcwd() + '/';
-        $this->_SERVER['REQUEST_METHOD'] = $this->request->method;
+        $this->_SERVER['REQUEST_METHOD'] = $method = strtoupper($this->request->method);
         $this->_SERVER['REQUEST_URI']	   = $this->request->uri;
         $this->_SERVER['HTTP_HOST']		   = $fullpath[2];
         $this->_SERVER['REMOTE_ADDR'] 	 = $this->request->remoteAddress;
@@ -315,9 +315,7 @@ class DooEventBusApp {
         $this->_SERVER['HTTP_USER_AGENT'] = $headers['User-Agent'];
         $this->_SERVER['HTTP_X_REQUESTED_WITH'] = $headers['X-Requested-With'];
 
-        $method = strtolower($this->request->method);
-
-        if($method == 'get' || $method == 'delete' || $method == 'head'){
+        if($method == 'GET' || $method == 'OPTIONS' || $method == 'HEAD'){
             $this->processRequest();
         }
         else{
@@ -409,7 +407,7 @@ class DooEventBusApp {
      * @param string $out Additional output to end with request
      */
     public function end($output=null){
-        $this->ended = true;
+        if($this->ended) return;
         $appHeaders = $this->headers;
         $statusCode = $this->statusCode;
         $this->request->response->statusCode = $statusCode;
@@ -432,6 +430,29 @@ class DooEventBusApp {
             $this->saveSessionData($this->session);
         }
 
+        //if status code is in error range, plus no output, try to check if ERROR_CODE_PAGES is defined.
+        //if is defined as a php file, error_503.php include and render the file.
+        //if is a route /error/code/503, reroute and render the final output
+        if($output===null && isset($this->conf->ERROR_CODE_PAGES) && $this->conf->ERROR_CODE_PAGES[$statusCode]){
+            $errPage = $this->conf->ERROR_CODE_PAGES[$statusCode];
+
+            if($errPage{0}=='/'){
+                $this->reroute($errPage, true);
+
+                if($this->async == false){
+                    $result = ob_get_clean();
+                    $this->endBlock($result);
+                }
+                return;
+            }
+            else{
+                ob_start();
+                include $this->conf->SITE_PATH . $errPage;
+                $output = ob_get_contents();
+                ob_end_clean();
+            }
+        }
+
         //end response for async mode since end() method is explicitly called from controller once process if done and not needed.
         if($this->async==true){
             if($output==null){
@@ -449,6 +470,12 @@ class DooEventBusApp {
                 $this->request->response->end($output);
             }
         }
+
+        if(!empty($this->endCallback)){
+            call_user_func_array($this->endCallback, [$this]);
+        }
+
+        $this->ended = true;
 
         if(!empty($this->endCallback)){
             call_user_func_array($this->endCallback, [$this]);
@@ -1030,11 +1057,15 @@ class DooEventBusApp {
                     $this->statusCode = 404;
 
                     if(!empty($this->conf->ERROR_404_DOCUMENT)){
+                        ob_start();
                         include $this->conf->SITE_PATH . $this->conf->ERROR_404_DOCUMENT;
+                        $data = ob_get_contents();
+                        ob_end_clean();
+                        $this->end($data);
                         return 404;
                     }
                     //execute route to handler 404 display if ERROR_404_ROUTE is defined, the route handler shouldn't send any headers or return 404
-                    elseif(!empty($this->conf->ERROR_404_ROUTE)){
+                    else if(!empty($this->conf->ERROR_404_ROUTE)){
                         $this->reroute($this->conf->ERROR_404_ROUTE, true);
                         return 404;
                     }
@@ -1042,7 +1073,32 @@ class DooEventBusApp {
                 //if not 404, just send the header code
                 else{
                     $this->statusCode = $code;
-                    // DooUriRouter::redirect(null, false, $code);
+
+                    //if status code is in error range, plus no output, try to check if ERROR_CODE_PAGES is defined.
+                    //if is defined as a php file, error_503.php include and render the file.
+                    //if is a route /error/code/503, reroute and render the final output
+                    if(isset($this->conf->ERROR_CODE_PAGES) && $this->conf->ERROR_CODE_PAGES[$code]){
+                        $errPage = $this->conf->ERROR_CODE_PAGES[$code];
+                        $output = null;
+
+                        if($errPage{0}=='/'){
+                            $this->reroute($errPage, true);
+
+                            if($this->async == false){
+                                $result = ob_get_clean();
+                                $this->endBlock($result);
+                            }
+                            return;
+                        }
+                        else{
+                            ob_start();
+                            include $this->conf->SITE_PATH . $errPage;
+                            $output = ob_get_contents();
+                            ob_end_clean();
+                        }
+
+                        $this->end($output);
+                    }
                 }
             }
             elseif(is_string($code)){

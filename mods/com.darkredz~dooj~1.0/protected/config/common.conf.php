@@ -35,7 +35,7 @@ $config['APP_MODE'] = 'prod';
 //$config['SUBFOLDER'] = '/app/';
 $config['APP_URL'] = 'http://localhost/';
 $config['AUTOROUTE'] = TRUE;
-$config['DEBUG_ENABLED'] = TRUE;
+$config['DEBUG_ENABLED'] = FALSE;
 
 
 // $config['TEMPLATE_COMPILE_ALWAYS'] = TRUE;
@@ -55,15 +55,22 @@ $config['DEBUG_ENABLED'] = TRUE;
  * Error document must be more than 512 bytes as IE sees it as a normal 404 sent if < 512b
  */
 //$config['ERROR_404_DOCUMENT'] = 'error.php';
-$config['ERROR_404_ROUTE'] = '/error';
+$config['ERROR_CODE_PAGES'] = [
+    401 => '/error/code/401',
+    403 => '/error/code/403',
+    408 => '/error/code/408',
+    500 => '/error/code/500',
+    503 => '/error/code/503',
+];
 
+$config['ERROR_404_ROUTE'] = '/error';
 
 /**
  * Defines modules that are allowed to be accessed from an auto route URI.
  * Example, we have a module in SITE_PATH/PROTECTED_FOLDER/module/example
  * It can be accessed via http://localhost/example/controller/method/parameters
  */
- // $config['MODULES'] = array('admin','example','api');
+// $config['MODULES'] = array('test','example','api');
 
 
 
@@ -87,8 +94,7 @@ $config['APP_NAMESPACE_ID'] = 'myapp';
 
 $config['SERVER_ID'] = 1;
 
-$config['SESSION_ENABLE'] = true;
-
+// $config['SESSION_ENABLE'] = true;
 
 //$config['SESSION_REDIS'] = [
 //    "address"    => $config['APP_NAMESPACE_ID'] . '.session.redis' . $config['SERVER_ID'],
@@ -97,12 +103,6 @@ $config['SESSION_ENABLE'] = true;
 //    "encoding"   => 'UTF-8',
 ////    "auth"       => <password>,
 //];
-
-
-//Class map for OrientDB classes
-// $config['orientDbClasses'] = array (
-//     'User' => 'myapp\\model\\User',
-// );
 
 
 /**

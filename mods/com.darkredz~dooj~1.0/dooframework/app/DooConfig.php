@@ -182,6 +182,17 @@ class DooConfig{
     public $ERROR_404_ROUTE;
 
     /**
+     * A list of pages or internal route to handle/render error pages (status code >= 400) when no output is passed to end the request
+     * <code>$config['ERROR_CODE_PAGES'] = [
+     *      404 => 'error_404.php',
+     *      408 => '/error/code/408',
+     *      503 => '/error/code/503'
+     * ]</code>
+     * @var array
+     */
+    public $ERROR_CODE_PAGES;
+
+    /**
      * Path where the cache files are stored. If not defined, caches are stored in SITE_PATH/protected/cache/
      * @var string
      */

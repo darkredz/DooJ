@@ -55,7 +55,24 @@ $config['DEBUG_ENABLED'] = TRUE;
  * Error document must be more than 512 bytes as IE sees it as a normal 404 sent if < 512b
  */
 //$config['ERROR_404_DOCUMENT'] = 'error.php';
+
+$config['ERROR_CODE_PAGES'] = [
+    401 => '/error/code/401',
+    403 => '/error/code/403',
+    408 => '/error/code/408',
+    500 => '/error/code/500',
+    503 => '/error/code/503',
+];
+
 $config['ERROR_404_ROUTE'] = '/error';
+
+/**
+ * Defines modules that are allowed to be accessed from an auto route URI.
+ * Example, we have a module in SITE_PATH/PROTECTED_FOLDER/module/example
+ * It can be accessed via http://localhost/example/controller/method/parameters
+ */
+ // $config['MODULES'] = array('test','example','api');
+
 
 
 /**
@@ -78,3 +95,35 @@ $config['APP_NAMESPACE_ID'] = 'myapp';
 
 $config['SERVER_ID'] = 'proxy';
 
+$config['SESSION_ENABLE'] = false;
+
+$config['WEB_STATIC_ETAG'] = true;
+$config['WEB_STATIC_INCLUDE_LAST_MODIFIED'] = false;
+$config['WEB_STATIC_CACHE_CONTROL_EXPIRY'] = 3600 * 24 * 30;
+
+
+//$config['SESSION_REDIS'] = [
+//    "address"    => $config['APP_NAMESPACE_ID'] . '.session.redis' . $config['SERVER_ID'],
+//    "host"       => 'localhost',
+//    "port"       => 6379,
+//    "encoding"   => 'UTF-8',
+////    "auth"       => <password>,
+//];
+
+
+/**
+ * To enable autoloading, add directories which consist of the classes needed in your application. 
+ *
+ * $config['AUTOLOAD'] = array(
+                            //internal directories, live in the app
+                            'class', 'model', 'module/example/controller', 
+                            //external directories, live outside the app
+                            '/var/php/library/classes'
+                        );
+*/
+
+/**
+ * you can include self defined config, retrieved via Doo::conf()->variable
+ * Use lower case for you own settings for future Compability with DooPHP
+ */
+//$config['pagesize'] = 10;
