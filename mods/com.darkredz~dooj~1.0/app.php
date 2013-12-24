@@ -78,16 +78,6 @@ $server->requestHandler(function($request) use ($config, $route) {
     
     $app = new DooWebApp();
 
-    //hook function that would be executed when the request is ended
-    $app->endCallback = function($app){
-        if(isset($app->db)){
-            Vertx::logger()->info($app->db);
-            Vertx::logger()->info('DB CLOSE');
-            $app->db->close();
-            $app->db = null;
-        }
-    };
-
     $exceptionHandler = function($msg, $filename='', $line='', $className='', $funcName='') use ($app, $conf){
         Vertx::logger()->info("exceptionHandler $className $funcName");
         // require $conf->BASE_PATH.'diagnostic/DooDiagnostic.php';
@@ -109,6 +99,31 @@ $server->requestHandler(function($request) use ($config, $route) {
 
     Vertx::exceptionHandler($exceptionHandler);
 
+    //server handle request 30 sec timeout
+    if($request->uri != '/favicon.ico'){
+        $timerId = Vertx::setTimer(30*1000, function() use ($app){
+            $app->logDebug('HTTP TIMEOUT END');
+            $app->statusCode = 408;
+            $app->end();
+        });
+    }
+
+    //hook function that would be executed when the request is ended
+    $app->endCallback = function($app) use ($timerId){
+        if(isset($app->db)){
+            $app->logDebug($app->db);
+            $app->logDebug('DB CLOSE');
+            $app->db->close();
+            $app->db = null;
+        }
+
+        $app = null;
+        if(is_int($timerId)){
+            Vertx::cancelTimer($timerId);
+        }
+    };
+
+
     $app->exec($conf, $route, $request);
 
 })->listen($port, $ip);
@@ -118,9 +133,8 @@ Vertx::eventBus()->registerHandler('myapp.web', function($message) use ($config,
 
     $app = new DooEventBusApp();
 
-    //hook to close db conn when app ends, (non-async mode)
+    //hook function that would be executed when the request is ended
     $app->endCallback = function($app){
-//        Vertx::logger()->info('==== ended ---- '. $app->_SERVER['URI_REQUEST']);
         if(isset($app->db)){
             Vertx::logger()->info($app->db);
             Vertx::logger()->info('DB CLOSE');
@@ -131,4 +145,3 @@ Vertx::eventBus()->registerHandler('myapp.web', function($message) use ($config,
 
     $app->exec($config, $route, $message);
 });
-

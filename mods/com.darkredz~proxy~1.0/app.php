@@ -43,6 +43,8 @@ spl_autoload_register(function($class) use ($c){
 Vertx::logger()->info("Proxy server deployed at port " . $port);
 Vertx::logger()->info("Server ID " . $config['SERVER_ID']);
 
+$server->setCompressionSupported(true);
+
 $server->requestHandler(function($request) use ($config, $route) {
 
     $conf = new DooConfig();
@@ -50,11 +52,30 @@ $server->requestHandler(function($request) use ($config, $route) {
 
     $app = new DooWebApp();
     $app->proxy = 'myapp.web';
+//    $app->proxy = [
+//        '^/admin/.?' => 'myapp.admin',
+//        '^/api/user' => 'myapp.api.user',
+//        '^/api/email' => 'myapp.api.email',
+//        '_others'  => 'myapp.frontend'
+//    ];
+
+    //server handle request 30 sec timeout
+    if($request->uri != '/favicon.ico'){
+        $timerId = Vertx::setTimer(30*1000, function() use ($app){
+            $app->logDebug('HTTP TIMEOUT END');
+            $app->statusCode = 408;
+            $app->end();
+        });
+    }
 
     //hook function that would be executed when the request is ended
-//    $app->endCallback = function($app){
-//        Vertx::logger()->info('==== ended ==== '. $app->_SERVER['URI_REQUEST']);
-//    };
+    $app->endCallback = function($app) use ($timerId){
+        $app = null;
+
+        if(is_int($timerId)){
+            Vertx::cancelTimer($timerId);
+        }
+    };
 
     $app->exec($conf, $route, $request);
 
