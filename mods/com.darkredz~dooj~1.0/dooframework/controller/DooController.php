@@ -410,6 +410,42 @@ class DooController {
     }
 
     /**
+     * Check token to prevent CSRF attack. Token had to be stored in session and verify against header/post field. Use com.doophp.util.UUID::randomUUID() to generate a unique CSRF token
+     * @param $token Unique CSRF token stored
+     * @param string $output Output if failed to pass CSRF token validation to the client
+     * @param string $csrfParamName Field name/Header name for the CSRF token field. Default is 'x-csrf-token'
+     * @return bool
+     */
+    public function checkCsrf($token, $output=null, $csrfParamName = 'x-csrf-token'){
+        $method = $this->app->_SERVER['REQUEST_METHOD'];
+        $failed = false;
+
+        if(!($method == 'GET' || $method == 'OPTIONS' || $method == 'HEAD')){
+            if(!$this->app->request->headers[$csrfParamName] && !$this->_POST[$csrfParamName]){
+                $failed = true;
+            }
+            else if(isset($this->app->request->headers[$csrfParamName]) && $this->app->request->headers[$csrfParamName] != $token){
+                $failed = true;
+            }
+            else if(isset($this->_POST[$csrfParamName]) && $this->_POST[$csrfParamName] != $token){
+                $failed = true;
+            }
+
+            if($failed){
+                $this->app->statusCode = 403;
+
+                if($this->async){
+                    $this->endReq($output);
+                }
+                else{
+                    echo $output;
+                }
+            }
+        }
+        return !$failed;
+    }
+
+    /**
      * Get client's IP
      * @return string
      */

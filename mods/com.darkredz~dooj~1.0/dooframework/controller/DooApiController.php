@@ -39,7 +39,7 @@ class DooApiController extends DooController {
         $this->actionField = 'field' . ucfirst($this->action);
         $allowMethod = $this->{$this->actionField}['_method'];
 
-        if($allowMethod && strtoupper($allowMethod) != strtoupper($this->app->_SERVER['REQUEST_METHOD'])){
+        if($allowMethod && strtoupper($allowMethod) != $this->app->_SERVER['REQUEST_METHOD']){
             $this->setContentType("json");
             $this->app->statusCode = 404;
             $this->endReq( '{"error":"Method Not Found"}' );
@@ -66,8 +66,9 @@ class DooApiController extends DooController {
 
     protected function getApiInput(){
         $field = array_keys($this->{$this->actionField});
-        $method = strtoupper($this->app->_SERVER['REQUEST_METHOD']);
-        if($method == 'GET' || $method == 'DELETE' || $method == 'HEAD'){
+        $method = $this->app->_SERVER['REQUEST_METHOD'];
+
+        if($method == 'GET' || $method == 'OPTIONS' || $method == 'HEAD'){
             $input = $this->getKeyParams($field);
         }
         else{
