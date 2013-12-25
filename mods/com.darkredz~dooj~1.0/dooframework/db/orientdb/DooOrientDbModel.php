@@ -122,9 +122,20 @@ class DooOrientDbModel{
         return $this->_debug;
     }
 
-    public function setFields($fieldVals){
-        foreach($fieldVals as $k=>$v){
-            $this->$k = $v;
+    public function setFields($fieldVals, $strict = false){
+        if($strict){
+            $allFields = array_keys($this->_fieldType);
+
+            foreach($fieldVals as $k=>$v){
+                if(in_array($k, $allFields)){
+                    $this->$k = $v;
+                }
+            }
+        }
+        else{
+            foreach($fieldVals as $k=>$v){
+                $this->$k = $v;
+            }
         }
     }
 
