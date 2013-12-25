@@ -312,7 +312,7 @@ class DooWebApp{
                          $psize = sizeof($matches);
 
                          if($psize == 4){
-                             for($i=0; $i < $psize; $i++){
+                             for($i=0; $i < sizeof($matches[0]); $i++){
                                 $app->_POST[$matches[2][$i]] = trim($matches[3][$i]);
                              }
                          }

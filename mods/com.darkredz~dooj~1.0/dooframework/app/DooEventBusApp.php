@@ -327,8 +327,9 @@ class DooEventBusApp {
                 preg_match_all('/([\-]{3,}[a-zA-Z0-9]+\s?\n)Content\-Disposition\: form\-data\; name\=\"([a-zA-Z0-9\-\_]+)\"\s?\n([^\-]+)/', $this->request->body, $matches);
                 $psize = sizeof($matches);
 
+
                 if($psize == 4){
-                    for($i=0; $i < $psize; $i++){
+                    for($i=0; $i < sizeof($matches[0]); $i++){
                         $this->_POST[$matches[2][$i]] = trim($matches[3][$i]);
                     }
                 }
