@@ -22,6 +22,11 @@ trait DooApiCaller {
     protected $_apiUrlRoot = 'http://localhost/';
     protected $_apiContentType = 'application/x-www-form-urlencoded';
     protected $_apiTimeout = 30000;
+    protected $_proxy;
+
+    protected function setApiProxy($v){
+        $this->_proxy = $v;
+    }
 
     protected function setApiAddress($v){
         $this->_apiAddress = $v;
@@ -59,6 +64,40 @@ trait DooApiCaller {
             $body = \json_encode($body);
         }
 
+        //proxy api address based on uri
+        $ebAddress = null;
+
+        if(isset($this->_proxy)){
+            if(is_string($this->_proxy)){
+                $ebAddress = $this->_proxy;
+            }
+            else if(is_array($this->_proxy)){
+                if(strpos($uri,'?')!==false){
+                    $uri = explode('?', $uri,2)[0];
+                }
+
+                foreach($this->_proxy as $regex => $address){
+                    if($regex=='_others') continue;
+
+                    if(preg_match('/'. $regex .'/', $uri)){
+                        if($this->conf->DEBUG_ENABLED){
+                            $this->logInfo("Proxy $regex to $address");
+                        }
+
+                        $ebAddress = $address;
+                        break;
+                    }
+                }
+
+                if($ebAddress==null && $this->_proxy['_others']){
+                    $ebAddress = $this->_proxy['_others'];
+                }
+            }
+        }
+        else{
+            $ebAddress = $this->_apiAddress;
+        }
+
         $headers = ['Authority' => $this->_apiKey, "Content-Type" => $this->_apiContentType];
         $headers = json_encode($headers);
 
@@ -74,7 +113,7 @@ trait DooApiCaller {
             $msg['body'] = $body;
         }
 
-        \Vertx::eventBus()->sendWithTimeout($this->_apiAddress, $msg, $this->_apiTimeout, function($reply, $error) use ($callback){
+        \Vertx::eventBus()->sendWithTimeout($ebAddress, $msg, $this->_apiTimeout, function($reply, $error) use ($callback){
             if (!$error) {
                 $res = $reply->body();
 

@@ -344,6 +344,8 @@ class DooWebApp{
                 }
 
                 foreach($this->proxy as $regex => $address){
+                    if($regex=='_others') continue;
+
                     if(preg_match('/'. $regex .'/', $uri)){
                         if($this->conf->DEBUG_ENABLED){
                             $this->logInfo("Proxy $regex to $address");
