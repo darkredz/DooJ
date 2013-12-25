@@ -450,14 +450,15 @@ class DooController {
      * @return string
      */
     public function clientIP(){
-        if(getenv('HTTP_CLIENT_IP') && strcasecmp(getenv('HTTP_CLIENT_IP'), 'unknown')) {
-            return getenv('HTTP_CLIENT_IP');
-        } elseif(getenv('HTTP_X_FORWARDED_FOR') && strcasecmp(getenv('HTTP_X_FORWARDED_FOR'), 'unknown')) {
-            return getenv('HTTP_X_FORWARDED_FOR');
-        } elseif(getenv('REMOTE_ADDR') && strcasecmp(getenv('REMOTE_ADDR'), 'unknown')) {
-            return getenv('REMOTE_ADDR');
-        } elseif(isset($this->app->_SERVER['REMOTE_ADDR']) && $this->app->_SERVER['REMOTE_ADDR'] && strcasecmp($this->app->_SERVER['REMOTE_ADDR'], 'unknown')) {
-            return $this->app->_SERVER['REMOTE_ADDR']->toString();
+
+        if($this->app->request->headers['HTTP_X_FORWARDED_FOR']) {
+            return $this->app->request->headers['HTTP_X_FORWARDED_FOR'];
+        }
+        else if($this->app->request->headers['HTTP_CLIENT_IP']) {
+            return $this->app->request->headers['HTTP_CLIENT_IP'];
+        }
+        else if($this->app->_SERVER['REMOTE_ADDR']) {
+            return $this->app->_SERVER['REMOTE_ADDR'];
         }
     }
 

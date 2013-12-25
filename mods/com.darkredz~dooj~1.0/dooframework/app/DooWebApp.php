@@ -257,7 +257,7 @@ class DooWebApp{
          $this->_SERVER['REQUEST_METHOD'] = $method = strtoupper($this->request->method);
          $this->_SERVER['REQUEST_URI']	   = $this->request->uri;
          $this->_SERVER['HTTP_HOST']		   = $fullpath[2];
-         $this->_SERVER['REMOTE_ADDR'] 	 = $this->request->remoteAddress->getAddress();
+         $this->_SERVER['REMOTE_ADDR'] 	 = substr($this->request->remoteAddress->getAddress()->toString(), 1);
          $this->_SERVER['SERVER_PROTOCOL'] = $this->request->version();
 
          $this->_SERVER['HTTP_ACCEPT'] = $headers['Accept'];
@@ -382,6 +382,7 @@ class DooWebApp{
 
     public function sendProxyRequest($addr){
         $headers = $this->request->headers->map;
+        $headers->set('HTTP_X_FORWARDED_FOR', $this->_SERVER['REMOTE_ADDR']);
         $headers = json_encode($headers);
         //msg format
         /*
