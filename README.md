@@ -1,7 +1,7 @@
 DooJ
 ====
 
-DooJ - doophp on steroids. Runs on JVM, event-driven, non-blocking I/O realtime web framework, modular and distributed app/web server.
+DooJ - doophp on steroids. Runs on JVM, event-driven, non-blocking I/O realtime web framework, modular and distributed app/web server, built in proxy load balancer, and session clustering (with optional Redis failover)
 
 ##Requirements
 - JDK 7 http://www.oracle.com/technetwork/java/javase/downloads/jdk7-downloads-1880260.html
