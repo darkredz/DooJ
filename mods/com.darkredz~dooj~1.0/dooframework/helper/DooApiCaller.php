@@ -28,8 +28,20 @@ trait DooApiCaller {
         $this->_proxy = $v;
     }
 
-    protected function setApiAddress($v){
-        $this->_apiAddress = $v;
+    /**
+     * Set Event bus address for the API call. An array can be passed in to proxy the request
+     * @param string|array $proxy A string value for the api address or an array for proxy request, same as proxy array used in DooWebApp.
+     * Example:
+     * <code>
+     * $this->setApiAddress([
+     *      '^/api/user' => 'myapp.api.user',
+     *      '^/api/contact' => 'myapp.api.contact',
+     *      '_others' => 'myapp.api',
+     * ]);
+     * </code>
+     */
+    protected function setApiAddress($proxy){
+        $this->_apiAddress = $proxy;
     }
 
     protected function setApiKey($v){
@@ -44,7 +56,7 @@ trait DooApiCaller {
         $this->_apiContentType = $v;
     }
 
-    protected function setTimeout($v){
+    protected function setApiTimeout($v){
         $this->_apiTimeout = $v;
     }
 
@@ -131,7 +143,7 @@ trait DooApiCaller {
             }
             else{
                 $this->app->logDebug('API server error');
-                $callback(['statusCode' => 503, 'error' => 'Internal Server Error']);
+                $callback(['statusCode' => 503, 'error' => 'Service Unavailable']);
             }
         });
     }
