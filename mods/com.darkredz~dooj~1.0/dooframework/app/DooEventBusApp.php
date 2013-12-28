@@ -476,10 +476,6 @@ class DooEventBusApp {
             }
         }
 
-        if(!empty($this->endCallback)){
-            call_user_func_array($this->endCallback, [$this]);
-        }
-
         $this->ended = true;
 
         if(!empty($this->endCallback)){
