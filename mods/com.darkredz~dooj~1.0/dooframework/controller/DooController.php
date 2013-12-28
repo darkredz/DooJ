@@ -310,6 +310,55 @@ class DooController {
 	}
 
     /**
+     * Checks a content type against request's Accept header
+     * @param $contentType Content type eg. application/json
+     * @return bool
+     */
+    protected function checkReqAcceptType($contentType, $allowMultipleValues=false){
+        return $this->checkReqHeaderValue('Accept', $contentType, $allowMultipleValues);
+    }
+
+    /**
+     * Checks a content type against request's Content-Type header
+     * @param $contentType Content type eg. application/json
+     * @return bool
+     */
+    protected function checkReqContentType($contentType, $allowMultipleValues=false){
+        return $this->checkReqHeaderValue('Content-Type', $contentType, $allowMultipleValues);
+    }
+
+    /**
+     * Checks a value againts request's header
+     * @param $headerKey
+     * @param $contentType
+     * @param bool $allowMultipleValues
+     * @return bool
+     */
+    protected function checkReqHeaderValue($headerKey, $contentType, $allowMultipleValues=false){
+        if($allowMultipleValues==false){
+            return $this->app->request->headers[$headerKey] == $contentType;
+        }
+        else{
+            $multiples = explode(',', $this->app->request->headers[$headerKey]);
+            foreach($multiples as $type){
+                if(trim($type) == $contentType){
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Shorthand to get request's Content-Type header
+     * @param $contentType
+     * @return string
+     */
+    protected function requestContentType($contentType){
+        return $this->app->request->headers['Content-Type'];
+    }
+
+    /**
      * Get the client specified accept type from the header sent
      *
      * <p>Instead of appending a extension name like '.json' to a URL,
