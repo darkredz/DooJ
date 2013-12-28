@@ -268,15 +268,19 @@ class DooEventBusApp {
      * @param array $route
      * @param $request
      */
-    public function exec($conf, $route, $message){
+    public function exec($conf, $route, $message, $autoInit = true){
 
-        if( $this->init($message, $conf) == false ){
-            return false;
+        if($autoInit){
+            if( $this->init($message, $conf) == false ){
+                return false;
+            }
         }
 
         $this->route = $route;
-        $logger = Vertx::logger();
-        $this->logger = $logger;
+
+        if(!$this->logger){
+            $this->logger = Vertx::logger();
+        }
 
 //        $fullpath = explode('/', $this->request->absoluteUri);
 

@@ -194,8 +194,10 @@ class DooWebApp{
          $this->conf = $conf;
          $this->route = $route;
          $this->request = $request;
-         $logger = Vertx::logger();
-         $this->logger = $logger;
+
+         if(!$this->logger){
+            $this->logger = Vertx::logger();
+         }
 
          $fullpath = explode('/', $this->request->absoluteUri);
          $lastpart = $fullpath[sizeof($fullpath)-1];
