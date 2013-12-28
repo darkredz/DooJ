@@ -96,14 +96,27 @@ class DooOrientDbModel{
         }
         else{
             if(gettype($ORecordId)=='string'){
-                $this->_doc = new ODocument(new ORecordId($ORecordId));
-                $this->rid = $this->idStr();
+                if($this->validateId($ORecordId)){
+                    $this->_doc = new ODocument(new ORecordId($ORecordId));
+                    $this->rid = $this->idStr();
+                }
+                else{
+                    $this->_doc = new ODocument($this->_class);
+                }
             }
             else if($ORecordId!=null){
                 $this->_doc = new ODocument($ORecordId);
                 $this->rid = $this->idStr();
             }
         }
+    }
+
+    public static function _validateId($ORecordId){
+        return strpos($ORecordId, ':') !== false && ctype_digit(str_replace(['#',':'], '', $ORecordId));
+    }
+
+    public function validateId($ORecordId){
+        return self::_validateId($ORecordId);
     }
 
     public function useCluster($clusterName){
@@ -460,6 +473,16 @@ class DooOrientDbModel{
         return hex2bin($id);
     }
 
+    /**
+     * Find records with an array of RIDs of a class
+     * @param $idArr Array of RIDs
+     * @return array
+     */
+    public function findWithIDs($idArr){
+        $class = (empty($this->_useCluster)) ? $this->_class : 'cluster:' . $this->_useCluster;
+        return $this->find('SELECT FROM '. $class .' WHERE @rid IN ['. implode(',', $idArr) .']');
+    }
+
     public function find($query=null, $fetchPlan="*:-1", $docToObj=true){
         if(is_string($query)){
             $rs = $this->query($query, null, $fetchPlan);
@@ -469,7 +492,14 @@ class DooOrientDbModel{
             $sql = $this->buildSql(&$query);
 
             if($this->_debug && !empty($query)){
-                Vertx::logger()->debug('SQL params: ' . var_export($query, true));
+                $queryFlat = [];
+                foreach($query as $key => $val){
+                    if($val!=null && is_object($val) && get_class($val) == "com.orientechnologies.orient.core.id.ORecordId"){
+                        $val = $val->toString();
+                    }
+                    $queryFlat[$key] = $val;
+                }
+                Vertx::logger()->debug('SQL params: ' . var_export($queryFlat, true));
             }
 
             $rs = $this->query( $sql, $query, $fetchPlan );
@@ -502,7 +532,14 @@ class DooOrientDbModel{
             $sql = $this->buildSql(&$query);
 
             if($this->_debug && !empty($query)){
-                Vertx::logger()->debug('SQL params: ' . var_export($query, true));
+                $queryFlat = [];
+                foreach($query as $key => $val){
+                    if($val!=null && is_object($val) && get_class($val) == "com.orientechnologies.orient.core.id.ORecordId"){
+                        $val = $val->toString();
+                    }
+                    $queryFlat[$key] = $val;
+                }
+                Vertx::logger()->debug('SQL params: ' . var_export($queryFlat, true));
             }
 
             if($this->_debug){
@@ -529,8 +566,15 @@ class DooOrientDbModel{
             $params = ['rid' => $id];
             $sql = $this->buildSql($params);
 
-            if($this->_debug){
-                Vertx::logger()->debug('SQL params: ' . var_export($params, true));
+            if($this->_debug && !empty($params)){
+                $paramsFlat = [];
+                foreach($params as $key => $val){
+                    if($val!=null && is_object($val) && get_class($val) == "com.orientechnologies.orient.core.id.ORecordId"){
+                        $val = $val->toString();
+                    }
+                    $queryFlat[$key] = $val;
+                }
+                Vertx::logger()->debug('SQL params: ' . var_export($paramsFlat, true));
             }
 
             $rs = $this->query($sql, $params, $fetchPlan);
@@ -545,7 +589,14 @@ class DooOrientDbModel{
                 $sql = $this->buildSql(&$query);
 
                 if($this->_debug && !empty($query)){
-                    Vertx::logger()->debug('SQL params: ' . var_export($query, true));
+                    $queryFlat = [];
+                    foreach($query as $key => $val){
+                        if($val!=null && is_object($val) && get_class($val) == "com.orientechnologies.orient.core.id.ORecordId"){
+                            $val = $val->toString();
+                        }
+                        $queryFlat[$key] = $val;
+                    }
+                    Vertx::logger()->debug('SQL params: ' . var_export($queryFlat, true));
                 }
 
                 $rs = $this->query( $sql, $query, $fetchPlan );
@@ -886,6 +937,38 @@ class DooOrientDbModel{
 
             $this->_doc->field($k, $v, constant("DooOrientDbModel::$cnst"));
         }
+    }
+
+    public function isIndexedArray($array){
+        return ctype_digit(implode('', array_keys($array)));
+    }
+
+    public function setEmbeddedMap($field, $map, $mapType = 'EMBEDDEDMAP'){
+        $jmap = new java('java.util.HashMap');
+        foreach($map as $k=>$v){
+            //if array, check if it's map or linklist
+            if(is_array($v)){
+                if($this->isIndexedArray($v)){
+                    $jmap2 = new java('java.util.ArrayList');
+                    foreach($v as $v2){
+                        $jmap2->add($v2);
+                    }
+                    $jmap->put($k, $jmap2);
+                }
+                else{
+                    $jmap2 = new java('java.util.HashMap');
+                    foreach($v as $k2=>$v2){
+                        $jmap2->put($k2, $v2);
+                    }
+                    $jmap->put($k, $jmap2);
+                }
+            }
+            else{
+                $jmap->put($k, $v);
+            }
+        }
+        $mapType = strtoupper($mapType);
+        $this->_doc->field($field, $jmap, constant("DooOrientDbModel::TYPE_$mapType"));
     }
 
     public function __get($name){
