@@ -140,11 +140,16 @@ class DooApiController extends DooController {
     protected function sendError($err, $statusCode=400){
         $this->setContentType('json');
         $this->app->statusCode = $statusCode;
-        $this->endReq( json_encode(['error' => 'Invalid field data', 'errorList' => $err]) );
+        if(is_string($err)){
+            $this->endReq( $err );
+        }else{
+            $this->endReq( json_encode($err) );
+        }
     }
 
-    protected function sendResult($jsonStr){
+    protected function sendResult($jsonStr, $statusCode=200){
         $this->setContentType('json');
+        $this->app->statusCode = $statusCode;
         if(is_string($jsonStr)){
             $this->endReq( $jsonStr );
         }else{
