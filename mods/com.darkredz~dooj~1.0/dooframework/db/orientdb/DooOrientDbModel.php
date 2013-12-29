@@ -111,6 +111,26 @@ class DooOrientDbModel{
         }
     }
 
+    public function setId($ORecordId){
+        if(gettype($ORecordId)=='string'){
+            if($this->validateId($ORecordId)){
+                $this->_doc->setIdentity(new ORecordId($ORecordId));
+                $this->rid = $this->idStr();
+            }
+            else{
+                $this->_doc->setIdentity(new ORecordId(null));
+                $this->rid = null;
+            }
+        }
+        else if($ORecordId!=null){
+            $this->_doc->setIdentity($ORecordId);
+        }
+        else{
+            $this->_doc->setIdentity(new ORecordId(null));
+            $this->rid = null;
+        }
+    }
+
     public static function _validateId($ORecordId){
         return strpos($ORecordId, ':') !== false && ctype_digit(str_replace(['#',':'], '', $ORecordId));
     }

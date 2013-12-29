@@ -481,6 +481,8 @@ class Doo{
         $class['DooJsonSchema']      = 'helper/DooJsonSchema';
         $class['DooApiCaller']       = 'helper/DooApiCaller';
         $class['DooHttpClientBuilder']  = 'helper/DooHttpClientBuilder';
+        $class['DooCountryCode']  = 'helper/DooCountryCode';
+
 
         //logging
 		$class['DooLog'] = 'logging/DooLog';
