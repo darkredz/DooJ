@@ -336,7 +336,7 @@ class DooOrientDbModel{
 
         $select = $queryParam['_select'];
 
-        foreach($queryParam as $field=>$v){
+        foreach($queryParam as $field=>&$v){
             if(strpos($field, '_') === 0){
                 unset($queryParam[$field]);
 
@@ -390,6 +390,15 @@ class DooOrientDbModel{
             else if($field=='rid' || $field=='@rid'){
                 $field = 'rid';
                 $params[] = "AND @rid = :$field";
+
+                if(is_string($v) && !($v!=null && is_object($v) && get_class($v) == "com.orientechnologies.orient.core.id.ORecordId")){
+                    if($this->validateId($v)){
+                        $v = new ORecordId($v);
+                    }
+                    else{
+                        $v = new ORecordId('#-1:-1');
+                    }
+                }
             }
             else{
                 $andOr = 'and';
