@@ -62,7 +62,7 @@ class DooVertxSessionServer {
         $gcmap = Vertx::sharedData()->getMap( $this->getNamespace() . '.gc' )->map;
         $map = Vertx::sharedData()->getMap( $this->getNamespace() )->map;
 
-        if($map==null || $gcmap==null){
+        if($map==null || $gcmap==null || $sid==null){
             $callback(null);
             return;
         }
