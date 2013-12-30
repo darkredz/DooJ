@@ -348,7 +348,26 @@ class DooWebApp{
                 foreach($this->proxy as $regex => $address){
                     if($regex=='_others') continue;
 
-                    if(preg_match('/'. $regex .'/', $uri)){
+                    //if regex contain domain and port (Virtual Host), try matching it against full URL (exclude query string)
+                    if(strpos($regex, '^http:') === 0 || strpos($regex, '^http\:') === 0
+                     || strpos($regex, '^https:') === 0 || strpos($regex, '^https\:') === 0){
+                        $host = $this->request->headers['Host'];
+                        $uriParts = parse_url($this->request->absoluteUri);
+
+                        if($uriParts['port']==80){
+                            $fullUrl = $uriParts['scheme'] .'://'. $host . $uriParts['path'];
+                        }
+                        else{
+                            $fullUrl = $uriParts['scheme'] .'://'. $host .':'. $uriParts['port'] . $uriParts['path'];
+                        }
+
+                        $match = preg_match('/'. $regex .'/', $fullUrl);
+                    }
+                    else{
+                        $match = preg_match('/'. $regex .'/', $uri);
+                    }
+
+                    if($match){
                         if($this->conf->DEBUG_ENABLED){
                             $this->logInfo("Proxy $regex to $address");
                         }
