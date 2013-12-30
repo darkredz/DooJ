@@ -54,6 +54,55 @@ class DooVertxSessionManager {
         return (!empty($cookie) && !empty($cookie['DVSESSID']));
     }
 
+    public function encryptId($sid, $ts, $key=null){
+        if($key==null){
+            $key = $this->app->conf->SESSION_SECRET;
+        }
+        $enc = mcrypt_encrypt("rijndael-128", $key, $sid .'*'. $ts,'ECB');
+        $enc = bin2hex($enc);
+        return $enc;
+    }
+
+    public function decryptId($sid, $expireDur=30, $key=null){
+        if($key==null){
+            $key = $this->app->conf->SESSION_SECRET;
+        }
+
+        $retval = mcrypt_decrypt("rijndael-128",
+            $key,
+            hex2bin($sid) ,
+            "ECB");
+        if($retval == null || strpos($retval,'*') === false){
+            return null;
+        }
+        $retval = explode('*', $retval);
+        if(time() - intval($retval[1]) > $expireDur){
+            return;
+        }
+
+        return $retval[0];
+    }
+
+    public function setSessionCookieWithId($sid){
+        $timeout = null;
+        if($this->timeout > 0){
+            $timeout = time() + $this->timeout;
+        }
+        $this->app->setCookie(['DVSESSID' => $sid], $timeout, $this->path, $this->domain );
+    }
+
+    public function startSessionWithId($sid){
+        $timeout = null;
+        if($this->timeout > 0){
+            $timeout = time() + $this->timeout;
+        }
+        $this->app->setCookie(['DVSESSID' => $sid], $timeout, $this->path, $this->domain );
+        $session = new DooVertxSession();
+        $session->id = $sid;
+        $session->lastAccess = time();
+        return $session;
+    }
+
     public function startSession(){
         $sessionIdGen = new DooVertxSessionId();
         $sessionIdGen->app = &$this->app;
