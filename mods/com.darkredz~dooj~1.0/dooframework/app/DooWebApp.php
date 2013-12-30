@@ -224,6 +224,10 @@ class DooWebApp{
                              $this->request->response->statusCode = 304;
                              $this->request->response->statusMessage = $this->httpCodes[304];
                              $this->request->response->end();
+
+                             if(!empty($this->endCallback)){
+                                 call_user_func_array($this->endCallback, [$this]);
+                             }
                              return;
                          }
 
@@ -241,6 +245,10 @@ class DooWebApp{
 
                      $this->ended = true;
                      $this->request->response->sendFile($file);
+
+                     if(!empty($this->endCallback)){
+                         call_user_func_array($this->endCallback, [$this]);
+                     }
                      return;
                  }
              }
