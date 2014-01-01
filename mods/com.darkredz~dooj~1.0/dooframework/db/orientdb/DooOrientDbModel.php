@@ -940,26 +940,22 @@ class DooOrientDbModel{
                     $cls = get_class($v);
     //                $ref = new ReflectionClass($v);
     //                Vertx::logger()->debug("$k =parent= ". $ref->getParentClass()->getName());
+                    //if model class, set field with the ODocument value of the model
                     if($cls != 'com.orientechnologies.orient.core.record.impl.ODocument'){
                         $this->_doc->field($k, $v->doc(), constant("DooOrientDbModel::$cnst"));
                         return;
                     }
                 }
                 else if(is_array($v)){
-                    $list = new java('java.util.ArrayList');
-
-                    foreach($v as $itm){
-                        if(is_object($itm)){
-                            $cls = get_class($itm);
-                            if($cls != 'com.orientechnologies.orient.core.record.impl.ODocument'){
-                                $list->add($itm->doc());
-                            }else{
-                                $list->add($itm);
-                            }
-                        }
+                    if($type == 'LINKLIST' || $type == 'LINKSET' ){
+                        $this->setLinkList($k, $v);
                     }
-
-                    $this->_doc->field($k, $list, constant("DooOrientDbModel::$cnst"));
+                    else if($type == 'EMBEDDEDLIST' || $type == 'EMBEDDEDSET'){
+                        $this->setEmbeddedList($k, $v, $type);
+                    }
+                    else if($type == 'EMBEDDEDMAP' || $type == 'LINKMAP'){
+                        $this->setEmbeddedMap($k, $v, $type);
+                    }
                     return;
                 }
             }
@@ -972,8 +968,86 @@ class DooOrientDbModel{
         return ctype_digit(implode('', array_keys($array)));
     }
 
+    public function setEmbeddedSet($field, $listArr){
+        return $this->setEmbeddedList($field, $listArr, 'EMBEDDEDSET');
+    }
+
+    public function setEmbeddedList($field, $listArr, $embedType = 'EMBEDDEDLIST'){
+        if($this->isIndexedArray($listArr)){
+            $list = new java('java.util.ArrayList');
+
+            foreach($listArr as $itm){
+                if(is_object($itm)){
+                    $cls = get_class($itm);
+                    if($cls != 'com.orientechnologies.orient.core.record.impl.ODocument'){
+                        $list->add($itm->doc());
+                    }else{
+                        $list->add($itm);
+                    }
+                }
+                else if(is_array($itm) && !$this->isIndexedArray($itm)){
+                    $jmap = new java('java.util.HashMap');
+                    foreach($itm as $k2=>$v2){
+                        $jmap->put($k2, $v2);
+                    }
+                    $list->add($jmap);
+                }
+                else{
+                    $list->add($itm);
+                }
+            }
+
+            $embedType = strtoupper($embedType);
+            $this->_doc->field($field, $list, constant("DooOrientDbModel::TYPE_$embedType"));
+            return true;
+        }
+        return false;
+    }
+
+    public function setLinkSet($field, $listArr){
+        return $this->setLinkList($field, $listArr, 'LINKSET');
+    }
+
+    public function setLinkList($field, $listArr, $linkType = 'LINKLIST'){
+        if($this->isIndexedArray($listArr)){
+            $list = new java('java.util.ArrayList');
+
+            foreach($listArr as $itm){
+                //if is object ODocument or a Model class, add as a LINKLIST to the object
+                if(is_object($itm)){
+                    $cls = get_class($itm);
+                    if($cls != 'com.orientechnologies.orient.core.record.impl.ODocument'){
+                        $list->add($itm->doc());
+                    }else{
+                        $list->add($itm);
+                    }
+                }
+                else if(is_array($itm) && !$this->isIndexedArray($itm)){
+                    $doc =  new ODocument();
+                    foreach($itm as $k2=>$v2){
+                        $type = strtoupper(gettype($v2));
+                        $cnst = 'TYPE_' . $type;
+                        $doc->field($k2, $v2, constant("DooOrientDbModel::$cnst"));
+                    }
+                    $list->add($doc);
+                }
+            }
+
+            $linkType = strtoupper($linkType);
+            $this->_doc->field($field, $list, constant("DooOrientDbModel::TYPE_$linkType"));
+            return true;
+        }
+        return false;
+    }
+
+    public function setLinkMap($field, $map){
+        return $this->setEmbeddedMap($field, $map, 'LINKMAP');
+    }
+
     public function setEmbeddedMap($field, $map, $mapType = 'EMBEDDEDMAP'){
         $jmap = new java('java.util.HashMap');
+        $mapType = strtoupper($mapType);
+
         foreach($map as $k=>$v){
             //if array, check if it's map or linklist
             if(is_array($v)){
@@ -984,20 +1058,29 @@ class DooOrientDbModel{
                     }
                     $jmap->put($k, $jmap2);
                 }
-                else{
+                else if($mapType == 'EMBEDDEDMAP'){
                     $jmap2 = new java('java.util.HashMap');
                     foreach($v as $k2=>$v2){
                         $jmap2->put($k2, $v2);
                     }
                     $jmap->put($k, $jmap2);
                 }
+                else if($mapType == 'LINKMAP'){
+                    $doc =  new ODocument();
+                    foreach($v as $k2=>$v2){
+                        $type = strtoupper(gettype($v2));
+                        $cnst = 'TYPE_' . $type;
+                        $doc->field($k2, $v2, constant("DooOrientDbModel::$cnst"));
+                    }
+                    $jmap->put($k, $doc);
+                }
             }
             else{
                 $jmap->put($k, $v);
             }
         }
-        $mapType = strtoupper($mapType);
         $this->_doc->field($field, $jmap, constant("DooOrientDbModel::TYPE_$mapType"));
+        return true;
     }
 
     public function __get($name){
@@ -1141,42 +1224,6 @@ class DooOrientDbModel{
 
     public function disableStrictMode(){
         $this->command('ALTER CLASS '. $this->_class .' STRICTMODE false');
-    }
-
-    public function addLink($field, $arr){
-
-        $list = new java('java.util.ArrayList');
-
-        foreach($arr as $itm){
-            if(is_object($itm)){
-                $cls = get_class($itm);
-                if($cls != 'com.orientechnologies.orient.core.record.impl.ODocument'){
-                    $list->add($itm->doc());
-                }else{
-                    $list->add($itm);
-                }
-            }
-        }
-
-        if(!empty($this->{$field})){
-            $arr = $this->{$field};
-            foreach($arr as $itm){
-                if(is_object($itm)){
-                    $cls = get_class($itm);
-                    if($cls != 'com.orientechnologies.orient.core.record.impl.ODocument'){
-                        $list->add($itm->doc());
-                    }else{
-                        $list->add($itm);
-                    }
-                }
-            }
-        }
-
-        $this->_doc->field($field, $list, DooOrientDbModel::TYPE_LINKLIST);
-    }
-    public function testLinkFind(){
-        //organizer -> products -> productType.name
-        return $this->query("select flatten(products) from organizer where products contains (type.name = 'Cap')");
     }
 
     public static function _toDateTime($dateTime){
