@@ -35,16 +35,28 @@ class DooApiController extends DooController {
             return 401;
         }
 
-        $this->action = $action;
-        $this->actionField = 'field' . ucfirst($this->action);
-        $allowMethod = $this->{$this->actionField}['_method'];
+        $this->initReqAction($action);
 
-        if($allowMethod && strtoupper($allowMethod) != $this->app->_SERVER['REQUEST_METHOD']){
+        if($this->isMethodAllow() == false){
             $this->setContentType("json");
             $this->app->statusCode = 404;
             $this->endReq( '{"error":"Method Not Found"}' );
             return;
         }
+    }
+
+    protected function initReqAction($action){
+        $this->action = $action;
+        $this->actionField = 'field' . ucfirst($this->action);
+    }
+
+    protected function isMethodAllow(){
+        $allowMethod = $this->{$this->actionField}['_method'];
+
+        if($allowMethod && strtoupper($allowMethod) != $this->app->_SERVER['REQUEST_METHOD']){
+            return false;
+        }
+        return true;
     }
 
     protected function getFieldSchema(){
