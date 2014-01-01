@@ -501,6 +501,10 @@ class DooWebApp{
         $this->end($result);
     }
 
+    public function eventBus(){
+        return Vertx::eventBus();
+    }
+
     /**
      * End the app process for current request
      * @param string $out Additional output to end with request

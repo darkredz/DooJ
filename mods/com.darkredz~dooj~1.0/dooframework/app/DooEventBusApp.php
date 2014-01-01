@@ -403,8 +403,11 @@ class DooEventBusApp {
 
     public function endBlock($result){
         //blocking mode
-
         $this->end($result);
+    }
+
+    public function eventBus(){
+        return Vertx::eventBus();
     }
 
     /**

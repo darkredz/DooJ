@@ -1,6 +1,6 @@
 <?php
 /**
- * DooApiCaller trait file.
+ * DooApiCaller class file.
  *
  * @author Leng Sheng Hong <darkredz@gmail.com>
  * @link http://www.doophp.com/
@@ -10,21 +10,22 @@
 
 
 /**
- * DooApiCaller provides methods for calling API to an eventbus address
+ * DooApiCaller provides methods for calling API through an eventbus address
  *
  * @author Leng Sheng Hong <darkredz@gmail.com>
  * @package doo.controller
  * @since 2.0
  */
-trait DooApiCaller {
+class DooApiCaller {
     protected $_apiAddress = 'myapp.api';
     protected $_apiKey = '';
     protected $_apiUrlRoot = 'http://localhost/';
     protected $_apiContentType = 'application/x-www-form-urlencoded';
     protected $_apiTimeout = 30000;
     protected $_proxy;
+    public $app;
 
-    protected function setApiProxy($v){
+    public function setApiProxy($v){
         $this->_proxy = $v;
     }
 
@@ -40,35 +41,60 @@ trait DooApiCaller {
      * ]);
      * </code>
      */
-    protected function setApiAddress($proxy){
+    public function address($proxy){
         $this->_apiAddress = $proxy;
+        return $this;
     }
 
-    protected function setApiKey($v){
+    public function apiKey($v){
         $this->_apiKey = $v;
+        return $this;
     }
 
-    protected function setApiUrlRoot($v){
+    public function urlRoot($v){
         $this->_apiUrlRoot = $v;
+        return $this;
     }
 
-    protected function setApiContentType($v){
+    public function contentType($v){
         $this->_apiContentType = $v;
+        return $this;
     }
 
-    protected function setApiTimeout($v){
+    public function timeout($v){
         $this->_apiTimeout = $v;
+        return $this;
     }
 
-    protected function apiGet($uri, callable $callback) {
-        $this->apiCall($uri, 'GET', null, $callback);
+    public function getAddress(){
+        return $this->_apiAddress;
     }
 
-    protected function apiPost($uri, $body, callable $callback) {
-        $this->apiCall($uri, 'POST', $body, $callback);
+    public function getApiKey(){
+        return $this->_apiKey;
     }
 
-    protected function apiCall($uri, $method, $body, callable $callback){
+    public function getUrlRoot(){
+        return $this->_apiUrlRoot;
+    }
+
+    public function getContentType(){
+        return $this->_apiContentType;
+    }
+
+    public function getTimeout(){
+        return $this->_apiTimeout;
+    }
+
+    public function get($uri, callable $callback) {
+        $this->call($uri, 'GET', null, $callback);
+    }
+
+    public function post($uri, $body, callable $callback) {
+        $this->call($uri, 'POST', $body, $callback);
+    }
+
+    public function call($uri, $method, $body, callable $callback){
         if($this->_apiContentType == 'application/x-www-form-urlencoded' && is_array($body)){
             $body = \http_build_query($body);
         }
@@ -92,7 +118,7 @@ trait DooApiCaller {
                     if($regex=='_others') continue;
 
                     if(preg_match('/'. $regex .'/', $uri)){
-                        if($this->conf->DEBUG_ENABLED){
+                        if($this->app->conf->DEBUG_ENABLED){
                             $this->logInfo("Proxy $regex to $address");
                         }
 
@@ -125,7 +151,8 @@ trait DooApiCaller {
             $msg['body'] = $body;
         }
 
-        \Vertx::eventBus()->sendWithTimeout($ebAddress, $msg, $this->_apiTimeout, function($reply, $error) use ($callback){
+//        \Vertx::eventBus()->sendWithTimeout($ebAddress, $msg, $this->_apiTimeout, function($reply, $error) use ($callback){
+        $this->app->eventBus()->sendWithTimeout($ebAddress, $msg, $this->_apiTimeout, function($reply, $error) use ($callback){
             if (!$error) {
                 $res = $reply->body();
 
