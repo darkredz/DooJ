@@ -117,7 +117,8 @@ class $className extends ArrMock{
     
     public static function __callStatic(\$name, \$arguments) {
         if( isset( self::\$staticMethods[\$name] ) ){
-            \$args = var_export(\$arguments, true);
+            \$args = ArrMock::_serializeArgs(\$args);
+
             if( isset( self::\$staticMethods[\$name][\$args] ) ){
                 \$ret = &self::\$staticMethods[\$name][\$args];
                 if( !isset(\$ret['count']) )
@@ -177,14 +178,13 @@ EOF
     public function args(){
         if( isset($this->lastMethod) || isset($this->lastStaticMethod) ){
             $args = func_get_args();
-            // args is a null or no args at all
-            $this->lastArgs = var_export($args, true);
+            $this->lastArgs = $this->serializeArgs($args);
         }
         return $this;
     }
 
     public function handle($func){            
-        if(isset($this->lastMethod)){            
+        if(isset($this->lastMethod)){
             $this->methods[$this->lastMethod]['handler'] = $func;
         }
         else if(isset($this->lastStaticMethod)){  
@@ -196,9 +196,9 @@ EOF
     public function returns( $returnVal = null, $position = null, $execFunc = null){
         if( isset($this->lastMethod) || isset($this->lastStaticMethod) ){    
             if( $this->lastArgs===null ){
-                $this->lastArgs = var_export(array(), true);
+                $this->lastArgs = $this->serializeArgs([]);
             }
-            
+
             if(isset($this->lastMethod)){
             
                 if(empty($this->methods[$this->lastMethod][$this->lastArgs])){
@@ -249,7 +249,9 @@ EOF
 
     public function __call($name, $arguments) {
         if( isset( $this->methods[$name] ) ){
-            $args = var_export($arguments, true);
+
+            $args = $this->serializeArgs($arguments);
+
             if( isset( $this->methods[$name][$args] ) ){
                 $ret = &$this->methods[$name][$args];
 
@@ -293,9 +295,10 @@ EOF
             if( sizeof($args)===1 && $args[0]===null ) 
                 $args = array();
             
-            if(!$emptyArgs)
-                $args = var_export($args, true);
-                        
+            if(!$emptyArgs){
+                $args = $this->serializeArgs($args);
+            }
+
             // add up all methods call count
             foreach($methodsCalled as $argsKey => $mc){
                 if($argsKey==='handlerCallCount') continue;
@@ -317,6 +320,34 @@ EOF
             }
             return $total;
         }
+    }
+
+    public function serializeArgs($args){
+        return self::_serializeArgs($args);
+    }
+
+    public static function _serializeArgs($args){
+        $closure = false;
+        $clsArgs = [];
+        //convert closures into string, var_export not working for closures
+        foreach($args as $k=>$v){
+            if(is_callable($v)){
+                $closure = true;
+                ob_start();
+                var_dump($v);
+                $clousureExp = ob_get_clean();
+                $clsArgs[$k] = $clousureExp;
+                break;
+            }
+            else{
+                $clsArgs[$k] = $v;
+            }
+        }
+
+        if($closure){
+            return var_export($clsArgs, true);
+        }
+        return var_export($args, true);
     }
 }
 
