@@ -491,7 +491,11 @@ class DooOrientDbModel{
         if(is_array($select)){
             $sql = [];
             foreach($select as $field => $realField){
-                $sql[] = "$realField as $field";
+                if($field == $realField || $realField === null || $realField === ''){
+                    $sql[] = $field;
+                }else{
+                    $sql[] = "$realField as $field";
+                }
             }
             $select = implode(',', $sql);
         }
@@ -687,18 +691,18 @@ class DooOrientDbModel{
         if($removeNullField){
             if($exceptField===null)
                 $rs = preg_replace(array('/\,\"[^\"]+\"\:null/U', '/\{\"[^\"]+\"\:null\,/U'), array('','{'), $rs);
-            else{
+            else if(is_array($exceptField)){
                 $funca1 =  create_function('$matches',
                     'if(in_array($matches[1], array(\''. implode("','",$exceptField) .'\'))===false){
-                                return "";
-                            }
-                            return $matches[0];');
+                        return "";
+                    }
+                    return $matches[0];');
 
                 $funca2 =  create_function('$matches',
                     'if(in_array($matches[1], array(\''. implode("','",$exceptField) .'\'))===false){
-                                return "{";
-                            }
-                            return $matches[0];');
+                        return "{";
+                    }
+                    return $matches[0];');
 
                 $rs = preg_replace_callback('/\,\"([^\"]+)\"\:null/U', $funca1, $rs);
                 $rs = preg_replace_callback('/\{\"([^\"]+)\"\:null\,/U', $funca2, $rs);
@@ -709,15 +713,15 @@ class DooOrientDbModel{
         if($mustRemoveFieldList!==null){
             $funcb1 =  create_function('$matches',
                 'if(in_array($matches[1], array(\''. implode("','",$mustRemoveFieldList) .'\'))){
-                            return "";
-                        }
-                        return $matches[0];');
+                    return "";
+                }
+                return $matches[0];');
 
             $funcb2 =  create_function('$matches',
                 'if(in_array($matches[1], array(\''. implode("','",$mustRemoveFieldList) .'\'))){
-                            return "{";
-                        }
-                        return $matches[0];');
+                    return "{";
+                }
+                return $matches[0];');
 
             $rs = preg_replace_callback(array('/\,\"([^\"]+)\"\:\".*\"/U', '/\,\"([^\"]+)\"\:\{.*\}/U', '/\,\"([^\"]+)\"\:\[.*\]/U', '/\,\"([^\"]+)\"\:([false|true|0-9|\.\-|null]+)/'), $funcb1, $rs);
 
