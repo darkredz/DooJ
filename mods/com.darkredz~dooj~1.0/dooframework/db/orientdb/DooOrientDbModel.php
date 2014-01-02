@@ -333,6 +333,7 @@ class DooOrientDbModel{
         $orderStr = '';
         $limitStr = '';
         $skipStr = '';
+        $groupByStr = '';
 
         $select = $queryParam['_select'];
 
@@ -341,6 +342,9 @@ class DooOrientDbModel{
                 unset($queryParam[$field]);
 
                 switch($field){
+                    case '_groupBy':
+                        $groupByStr = " GROUP BY $v";
+                        break;
                     case '_orderBy':
                         if(is_string($v)){
                             $orderStr = " ORDER BY $v";
@@ -484,11 +488,19 @@ class DooOrientDbModel{
         //if cluster is set, use cluster to select
         $class = (empty($this->_useCluster)) ? $this->_class : 'cluster:' . $this->_useCluster;
 
+        if(is_array($select)){
+            $sql = [];
+            foreach($select as $field => $realField){
+                $sql[] = "$realField as $field";
+            }
+            $select = implode(',', $sql);
+        }
+
         if($select){
-            $sql = "SELECT $select FROM $class". $paramStr . $orderStr . $skipStr . $limitStr;
+            $sql = "SELECT $select FROM $class". $paramStr . $groupByStr . $orderStr . $skipStr . $limitStr;
         }
         else{
-            $sql = "SELECT FROM $class". $paramStr . $orderStr . $skipStr . $limitStr;
+            $sql = "SELECT FROM $class". $paramStr . $groupByStr . $orderStr . $skipStr . $limitStr;
         }
 
         return $sql;
