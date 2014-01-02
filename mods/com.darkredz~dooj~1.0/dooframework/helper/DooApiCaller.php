@@ -94,6 +94,14 @@ class DooApiCaller {
         $this->call($uri, 'POST', $body, $callback);
     }
 
+    public function put($uri, $body, callable $callback) {
+        $this->call($uri, 'PUT', $body, $callback);
+    }
+
+    public function delete($uri, $body, callable $callback) {
+        $this->call($uri, 'DELETE', $body, $callback);
+    }
+
     public function call($uri, $method, $body, callable $callback){
         if($this->_apiContentType == 'application/x-www-form-urlencoded' && is_array($body)){
             $body = \http_build_query($body);

@@ -91,7 +91,7 @@ class $className extends ArrMock{
         return \$this;
     }
     
-    public function handle(\$func){            
+    public function handle(\$func){
         \$return = parent::handle( \$func );
         
         //if the return is \$this, meaning it's a non static method, return \$this straight away
@@ -143,24 +143,12 @@ class $className extends ArrMock{
             }
         }
 
-        if(\$this->ignoreNonExistentMethod!=true){
-            if(\$this->varDumpException){
-                var_dump("Call to undefined method ". \$this->selfClassName ."::\$name()");
-            }
-            else{
-                throw new Exception("Call to undefined method ". \$this->selfClassName ."::\$name()");
-            }
-        }
+        var_dump("Call to undefined method $className::\$name()");
     }
 }
 EOF
         );
         return new $className;
-    }
-    
-    public function toString( $stringVal ){
-        $this->toStringVal = $stringVal;
-        return $this;
     }
     
     public function method( $name ){
@@ -191,6 +179,12 @@ EOF
             return $func;
         }
         return $this;    
+    }
+
+    public function autoChain(){
+        $this->handle(function($args){
+            return $this;
+        });
     }
     
     public function returns( $returnVal = null, $position = null, $execFunc = null){
