@@ -289,7 +289,7 @@ class DooController {
         }
 
         if($this->async){
-            $output = ob_get_clean();
+            $output = utf8_decode(ob_get_clean());
             $this->endReq($output);
         }
     }
@@ -806,7 +806,9 @@ class DooController {
      */
     public function getInput($fields, $rawInput){
         $input = [];
+        $this->app->trace($fields);
         foreach($fields as $k){
+            $this->app->logInfo($k);
             $input[$k] = $rawInput[$k];
         }
         return $input;

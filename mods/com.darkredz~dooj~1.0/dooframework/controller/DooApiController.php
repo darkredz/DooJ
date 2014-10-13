@@ -25,10 +25,11 @@ class DooApiController extends DooController {
     public $apiKey = 'AZ00B701J2pI90P84e7yrGhM401Z801';
     public $fieldDef;
 
+    public $authority;
 
     public function beforeRun($resource, $action){
 
-        if($this->app->request->headers['Authority'] != $this->apiKey){
+        if($this->app->request->headers['Authority'] != $this->apiKey && $this->authority != $this->apiKey){
             $this->setContentType('json');
             $this->app->statusCode = 401;
             $this->endReq( '{"error":"Invalid API key"}' );
@@ -153,8 +154,10 @@ class DooApiController extends DooController {
         $this->setContentType('json');
         $this->app->statusCode = $statusCode;
         if(is_string($err)){
+            $err = utf8_encode($err);
             $this->endReq( $err );
         }else{
+            DooApiCaller::encUtf8($err);
             $this->endReq( json_encode($err) );
         }
     }
@@ -163,10 +166,11 @@ class DooApiController extends DooController {
         $this->setContentType('json');
         $this->app->statusCode = $statusCode;
         if(is_string($jsonStr)){
+            $jsonStr = utf8_encode($jsonStr);
             $this->endReq( $jsonStr );
         }else{
+            DooApiCaller::encUtf8($jsonStr);
             $this->endReq( json_encode($jsonStr) );
         }
     }
-
 }

@@ -159,7 +159,6 @@ class DooApiCaller {
             $msg['body'] = $body;
         }
 
-//        \Vertx::eventBus()->sendWithTimeout($ebAddress, $msg, $this->_apiTimeout, function($reply, $error) use ($callback){
         $this->app->eventBus()->sendWithTimeout($ebAddress, $msg, $this->_apiTimeout, function($reply, $error) use ($callback){
             if (!$error) {
                 $res = $reply->body();
@@ -170,10 +169,14 @@ class DooApiCaller {
                 }
 
                 if($res['statusCode'] > 299){
-                    $callback(['statusCode' => $res['statusCode'], 'error'=> json_decode($res['body'],true)]);
+                    $err = json_decode($res['body'],true);
+                    self::decUtf8($err);
+                    $callback(['statusCode' => $res['statusCode'], 'error' => $err]);
                 }
                 else{
-                    $callback(json_decode($res['body'], true));
+                    $rs = json_decode($res['body'], true);
+                    self::decUtf8($rs);
+                    $callback($rs);
                 }
             }
             else{
@@ -181,5 +184,28 @@ class DooApiCaller {
                 $callback(['statusCode' => 503, 'error' => 'Service Unavailable']);
             }
         });
+    }
+
+    public static function decUtf8(&$rs){
+        foreach($rs as &$r1){
+            if(is_string($r1)){
+                $r1 = utf8_decode($r1);
+            }
+            else if(is_array($r1)){
+                self::decUtf8($r1);
+            }
+        }
+    }
+
+
+    public static function encUtf8(&$rs){
+        foreach($rs as &$r1){
+            if(is_string($r1)){
+                $r1 = utf8_encode($r1);
+            }
+            else if(is_array($r1)){
+                self::encUtf8($r1);
+            }
+        }
     }
 } 

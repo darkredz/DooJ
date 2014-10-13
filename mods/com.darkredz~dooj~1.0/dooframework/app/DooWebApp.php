@@ -286,7 +286,6 @@ class DooWebApp{
 //             $logger->info('content-length = ' . $headers['Content-Length']);
 
              if (!isset($headers['Transfer-Encoding']) && !isset($headers['Content-Length'])) {
-                 $logger->info('skip this');
                  $this->processRequest();
                  return;
              }
