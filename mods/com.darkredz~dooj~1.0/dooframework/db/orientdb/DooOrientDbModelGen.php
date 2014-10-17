@@ -81,7 +81,7 @@ class DooOrientDbModelGen {
             $fullClassName = $dbmapClasses[$classname];
             $schema = call_user_func($fullClassName . '::_schema');
 
-            $classInfo = json_decode($schema['classInfo']);
+            $classInfo = JSON::decode($schema['classInfo']);
 
             //echo "===========\n Create $classname .. \n";
 
@@ -117,7 +117,7 @@ class DooOrientDbModelGen {
             $fullClassName = $dbmapClasses[$classname];
             $schema = call_user_func($fullClassName . '::_schema');
 
-            $classInfo = json_decode($schema['classInfo']);
+            $classInfo = JSON::decode($schema['classInfo']);
             $properties = $classInfo->properties;
 
             $links = ['EMBEDDED','EMBEDDEDLIST','EMBEDDEDMAP','EMBEDDEDSET','LINK','LINKLIST','LINKMAP','LINKSET'];

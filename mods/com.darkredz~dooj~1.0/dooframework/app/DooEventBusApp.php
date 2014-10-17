@@ -144,7 +144,7 @@ class DooEventBusApp {
         }
 
         if(is_string($json)){
-            $json = json_decode($json, true);
+            $json = JSON::decode($json, true);
         }
 
         if(is_array($json) == false){
@@ -172,7 +172,7 @@ class DooEventBusApp {
         $request->remoteAddress  = $json['remoteAddress'];
 
         if(!empty($json['headers'])){
-            $request->headers = json_decode($json['headers'],true);
+            $request->headers = JSON::decode($json['headers'],true);
         }
 
         $response = new DooEventBusResponse();
@@ -448,7 +448,7 @@ class DooEventBusApp {
                 $this->reroute($errPage, true);
 
                 if($this->async == false){
-                    $result = ob_get_clean();
+                    $result = utf8_decode(ob_get_clean());
                     $this->endBlock($result);
                 }
                 return;
@@ -456,7 +456,7 @@ class DooEventBusApp {
             else{
                 ob_start();
                 include $this->conf->SITE_PATH . $errPage;
-                $output = ob_get_contents();
+                $output = utf8_decode(ob_get_contents());
                 ob_end_clean();
             }
         }
@@ -539,7 +539,7 @@ class DooEventBusApp {
     public function run(){
         $this->throwHeader( $this->routeTo() );
         if($this->async == false){
-            $result = ob_get_clean();
+            $result = utf8_decode(ob_get_clean());
             $this->endBlock($result);
         }
     }
@@ -912,7 +912,7 @@ class DooEventBusApp {
 
             ob_start();
             $this->routeTo();
-            $data = ob_get_contents();
+            $data = utf8_decode(ob_get_contents());
             ob_end_clean();
 
             $this->conf->PROTECTED_FOLDER = $tmp;
@@ -956,7 +956,7 @@ class DooEventBusApp {
 
             $this->throwHeader( $rs );
 
-            $data = ob_get_contents();
+            $data = utf8_decode(ob_get_contents());
             ob_end_clean();
             return $data;
         }
@@ -990,7 +990,7 @@ class DooEventBusApp {
 
             $this->throwHeader( $rs );
 
-            $data = ob_get_contents();
+            $data = utf8_decode(ob_get_contents());
             ob_end_clean();
             return $data;
         }
@@ -1063,7 +1063,7 @@ class DooEventBusApp {
                     if(!empty($this->conf->ERROR_404_DOCUMENT)){
                         ob_start();
                         include $this->conf->SITE_PATH . $this->conf->ERROR_404_DOCUMENT;
-                        $data = ob_get_contents();
+                        $data = utf8_decode(ob_get_contents());
                         ob_end_clean();
                         $this->end($data);
                         return 404;
@@ -1089,7 +1089,7 @@ class DooEventBusApp {
                             $this->reroute($errPage, true);
 
                             if($this->async == false){
-                                $result = ob_get_clean();
+                                $result = utf8_decode(ob_get_clean());
                                 $this->endBlock($result);
                             }
                             return;
@@ -1097,7 +1097,7 @@ class DooEventBusApp {
                         else{
                             ob_start();
                             include $this->conf->SITE_PATH . $errPage;
-                            $output = ob_get_contents();
+                            $output = utf8_decode(ob_get_contents());
                             ob_end_clean();
                         }
 

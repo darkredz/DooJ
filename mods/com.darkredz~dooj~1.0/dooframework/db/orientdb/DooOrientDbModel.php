@@ -769,13 +769,13 @@ class DooOrientDbModel{
 
     public function asArray($recursive=true, $withRid=true, $encodeRid=false, $removeNullField=false, $exceptField=null, $mustRemoveFieldList=null){
         $rs = $this->asJson($recursive, $withRid, $encodeRid, $removeNullField, $exceptField, $mustRemoveFieldList);
-        $rs = json_decode($rs, true);
+        $rs = JSON::decode($rs, true);
         return $rs;
     }
 
     public function asObject($recursive=true, $withRid=true, $encodeRid=false, $removeNullField=false, $exceptField=null, $mustRemoveFieldList=null){
         $rs = $this->asJson($recursive, $withRid, $encodeRid, $removeNullField, $exceptField, $mustRemoveFieldList);
-        $rs = json_decode($rs);
+        $rs = JSON::decode($rs);
         return $rs;
     }
 
@@ -793,7 +793,7 @@ class DooOrientDbModel{
         for($i = 0; $i < sizeof($resultList); $i++){
             $json[] = $resultList[$i]->asJson($recursive, $withRid, $encodeRid, $removeNullField, $exceptField, $mustRemoveFieldList);
         }
-        $arr = json_decode('['. implode(',', $json) .']', true);
+        $arr = JSON::decode('['. implode(',', $json) .']', true);
         return $arr;
     }
 
@@ -802,7 +802,7 @@ class DooOrientDbModel{
         for($i = 0; $i < sizeof($resultList); $i++){
             $json[] = $resultList[$i]->asJson($recursive, $withRid, $encodeRid, $removeNullField, $exceptField, $mustRemoveFieldList);
         }
-        $arr = json_decode('['. implode(',', $json) .']');
+        $arr = JSON::decode('['. implode(',', $json) .']');
         return $arr;
     }
 

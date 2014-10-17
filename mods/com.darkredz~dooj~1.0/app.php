@@ -1,5 +1,6 @@
 <?php
-
+import com.doophp.util.UUID;
+import io.vertx.lang.php.util.JSON;
 
 include './protected/config/common.conf.php';
 include './protected/config/routes.conf.php';

@@ -107,7 +107,7 @@ class DooApiCaller {
             $body = \http_build_query($body);
         }
         else if($this->_apiContentType == 'application/json' && is_array($body)){
-            $body = \json_encode($body);
+            $body = JSON::encode($body);
         }
 
         //proxy api address based on uri
@@ -145,7 +145,7 @@ class DooApiCaller {
         }
 
         $headers = ['Authority' => $this->_apiKey, "Content-Type" => $this->_apiContentType];
-        $headers = json_encode($headers);
+        $headers = JSON::encode($headers);
 
         $msg = [
             'headers'        => $headers,
@@ -159,28 +159,28 @@ class DooApiCaller {
             $msg['body'] = $body;
         }
 
-        $this->app->eventBus()->sendWithTimeout($ebAddress, $msg, $this->_apiTimeout, function($reply, $error) use ($callback){
+        $this->app->eventBus()->sendWithTimeout($ebAddress, $msg, $this->_apiTimeout, function($reply, $error) use ($callback, $ebAddress){
             if (!$error) {
                 $res = $reply->body();
 
                 if($this->app->conf->DEBUG_ENABLED){
                     $this->app->logDebug('API result received:');
-                    $this->app->trace(json_encode($res));
+                    $this->app->trace(JSON::encode($res));
                 }
 
                 if($res['statusCode'] > 299){
-                    $err = json_decode($res['body'],true);
-                    self::decUtf8($err);
+                    $this->app->trace($res['body']);
+                    $err = JSON::decode($res['body'], true);
                     $callback(['statusCode' => $res['statusCode'], 'error' => $err]);
                 }
                 else{
-                    $rs = json_decode($res['body'], true);
-                    self::decUtf8($rs);
-                    $callback($rs);
+                    $callback(JSON::decode($res['body'], true));
                 }
             }
             else{
                 $this->app->logDebug('API server error');
+                $this->app->trace(JSON::encode($error));
+
                 $callback(['statusCode' => 503, 'error' => 'Service Unavailable']);
             }
         });
@@ -196,7 +196,6 @@ class DooApiCaller {
             }
         }
     }
-
 
     public static function encUtf8(&$rs){
         foreach($rs as &$r1){

@@ -36,7 +36,6 @@ class DooEventBusResponse {
 
     public function end($output='') {
 //        Vertx::logger()->info('ending request');
-
         $this->replyOutput .= $output;
 
         if($this->sendOnlyBody){

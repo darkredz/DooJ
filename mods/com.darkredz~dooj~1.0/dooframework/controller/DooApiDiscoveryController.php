@@ -59,7 +59,7 @@ class DooApiDiscoveryController extends DooController {
         }
 
         $this->setContentType('json');
-        $this->endReq( json_encode($classes) );
+        $this->endReq( JSON::encode($classes) );
     }
 
     protected function getDocComment($str, $annotate){
@@ -89,7 +89,7 @@ class DooApiDiscoveryController extends DooController {
             if(!method_exists($apiClass, $func)){
                 $this->setContentType('json');
                 $this->app->statusCode = 501;
-                $this->endReq( json_encode(['error' => "Invalid API method $func. Method $func for section $section not found"]) );
+                $this->endReq( JSON::encode(['error' => "Invalid API method $func. Method $func for section $section not found"]) );
                 return 501;
             }
 
@@ -100,7 +100,7 @@ class DooApiDiscoveryController extends DooController {
             if(is_null($fieldData)){
                 $this->setContentType('json');
                 $this->app->statusCode = 422;
-                $this->endReq( json_encode(['error' => "No fields definition for method $func."]) );
+                $this->endReq( JSON::encode(['error' => "No fields definition for method $func."]) );
                 return 422;
             }
 
@@ -128,12 +128,12 @@ class DooApiDiscoveryController extends DooController {
             $json = ['schema' => $schema];
 
             $this->setContentType('json');
-            $this->endReq( json_encode($json) );
+            $this->endReq( JSON::encode($json) );
         }
         else{
             $this->setContentType('json');
             $this->app->statusCode = 501;
-            $this->endReq( json_encode(['error' => "Invalid API section $section. Class $sectionClass not found"]) );
+            $this->endReq( JSON::encode(['error' => "Invalid API section $section. Class $sectionClass not found"]) );
             return 501;
         }
     }

@@ -705,7 +705,7 @@ class DooController {
      */
     public function toJSON($result, $output=false, $removeNullField=false, $exceptField=null, $mustRemoveFieldList=null, $setJSONContentType=true, $encoding='utf-8'){
         if(!is_string($result)){
-            $result = json_encode($result);
+            $result = JSON::encode($result);
         }
         $rs = preg_replace(array('/\,\"\_table\"\:\".*\"/U', '/\,\"\_primarykey\"\:\".*\"/U', '/\,\"\_fields\"\:\[\".*\"\]/U'), '', $result);
         if($removeNullField){

@@ -154,11 +154,9 @@ class DooApiController extends DooController {
         $this->setContentType('json');
         $this->app->statusCode = $statusCode;
         if(is_string($err)){
-            $err = utf8_encode($err);
             $this->endReq( $err );
         }else{
-            DooApiCaller::encUtf8($err);
-            $this->endReq( json_encode($err) );
+            $this->endReq( JSON::encode($err) );
         }
     }
 
@@ -166,11 +164,9 @@ class DooApiController extends DooController {
         $this->setContentType('json');
         $this->app->statusCode = $statusCode;
         if(is_string($jsonStr)){
-            $jsonStr = utf8_encode($jsonStr);
             $this->endReq( $jsonStr );
         }else{
-            DooApiCaller::encUtf8($jsonStr);
-            $this->endReq( json_encode($jsonStr) );
+            $this->endReq( JSON::encode($jsonStr) );
         }
     }
 }

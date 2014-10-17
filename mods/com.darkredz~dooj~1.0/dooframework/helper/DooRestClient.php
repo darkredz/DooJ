@@ -537,7 +537,7 @@ class DooRestClient {
      * @return object
      */
     public function jsonResult($toArray=FALSE){
-        return json_decode($this->result,$toArray);
+        return JSON::decode($this->result,$toArray);
     }
     
     /**

@@ -110,9 +110,9 @@ trait AppFaker {
             list($uri, $data, $callback) = $args;
 
             foreach($apiEntries as $entry){
-                if($uri==$entry['uri'] && @json_encode($data)==@json_encode($entry['fields'])){
+                if($uri==$entry['uri'] && @JSON::encode($data)==@JSON::encode($entry['fields'])){
                     if(is_string($entry['result'])){
-                        $res = json_decode($entry['result'], true);
+                        $res = JSON::decode($entry['result'], true);
                     }
                     else{
                         $res = $entry['result'];
@@ -129,7 +129,7 @@ trait AppFaker {
             }
             //if not found, show default error
             var_dump($defaultError);
-//            $callback(json_decode($defaultError, true));
+//            $callback(JSON::decode($defaultError, true));
         };
 
         if($apiCallerMock){
@@ -189,7 +189,7 @@ trait AppFaker {
             $found = false;
 
             foreach($httpEntries as $entry){
-                if($uri==$entry['uri'] && @json_encode($data)==@json_encode($entry['requestBody'])){
+                if($uri==$entry['uri'] && @JSON::encode($data)==@JSON::encode($entry['requestBody'])){
                     $res = $entry['result'];
                     $hr->method('statusCode')->returns($entry['status']);
                     $found = true;

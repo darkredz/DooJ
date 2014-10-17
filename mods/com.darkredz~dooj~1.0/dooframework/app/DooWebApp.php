@@ -105,7 +105,7 @@ class DooWebApp{
         507 => 'Insufficient Storage',
         509 => 'Bandwidth Limit Exceeded'
     );
-    
+
     /**
      * @var array Headers to be sent to client
      */
@@ -191,152 +191,152 @@ class DooWebApp{
      */
     public function exec($conf, $route, $request){
 
-         $this->conf = $conf;
-         $this->route = $route;
-         $this->request = $request;
+        $this->conf = $conf;
+        $this->route = $route;
+        $this->request = $request;
 
-         if(!$this->logger){
+        if(!$this->logger){
             $this->logger = Vertx::logger();
-         }
+        }
 
-         $fullpath = explode('/', $this->request->absoluteUri);
-         $lastpart = $fullpath[sizeof($fullpath)-1];
+        $fullpath = explode('/', $this->request->absoluteUri);
+        $lastpart = $fullpath[sizeof($fullpath)-1];
 
-         $headers = $this->request->headers;
+        $headers = $this->request->headers;
 
-         //serve static files
-         if(isset($conf->WEB_STATIC_PATH)) {
-             if (strpos($lastpart, '.') !== false ){
-                 $file = $this->request->path;
-                 $file = $conf->WEB_STATIC_PATH . $file;
+        //serve static files
+        if(isset($conf->WEB_STATIC_PATH)) {
+            if (strpos($lastpart, '.') !== false ){
+                $file = $this->request->path;
+                $file = $conf->WEB_STATIC_PATH . $file;
 
-                 if(file_exists($file)){
-                     if($conf->WEB_STATIC_INCLUDE_LAST_MODIFIED){
-                         $lastModified = filemtime($file);
-                         $lastModified = gmdate("D, d M Y H:i:s", $lastModified)." GMT";
-                         $this->request->response->putHeader('Last-Modified', $lastModified);
-                     }
+                if(file_exists($file)){
+                    if($conf->WEB_STATIC_INCLUDE_LAST_MODIFIED){
+                        $lastModified = filemtime($file);
+                        $lastModified = gmdate("D, d M Y H:i:s", $lastModified)." GMT";
+                        $this->request->response->putHeader('Last-Modified', $lastModified);
+                    }
 
-                     if($conf->WEB_STATIC_ETAG || $this->request->uri=='/favicon.ico'){
-                         $etag = md5_file($file);
+                    if($conf->WEB_STATIC_ETAG || $this->request->uri=='/favicon.ico'){
+                        $etag = md5_file($file);
 
-                         if(trim($headers['If-None-Match']) == '"'.$etag.'"') {
-                             $this->request->response->statusCode = 304;
-                             $this->request->response->statusMessage = $this->httpCodes[304];
-                             $this->request->response->end();
+                        if(trim($headers['If-None-Match']) == '"'.$etag.'"') {
+                            $this->request->response->statusCode = 304;
+                            $this->request->response->statusMessage = $this->httpCodes[304];
+                            $this->request->response->end();
 
-                             if(!empty($this->endCallback)){
-                                 call_user_func_array($this->endCallback, [$this]);
-                             }
-                             return;
-                         }
+                            if(!empty($this->endCallback)){
+                                call_user_func_array($this->endCallback, [$this]);
+                            }
+                            return;
+                        }
 
-                         $this->request->response->putHeader('Etag', '"'.$etag.'"');
-                     }
+                        $this->request->response->putHeader('Etag', '"'.$etag.'"');
+                    }
 
-                     if(isset($conf->WEB_STATIC_CACHE_CONTROL_EXPIRY)){
-                         $this->request->response->putHeader('Cache-Control', "public, max-age=". $conf->WEB_STATIC_CACHE_CONTROL_EXPIRY);
-                         $this->request->response->putHeader('Expires', gmdate("D, d M Y H:i:s", time() + $conf->WEB_STATIC_CACHE_CONTROL_EXPIRY)." GMT");
-                     }
-                     else if($this->request->uri=='/favicon.ico'){
-                         $this->request->response->putHeader('Cache-Control', "public, max-age=86400");
-                         $this->request->response->putHeader('Expires', gmdate("D, d M Y H:i:s", time() + 86400)." GMT");
-                     }
+                    if(isset($conf->WEB_STATIC_CACHE_CONTROL_EXPIRY)){
+                        $this->request->response->putHeader('Cache-Control', "public, max-age=". $conf->WEB_STATIC_CACHE_CONTROL_EXPIRY);
+                        $this->request->response->putHeader('Expires', gmdate("D, d M Y H:i:s", time() + $conf->WEB_STATIC_CACHE_CONTROL_EXPIRY)." GMT");
+                    }
+                    else if($this->request->uri=='/favicon.ico'){
+                        $this->request->response->putHeader('Cache-Control', "public, max-age=86400");
+                        $this->request->response->putHeader('Expires', gmdate("D, d M Y H:i:s", time() + 86400)." GMT");
+                    }
 
-                     $this->ended = true;
-                     $this->request->response->sendFile($file);
+                    $this->ended = true;
+                    $this->request->response->sendFile($file);
 
-                     if(!empty($this->endCallback)){
-                         call_user_func_array($this->endCallback, [$this]);
-                     }
-                     return;
-                 }
-             }
-         }
+                    if(!empty($this->endCallback)){
+                        call_user_func_array($this->endCallback, [$this]);
+                    }
+                    return;
+                }
+            }
+        }
 
-         $this->_GET = [];
-         if(strpos($this->request->uri,'?')!==false){
-             $this->_GET = $this->parseQueryString( explode('?',$this->request->uri,2)[1] );  //$this->request->params()->map;
-         }
+        $this->_GET = [];
+        if(strpos($this->request->uri,'?')!==false){
+            $this->_GET = $this->parseQueryString( explode('?',$this->request->uri,2)[1] );  //$this->request->params()->map;
+        }
 
-         $contentType = $headers["Content-Type"];
-         $this->_SERVER['CONTENT_TYPE'] = $contentType;
-         $this->_SERVER['CONTENT_LENGTH'] = $headers["Content-Length"];
+        $contentType = $headers["Content-Type"];
+        $this->_SERVER['CONTENT_TYPE'] = $contentType;
+        $this->_SERVER['CONTENT_LENGTH'] = $headers["Content-Length"];
 
-         $this->_SERVER['DOCUMENT_ROOT']	 = getcwd() + '/';
-         $this->_SERVER['REQUEST_METHOD'] = $method = strtoupper($this->request->method);
-         $this->_SERVER['REQUEST_URI']	   = $this->request->uri;
-         $this->_SERVER['HTTP_HOST']		   = $fullpath[2];
-         $this->_SERVER['REMOTE_ADDR'] 	 = substr($this->request->remoteAddress->getAddress()->toString(), 1);
-         $this->_SERVER['SERVER_PROTOCOL'] = $this->request->version();
+        $this->_SERVER['DOCUMENT_ROOT']	 = getcwd() + '/';
+        $this->_SERVER['REQUEST_METHOD'] = $method = strtoupper($this->request->method);
+        $this->_SERVER['REQUEST_URI']	   = $this->request->uri;
+        $this->_SERVER['HTTP_HOST']		   = $fullpath[2];
+        $this->_SERVER['REMOTE_ADDR'] 	 = substr($this->request->remoteAddress->getAddress()->toString(), 1);
+        $this->_SERVER['SERVER_PROTOCOL'] = $this->request->version();
 
-         $this->_SERVER['HTTP_ACCEPT'] = $headers['Accept'];
-         $this->_SERVER['HTTP_ACCEPT_LANGUAGE'] = $headers['Accept-Language'];
-         $this->_SERVER['HTTP_ACCEPT_ENCODING'] = $headers['Accept-Encoding'];
-         $this->_SERVER['HTTP_CACHE_CONTROL'] = $headers['Cache-Control'];
-         $this->_SERVER['HTTP_USER_AGENT'] = $headers['User-Agent'];
-         $this->_SERVER['HTTP_X_REQUESTED_WITH'] = $headers['X-Requested-With'];
+        $this->_SERVER['HTTP_ACCEPT'] = $headers['Accept'];
+        $this->_SERVER['HTTP_ACCEPT_LANGUAGE'] = $headers['Accept-Language'];
+        $this->_SERVER['HTTP_ACCEPT_ENCODING'] = $headers['Accept-Encoding'];
+        $this->_SERVER['HTTP_CACHE_CONTROL'] = $headers['Cache-Control'];
+        $this->_SERVER['HTTP_USER_AGENT'] = $headers['User-Agent'];
+        $this->_SERVER['HTTP_X_REQUESTED_WITH'] = $headers['X-Requested-With'];
 
-         if($method == 'GET' || $method == 'OPTIONS' || $method == 'HEAD'){
-             $this->processRequest();
-         }
-         else{
-             //try processing input for POST, PUT, DELETE and etc HTTP methods
+        if($method == 'GET' || $method == 'OPTIONS' || $method == 'HEAD'){
+            $this->processRequest();
+        }
+        else{
+            //try processing input for POST, PUT, DELETE and etc HTTP methods
 //             $logger->info('transfer-encoding = ' . $headers['Transfer-Encoding']);
 //             $logger->info('content-length = ' . $headers['Content-Length']);
 
-             if (!isset($headers['Transfer-Encoding']) && !isset($headers['Content-Length'])) {
-                 $this->processRequest();
-                 return;
-             }
+            if (!isset($headers['Transfer-Encoding']) && !isset($headers['Content-Length'])) {
+                $this->processRequest();
+                return;
+            }
 
 //             $logger->info('$contentType = ' . $contentType);
 
-             $isJSON = $contentType != null && strpos($contentType, "application/json")!==false;
-             $isMultipart = $contentType != null && strpos($contentType, "multipart/form-data")!==false;
-             $isUrlencoded = $contentType != null && strpos($contentType, "application/x-www-form-urlencoded")!==false;
-             $buffer = (!$isMultipart && !$isUrlencoded) ? new Vertx\Buffer(0) : null;
+            $isJSON = $contentType != null && strpos($contentType, "application/json")!==false;
+            $isMultipart = $contentType != null && strpos($contentType, "multipart/form-data")!==false;
+            $isUrlencoded = $contentType != null && strpos($contentType, "application/x-www-form-urlencoded")!==false;
+            $buffer = (!$isMultipart && !$isUrlencoded) ? new Vertx\Buffer(0) : null;
 
-             $this->request->expectMultiPart(true);
+            $this->request->expectMultiPart(true);
 
-             $body = new Vertx\Buffer();
+            $body = new Vertx\Buffer();
 
 //             $logger->info('$isMultipart = ' . $isMultipart);
 
-             // enable the parsing at Vert.x level
-             $this->request->dataHandler(function($buffer) use ($body){
-                 $body->appendBuffer($buffer);
-             });
+            // enable the parsing at Vert.x level
+            $this->request->dataHandler(function($buffer) use ($body){
+                $body->appendBuffer($buffer);
+            });
 
-             $this->_POST = [];
-             $app = &$this;
+            $this->_POST = [];
+            $app = &$this;
 
-             $this->request->endHandler(function() use ($body, $app, $contentType, $isMultipart) {
+            $this->request->endHandler(function() use ($body, $app, $contentType, $isMultipart) {
 //                 $app->logger->info('$body = ' . $body->toString());
 
-                 if($body->length > 0){
-                     if($isMultipart){
-                         //parse multipart body to get parameters
-                         preg_match_all('/([\-]{3,}[a-zA-Z0-9]+\s?\n)Content\-Disposition\: form\-data\; name\=\"([a-zA-Z0-9\-\_]+)\"\s?\n([^\-]+)/', $body->toString(), $matches);
-                         $psize = sizeof($matches);
+                if($body->length > 0){
+                    if($isMultipart){
+                        //parse multipart body to get parameters
+                        preg_match_all('/([\-]{3,}[a-zA-Z0-9]+\s?\n)Content\-Disposition\: form\-data\; name\=\"([a-zA-Z0-9\-\_]+)\"\s?\n([^\-]+)/', $body->toString(), $matches);
+                        $psize = sizeof($matches);
 
-                         if($psize == 4){
-                             for($i=0; $i < sizeof($matches[0]); $i++){
+                        if($psize == 4){
+                            for($i=0; $i < sizeof($matches[0]); $i++){
                                 $app->_POST[$matches[2][$i]] = trim($matches[3][$i]);
-                             }
-                         }
-                     }
-                     else if(empty($contentType) || stripos($contentType, 'application/x-www-form-urlencoded') !== false ){
-                         $app->_POST = $this->parseQueryString($body->toString());
-                     }
-                     else{
-                         $app->_POST = $body->toString();
-                     }
-                 }
-                 $app->processRequest();
-             });
-         }
-     }
+                            }
+                        }
+                    }
+                    else if(empty($contentType) || stripos($contentType, 'application/x-www-form-urlencoded') !== false ){
+                        $app->_POST = $this->parseQueryString($body->toString());
+                    }
+                    else{
+                        $app->_POST = $body->toString();
+                    }
+                }
+                $app->processRequest();
+            });
+        }
+    }
 
     protected function processRequest(){
         //if proxy enable, send request to other servers
@@ -357,7 +357,7 @@ class DooWebApp{
 
                     //if regex contain domain and port (Virtual Host), try matching it against full URL (exclude query string)
                     if(strpos($regex, '^http:') === 0 || strpos($regex, '^http\:') === 0
-                     || strpos($regex, '^https:') === 0 || strpos($regex, '^https\:') === 0){
+                        || strpos($regex, '^https:') === 0 || strpos($regex, '^https\:') === 0){
                         $host = $this->request->headers['Host'];
                         $uriParts = parse_url($this->request->absoluteUri);
 
@@ -411,9 +411,9 @@ class DooWebApp{
     }
 
     public function sendProxyRequest($addr){
-        $headers = $this->request->headers->map;
-        $headers->set('HTTP_X_FORWARDED_FOR', $this->_SERVER['REMOTE_ADDR']);
-        $headers = json_encode($headers);
+        $headers = $this->request->headers;
+        $headers['HTTP_X_FORWARDED_FOR'] = $this->_SERVER['REMOTE_ADDR'];
+        $headers = JSON::encode($headers);
         //msg format
         /*
             {
@@ -542,7 +542,7 @@ class DooWebApp{
                 $this->reroute($errPage, true);
 
                 if($this->async == false){
-                    $result = ob_get_clean();
+                    $result = utf8_decode(ob_get_clean());
                     $this->endBlock($result);
                 }
                 return;
@@ -550,7 +550,7 @@ class DooWebApp{
             else{
                 ob_start();
                 include $this->conf->SITE_PATH . $errPage;
-                $output = ob_get_contents();
+                $output = utf8_decode(ob_get_contents());
                 ob_end_clean();
             }
         }
@@ -642,11 +642,11 @@ class DooWebApp{
     public function run(){
         $this->throwHeader( $this->routeTo() );
         if($this->async == false){
-            $result = ob_get_clean();
+            $result = utf8_decode(ob_get_clean());
             $this->endBlock($result);
         }
     }
-    
+
     /**
      * Run the web application from a http request or a CLI execution.
      */
@@ -658,14 +658,14 @@ class DooWebApp{
             $this->run();
         }
     }
-    
+
     /**
      * Run the web application from a CLI execution. Execution through this method will set $this->conf->FROM_CLI to true.
      * Options required in CLI:
      * <code>
      *   // -u (required) URI: any route you have in your application
      *   -u="/any/uri/route/"
-     * 
+     *
      *   // -m (optional) Request method: post, put, get, delete. Default is get.
      *   -m="get"
      * </code>
@@ -683,10 +683,10 @@ class DooWebApp{
             $this->_SERVER['REQUEST_METHOD'] = (isset($opt['m'])) ? $opt['m'] : 'GET';
             $this->conf->FROM_CLI = true;
             $this->run();
-        }        
+        }
     }
-    
-     /**
+
+    /**
      * Handles the routing process.
      * Auto routing, sub folder, subdomain, sub folder on subdomain are supported.
      * It can be used with or without the <i>index.php</i> in the URI
@@ -697,7 +697,7 @@ class DooWebApp{
         $router->app = $this;
         $router->conf = $this->conf;
         $routeRs = $router->execute($this->route,$this->conf->SUBFOLDER);
-        
+
         if(isset($routeRs['redirect'])===true){
             list($redirUrl, $redirCode) = $routeRs['redirect'];
 //            DooUriRouter::redirect($redirUrl, true, $redirCode);
@@ -714,21 +714,21 @@ class DooWebApp{
                     $nsClassFile = str_replace('\\','/',$routeRs[0]);
                     $nsClassFile = explode($this->conf->APP_NAMESPACE_ID.'/', $nsClassFile, 2);
                     $nsClassFile = $nsClassFile[1];
-                    require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . $nsClassFile .'.php';                    
+                    require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . $nsClassFile .'.php';
                 }else{
                     require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "controller/{$routeRs[0]}.php";
                 }
             }else{
                 $moduleParts = explode(']', $routeRs[0]);
                 $moduleName = substr($moduleParts[0],1);
-                
+
                 if(isset($this->conf->PROTECTED_FOLDER_ORI)===true){
-                    require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER_ORI . 'module/'. $moduleName .'/controller/'.$moduleParts[1].'.php';                    
+                    require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER_ORI . 'module/'. $moduleName .'/controller/'.$moduleParts[1].'.php';
                 }else{
-                    require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . 'module/'. $moduleName .'/controller/'.$moduleParts[1].'.php';                    
+                    require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . 'module/'. $moduleName .'/controller/'.$moduleParts[1].'.php';
                     $this->conf->PROTECTED_FOLDER_ORI = $this->conf->PROTECTED_FOLDER;
                 }
-                
+
                 //set class name
                 $routeRs[0] = $moduleParts[1];
                 $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI . 'module/'.$moduleName.'/';
@@ -759,7 +759,7 @@ class DooWebApp{
                 $controller->extension = $controller->params['__extension'];
                 unset($controller->params['__extension']);
             }
-			if(isset($controller->params['__routematch'])===true){
+            if(isset($controller->params['__routematch'])===true){
                 $controller->routematch = $controller->params['__routematch'];
                 unset($controller->params['__routematch']);
             }
@@ -787,7 +787,7 @@ class DooWebApp{
                 }
             }
 
-			$routeRs = $controller->$routeRs[1]();
+            $routeRs = $controller->$routeRs[1]();
             $controller->afterRun($routeRs);
             return $routeRs;
         }
@@ -802,7 +802,7 @@ class DooWebApp{
                     return;
                 }
             }
-            
+
             if(in_array($method_name, array('destroyCurrentSession','startNewSession','setCookie','getCookie','endReq','replyReq','getInput','setHeader','setRawHeader','initPutVars','load','db','acl','beforeRun','cache','saveRendered','saveRenderedC','view','render','renderc','language','acceptType','setContentType','clientIP','afterRun','getKeyParam','getKeyParams','viewRenderAutomation','isAjax','isSSL','toXML','toJSON'))){
                 $this->throwHeader(404);
                 return;
@@ -823,11 +823,11 @@ class DooWebApp{
                 require_once $controller_file;
 
                 $methodsArray = get_class_methods($controller_name);
-                
+
                 //if controller name matches 2 classes with the same name, namespace and W/O namespace
                 if($methodsArray!==null){
-                    $unfoundInMethods = (in_array($method_name, $methodsArray)===false && 
-                                         in_array($method_name .'_'. strtolower($this->_SERVER['REQUEST_METHOD']), $methodsArray)===false );
+                    $unfoundInMethods = (in_array($method_name, $methodsArray)===false &&
+                        in_array($method_name .'_'. strtolower($this->_SERVER['REQUEST_METHOD']), $methodsArray)===false );
                     if($unfoundInMethods){
                         $methodsArray = null;
                     }
@@ -836,48 +836,48 @@ class DooWebApp{
                 //if the method not in controller class, check for a namespaced class with the same file name.
                 if($methodsArray===null && isset($this->conf->APP_NAMESPACE_ID)===true){
                     if(isset($moduleName)===true){
-                        $controller_name = $this->conf->APP_NAMESPACE_ID . '\\module\\'. $moduleName .'\\controller\\' . $controller_name;                        
+                        $controller_name = $this->conf->APP_NAMESPACE_ID . '\\module\\'. $moduleName .'\\controller\\' . $controller_name;
                     }else{
                         $controller_name = $this->conf->APP_NAMESPACE_ID . '\\controller\\' . $controller_name;
                     }
-                    $methodsArray = get_class_methods($controller_name);   
+                    $methodsArray = get_class_methods($controller_name);
                 }
-                
+
                 //if method not found in both both controller and namespaced controller, 404 error
                 if($methodsArray===null){
                     if(isset($this->conf->PROTECTED_FOLDER_ORI)===true)
                         $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
-                        $this->throwHeader(404);
-                        return;                    
-                }                
+                    $this->throwHeader(404);
+                    return;
+                }
             }
             else if(isset($moduleName)===true && isset($this->conf->APP_NAMESPACE_ID)===true){
                 if(isset($this->conf->PROTECTED_FOLDER_ORI)===true)
-                    $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;                
-                
-                $controller_file = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . '/controller/'.$moduleName.'/'.$controller_name .'.php';                 
-                
+                    $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
+
+                $controller_file = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . '/controller/'.$moduleName.'/'.$controller_name .'.php';
+
                 if(file_exists($controller_file)===false){
                     $this->throwHeader(404);
-                    return;                    
-                }                
-                $controller_name = $this->conf->APP_NAMESPACE_ID .'\\controller\\'.$moduleName.'\\'.$controller_name;                
+                    return;
+                }
+                $controller_name = $this->conf->APP_NAMESPACE_ID .'\\controller\\'.$moduleName.'\\'.$controller_name;
                 #echo 'module = '.$moduleName.'<br>';
                 #echo $controller_file.'<br>';                
                 #echo $controller_name.'<br>';                   
-                $methodsArray = get_class_methods($controller_name);                
-            }            
+                $methodsArray = get_class_methods($controller_name);
+            }
             else{
                 if(isset($this->conf->PROTECTED_FOLDER_ORI)===true)
-                    $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;                
+                    $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
                 $this->throwHeader(404);
                 return;
             }
-            
+
             //check for REST request as well, utilized method_GET(), method_PUT(), method_POST, method_DELETE()
             $restMethod = $method_name .'_'. strtolower($this->_SERVER['REQUEST_METHOD']);
             $inRestMethod = in_array($restMethod, $methodsArray);
-            
+
             //check if method() and method_GET() etc. doesn't exist in the controller, 404 error
             if( in_array($method_name, $methodsArray)===false && $inRestMethod===false ){
                 if(isset($this->conf->PROTECTED_FOLDER_ORI)===true)
@@ -890,7 +890,7 @@ class DooWebApp{
             if( $inRestMethod===true ){
                 $method_name = $restMethod;
             }
-            
+
             $controller = new $controller_name;
             $controller->app = &$this;
             $controller->_GET = &$this->_GET;
@@ -931,7 +931,7 @@ class DooWebApp{
             $routeRs = $controller->$method_name();
             $controller->afterRun($routeRs);
 
-            return $routeRs;            
+            return $routeRs;
         }
         else{
             $this->throwHeader(404);
@@ -1014,17 +1014,17 @@ class DooWebApp{
                 $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
                 $tmpOri = $this->conf->PROTECTED_FOLDER_ORI;
             }
-            
+
             ob_start();
             $this->routeTo();
-            $data = ob_get_contents();
+            $data = utf8_decode(ob_get_contents());
             ob_end_clean();
-            
+
             $this->conf->PROTECTED_FOLDER = $tmp;
-            
+
             if(isset($tmpOri)===true)
                 $this->conf->PROTECTED_FOLDER_ORI = $tmpOri;
-            
+
             return $data;
         }
         //if Controller name passed in:  Doo::app()->module('admin/SomeController', 'login',  array('nav'=>'home'));
@@ -1052,7 +1052,7 @@ class DooWebApp{
             }
 
             ob_start();
-			$rs = $controller->{$action}();
+            $rs = $controller->{$action}();
 
             if($controller->autorender===true){
                 $this->conf->AUTO_VIEW_RENDER_PATH = array(strtolower(substr($controller_name, 0, -10)), strtolower(preg_replace('/(?<=\\w)(?=[A-Z])/','-$1', $action)));
@@ -1061,7 +1061,7 @@ class DooWebApp{
 
             $this->throwHeader( $rs );
 
-            $data = ob_get_contents();
+            $data = utf8_decode(ob_get_contents());
             ob_end_clean();
             return $data;
         }
@@ -1086,16 +1086,16 @@ class DooWebApp{
             }
 
             ob_start();
-			$rs = $controller->{$action}();
+            $rs = $controller->{$action}();
 
-			if($controller->autorender===true){
+            if($controller->autorender===true){
                 $this->conf->AUTO_VIEW_RENDER_PATH = array(strtolower(substr($controller_name, 0, -10)), strtolower(preg_replace('/(?<=\\w)(?=[A-Z])/','-$1', $action)));
             }
             $controller->afterRun($rs);
 
             $this->throwHeader( $rs );
 
-            $data = ob_get_contents();
+            $data = utf8_decode(ob_get_contents());
             ob_end_clean();
             return $data;
         }
@@ -1123,7 +1123,7 @@ class DooWebApp{
                 $tmp = $this->conf->PROTECTED_FOLDER;
                 $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI . 'module/'.$moduleName.'/';
                 $result = $this->module($moduleUri, $action, $params);
-                $this->conf->PROTECTED_FOLDER = $tmp;                
+                $this->conf->PROTECTED_FOLDER = $tmp;
             }
         }
         else{
@@ -1167,7 +1167,7 @@ class DooWebApp{
                     if(!empty($this->conf->ERROR_404_DOCUMENT)){
                         ob_start();
                         include $this->conf->SITE_PATH . $this->conf->ERROR_404_DOCUMENT;
-                        $data = ob_get_contents();
+                        $data = utf8_decode(ob_get_contents());
                         ob_end_clean();
                         $this->end($data);
                         return 404;
@@ -1193,7 +1193,7 @@ class DooWebApp{
                             $this->reroute($errPage, true);
 
                             if($this->async == false){
-                                $result = ob_get_clean();
+                                $result = utf8_decode(ob_get_clean());
                                 $this->endBlock($result);
                             }
                             return;
@@ -1201,7 +1201,7 @@ class DooWebApp{
                         else{
                             ob_start();
                             include $this->conf->SITE_PATH . $errPage;
-                            $output = ob_get_contents();
+                            $output = utf8_decode(ob_get_contents());
                             ob_end_clean();
                         }
 
@@ -1241,13 +1241,13 @@ class DooWebApp{
                         $this->statusCode = $code[1];
                     }
                     // $this->setHeader(null, true, $code[1]);
-                    return $this->reroute($code[0]);                    
+                    return $this->reroute($code[0]);
                 }
             }
         }
     }
 
-    
+
     /**
      * Set header. eg. setHeader('Content-Type', 'application/json')
      * @param string $name Header name
@@ -1262,12 +1262,12 @@ class DooWebApp{
      * @param string $rawHeader Header content
      * @param bool $replace Whether to replace the same header that is previously set
      * @param int $code HTTP status code
-     */    
+     */
     public function setRawHeader($rawHeader, $replace=true, $code=null){
         Vertx::logger()->info("Don't use setRawHeader for vertx");
         var_dump("Don't use setRawHeader for vertx");
     }
-    
+
     /**
      * To debug variables with DooPHP's diagnostic view
      * @param mixed $var The variable to view in diagnostics.
