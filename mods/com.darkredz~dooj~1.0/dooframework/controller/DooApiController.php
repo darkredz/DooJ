@@ -156,7 +156,7 @@ class DooApiController extends DooController {
         if(is_string($err)){
             $this->endReq( $err );
         }else{
-            $this->endReq( JSON::encode($err) );
+            $this->endReq( \JSON::encode($err) );
         }
     }
 
@@ -166,7 +166,7 @@ class DooApiController extends DooController {
         if(is_string($jsonStr)){
             $this->endReq( $jsonStr );
         }else{
-            $this->endReq( JSON::encode($jsonStr) );
+            $this->endReq( \JSON::encode($jsonStr) );
         }
     }
 }

@@ -111,7 +111,7 @@ class DooJsonSchema {
         ];
 
         if($toJson===true){
-            return JSON::encode($schema);
+            return \JSON::encode($schema);
         }
 
         return $schema;

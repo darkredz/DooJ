@@ -112,7 +112,7 @@ trait AppFaker {
             foreach($apiEntries as $entry){
                 if($uri==$entry['uri'] && @JSON::encode($data)==@JSON::encode($entry['fields'])){
                     if(is_string($entry['result'])){
-                        $res = JSON::decode($entry['result'], true);
+                        $res = \JSON::decode($entry['result'], true);
                     }
                     else{
                         $res = $entry['result'];

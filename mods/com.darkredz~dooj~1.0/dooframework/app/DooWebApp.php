@@ -413,7 +413,7 @@ class DooWebApp{
     public function sendProxyRequest($addr){
         $headers = $this->request->headers;
         $headers['HTTP_X_FORWARDED_FOR'] = $this->_SERVER['REMOTE_ADDR'];
-        $headers = JSON::encode($headers);
+        $headers = \JSON::encode($headers);
         //msg format
         /*
             {

@@ -144,7 +144,7 @@ class DooEventBusApp {
         }
 
         if(is_string($json)){
-            $json = JSON::decode($json, true);
+            $json = \JSON::decode($json, true);
         }
 
         if(is_array($json) == false){
@@ -172,7 +172,7 @@ class DooEventBusApp {
         $request->remoteAddress  = $json['remoteAddress'];
 
         if(!empty($json['headers'])){
-            $request->headers = JSON::decode($json['headers'],true);
+            $request->headers = \JSON::decode($json['headers'],true);
         }
 
         $response = new DooEventBusResponse();

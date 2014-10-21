@@ -728,7 +728,7 @@ class DooForm {
                 $validation[$element]['size'] = $e[1]['size'];
             }
         }
-        return JSON::encode($validation);
+        return \JSON::encode($validation);
     }
 }
 

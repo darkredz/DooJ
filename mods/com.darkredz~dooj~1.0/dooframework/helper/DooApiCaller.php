@@ -107,7 +107,7 @@ class DooApiCaller {
             $body = \http_build_query($body);
         }
         else if($this->_apiContentType == 'application/json' && is_array($body)){
-            $body = JSON::encode($body);
+            $body = \JSON::encode($body);
         }
 
         //proxy api address based on uri
@@ -145,7 +145,7 @@ class DooApiCaller {
         }
 
         $headers = ['Authority' => $this->_apiKey, "Content-Type" => $this->_apiContentType];
-        $headers = JSON::encode($headers);
+        $headers = \JSON::encode($headers);
 
         $msg = [
             'headers'        => $headers,
@@ -170,7 +170,7 @@ class DooApiCaller {
 
                 if($res['statusCode'] > 299){
                     $this->app->trace($res['body']);
-                    $err = JSON::decode($res['body'], true);
+                    $err = \JSON::decode($res['body'], true);
                     $callback(['statusCode' => $res['statusCode'], 'error' => $err]);
                 }
                 else{

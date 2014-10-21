@@ -1269,7 +1269,7 @@ class DooValidator {
      * @return string
      */
     public function testJsonArrayInList($value, $valueList, $msg=null){
-        $value = JSON::decode($value);
+        $value = \JSON::decode($value);
         if(!is_array($value)){
             return 'Invalid JSON array';
         }
