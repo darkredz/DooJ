@@ -320,12 +320,18 @@ class DooOrientDbModel{
         }
 
         if(empty($params)){
-            $this->_db->command($query)->execute();
+            try{
+                $this->_db->command($query)->execute();
+            }
+            catch(Exception $err){}
             return;
         }
 
         $query = $this->_db->command( $query );
-        QueryExecutor::execute($query, $params);
+        try{
+            QueryExecutor::execute($query, $params);
+        }
+        catch(Exception $err){}
     }
 
     public function buildSql($queryParam){
@@ -562,6 +568,32 @@ class DooOrientDbModel{
         return $rs;
     }
 
+    public function fetchOneAsync($query, $callback, $fetchPlan="*:-1") {
+        $rs = [];
+        $this->findAsync($query, function($itm, $count) use (&$rs) {
+            $rs[] = $itm;
+            return true;
+        },
+        function($count) use ( &$rs, $callback){
+            if (!empty($rs)) {
+                $callback($rs[0]);
+            }
+            else{
+                $callback(null);
+            }
+        });
+    }
+
+    public function fetchAsync($query, $callback, $fetchPlan="*:-1") {
+        $rs = [];
+        $this->findAsync($query, function($itm, $count) use (&$rs) {
+            $rs[] = $itm;
+            return true;
+        },
+        function($count) use (&$rs, $callback){
+            $callback($rs);
+        });
+    }
 
     public function findAsync($query, $rsFunc, $endFunc, $fetchPlan="*:-1"){
         if(is_string($query)){
@@ -942,11 +974,11 @@ class DooOrientDbModel{
         $cnst = 'TYPE_' . $type;
         if($v===null && $this->_doc!=null){
             if($type!='NULL'){
-                $this->_doc->field($k, null, constant("DooOrientDbModel::$cnst"));
+                ODoc::set($this->_doc, $k, null, constant("DooOrientDbModel::$cnst"));
             }
             else{
                 //no type defined, nothing, value is also null? WHat to do? set to TYPE String by default
-                $this->_doc->field($k, null, self::TYPE_STRING);
+                ODoc::set($this->_doc, $k, null, self::TYPE_STRING);
             }
         }
         else if($this->_doc!=null){
@@ -958,7 +990,7 @@ class DooOrientDbModel{
     //                Vertx::logger()->debug("$k =parent= ". $ref->getParentClass()->getName());
                     //if model class, set field with the ODocument value of the model
                     if($cls != 'com.orientechnologies.orient.core.record.impl.ODocument'){
-                        $this->_doc->field($k, $v->doc(), constant("DooOrientDbModel::$cnst"));
+                        ODoc::set($this->_doc, $k, $v->doc(), constant("DooOrientDbModel::$cnst"));
                         return;
                     }
                 }
@@ -976,7 +1008,10 @@ class DooOrientDbModel{
                 }
             }
 
-            $this->_doc->field($k, $v, constant("DooOrientDbModel::$cnst"));
+//            var_dump(constant("DooOrientDbModel::$cnst"));return;
+//            $this->_doc->field($k, $v, constant("DooOrientDbModel::$cnst"));
+            ODoc::set($this->_doc, $k, $v, constant("DooOrientDbModel::$cnst"));
+            return;
         }
     }
 
@@ -1014,7 +1049,7 @@ class DooOrientDbModel{
             }
 
             $embedType = strtoupper($embedType);
-            $this->_doc->field($field, $list, constant("DooOrientDbModel::TYPE_$embedType"));
+            ODoc::set($this->_doc, $field, $list, constant("DooOrientDbModel::TYPE_$embedType"));
             return true;
         }
         return false;
@@ -1024,8 +1059,17 @@ class DooOrientDbModel{
         return $this->setLinkList($field, $listArr, 'LINKSET');
     }
 
+    public function addLink($field, DooOrientDbModel $linkedObj) {
+        if (!empty($this->{$field})) {
+            $this->{$field}->add($linkedObj->doc());
+        }
+        else {
+            $this->{$field} = [$linkedObj->doc()];
+        }
+    }
+
     public function setLinkList($field, $listArr, $linkType = 'LINKLIST'){
-        if($this->isIndexedArray($listArr)){
+        if(ODoc::isType($listArr, 'com.orientechnologies.orient.core.db.record.ORecordLazyList') || $this->isIndexedArray($listArr)){
             $list = new java('java.util.ArrayList');
 
             foreach($listArr as $itm){
@@ -1043,14 +1087,14 @@ class DooOrientDbModel{
                     foreach($itm as $k2=>$v2){
                         $type = strtoupper(gettype($v2));
                         $cnst = 'TYPE_' . $type;
-                        $doc->field($k2, $v2, constant("DooOrientDbModel::$cnst"));
+                        ODoc::set($doc, $k2, $v2, constant("DooOrientDbModel::$cnst"));
                     }
                     $list->add($doc);
                 }
             }
 
             $linkType = strtoupper($linkType);
-            $this->_doc->field($field, $list, constant("DooOrientDbModel::TYPE_$linkType"));
+            ODoc::set($this->_doc, $field, $list, constant("DooOrientDbModel::TYPE_$linkType"));
             return true;
         }
         return false;
@@ -1086,7 +1130,7 @@ class DooOrientDbModel{
                     foreach($v as $k2=>$v2){
                         $type = strtoupper(gettype($v2));
                         $cnst = 'TYPE_' . $type;
-                        $doc->field($k2, $v2, constant("DooOrientDbModel::$cnst"));
+                        ODoc::set($doc, $k2, $v2, constant("DooOrientDbModel::$cnst"));
                     }
                     $jmap->put($k, $doc);
                 }
@@ -1095,7 +1139,7 @@ class DooOrientDbModel{
                 $jmap->put($k, $v);
             }
         }
-        $this->_doc->field($field, $jmap, constant("DooOrientDbModel::TYPE_$mapType"));
+        ODoc::set($this->_doc, $field, $jmap, constant("DooOrientDbModel::TYPE_$mapType"));
         return true;
     }
 

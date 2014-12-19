@@ -23,6 +23,10 @@ class DooApiCaller {
     protected $_apiContentType = 'application/x-www-form-urlencoded';
     protected $_apiTimeout = 30000;
     protected $_proxy;
+
+    /**
+     * @var DooWebApp|DooOrientDbModel
+     */
     public $app;
 
     public function setApiProxy($v){
@@ -159,28 +163,31 @@ class DooApiCaller {
             $msg['body'] = $body;
         }
 
+        $this->app->trace($uri);
+
         $this->app->eventBus()->sendWithTimeout($ebAddress, $msg, $this->_apiTimeout, function($reply, $error) use ($callback, $ebAddress){
             if (!$error) {
                 $res = $reply->body();
 
                 if($this->app->conf->DEBUG_ENABLED){
                     $this->app->logDebug('API result received:');
-                    $this->app->trace(JSON::encode($res));
+                    $this->app->trace(\JSON::encode($res));
                 }
 
-                if($res['statusCode'] > 299){
+                if($res['statusCode'] > 299) {
                     $this->app->trace($res['body']);
                     $err = \JSON::decode($res['body'], true);
                     $callback(['statusCode' => $res['statusCode'], 'error' => $err]);
                 }
                 else{
-                    $callback(JSON::decode($res['body'], true));
+                    $this->app->trace($res['body']);
+                    $body = \JSON::decode($res['body'], true);
+                    $callback($body);
                 }
             }
             else{
                 $this->app->logDebug('API server error');
-                $this->app->trace(JSON::encode($error));
-
+                $this->app->trace(\JSON::encode($error));
                 $callback(['statusCode' => 503, 'error' => 'Service Unavailable']);
             }
         });

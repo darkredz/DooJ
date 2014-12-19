@@ -172,7 +172,18 @@ class DooOrientDbModelGen {
                     $f = $idx['fields'];
                     $idxTyp = OClass::INDEX_TYPE->valueOf($idx['type'])->toString();
                     $fieldstr = implode(',', $f);
-                    $sql = "CREATE INDEX $nm ON $classname ($fieldstr) $idxTyp";
+                    if (strtoupper($idxTyp) == 'FULLTEXT') {
+                        $fullDetails = json_decode($idx['json']);
+                        if (!empty($fullDetails->algorithm) && strtoupper($fullDetails->algorithm) == 'LUCENE'){
+                            $sql = "CREATE INDEX $nm on $classname ($fieldstr) FULLTEXT ENGINE LUCENE";
+                        }
+                        else {
+                            $sql = "CREATE INDEX $nm ON $classname ($fieldstr) $idxTyp";
+                        }
+                    }
+                    else {
+                        $sql = "CREATE INDEX $nm ON $classname ($fieldstr) $idxTyp";
+                    }
                     $this->db->command( new OCommandSQL($sql) )->execute();
                 }
             }
@@ -203,7 +214,7 @@ class DooOrientDbModelGen {
 
         foreach($cls as $c){
             $clsName = $c->getName();
-            if(in_array($clsName, ['ORIDs','OIdentity' ,'OFunction' ,'ORole' ,'OSchedule' ,'ORestricted' ,'OTriggered' ,'OUser'])){
+            if(in_array($clsName, ['ORIDs', 'OIdentity', 'OFunction', 'ORole', 'OSchedule', 'ORestricted', 'OTriggered', 'OUser', '_studio'])){
                 continue;
             }
 
@@ -225,11 +236,13 @@ class DooOrientDbModelGen {
                     }
                 }
 
-                $keyArr = $idx->keys();
-                $keys = [];
-                foreach($keyArr as $ky){
-                    $keys[] = $ky;
-                }
+//                var_dump($idx->toString());
+//                return;
+//                $keyArr = $idx->keys();
+//                $keys = [];
+//                foreach($keyArr as $ky){
+//                    $keys[] = $ky;
+//                }
 
                 $fieldDetails = $idx->getConfiguration()->field('indexDefinition');
                 //composite field index
