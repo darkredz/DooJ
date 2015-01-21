@@ -111,6 +111,10 @@ class DooOrientDbModel{
         }
     }
 
+    /**
+     * @param $ORecordId
+     * @deprecated removed since orientdb 2.0
+     */
     public function setId($ORecordId){
         if(gettype($ORecordId)=='string'){
             if($this->validateId($ORecordId)){
@@ -1068,6 +1072,14 @@ class DooOrientDbModel{
         }
     }
 
+
+    public function createLinkList($field, $list, $linkType = 'LINKLIST'){
+//        $list = new java('java.util.ArrayList');
+        $linkType = strtoupper($linkType);
+        ODoc::set($this->_doc, $field, $list, constant("DooOrientDbModel::TYPE_$linkType"));
+        return true;
+    }
+
     public function setLinkList($field, $listArr, $linkType = 'LINKLIST'){
         if(ODoc::isType($listArr, 'com.orientechnologies.orient.core.db.record.ORecordLazyList') || $this->isIndexedArray($listArr)){
             $list = new java('java.util.ArrayList');
@@ -1155,7 +1167,7 @@ class DooOrientDbModel{
             return $this->_field[$name];
         }
 
-        if($this->_doc!=null && isset($this->_doc->containsField($name)) ){
+        if($this->_doc!=null && isset($this->_doc->containsField($name))){
             $class = get_class($this);
             $d = $this->_doc->field($name);
 
@@ -1164,7 +1176,19 @@ class DooOrientDbModel{
             $obj = null;
 
             if(isset($this->_classMap)){
-                $obj = self::_docToObj($d, $this->_classMap[$d->getClassName()], $this->_classMap);
+//                \Vertx::logger()->debug('============= '. $name . "   ,   ". ODoc::isType($d, 'java.util.ArrayList'));
+//                if(is_array($d) && ODoc::isType($d, 'java.util.ArrayList')){
+//                    \Vertx::logger()->debug($d[0]->getClassName());
+////                    $obj = $d;
+//                    $arr = [];
+//                    foreach($d as $itm){
+//                        $arr[] = self::_docToObj($itm, $this->_classMap[$itm->getClassName()], $this->_classMap);
+//                    }
+//                    $obj = $arr;
+//                }
+//                else {
+                    $obj = self::_docToObj($d, $this->_classMap[$d->getClassName()], $this->_classMap);
+//                }
             }
             else if(is_bool($this->_namespace) && $this->_namespace==true){
                 $ns = explode('\\', $class);

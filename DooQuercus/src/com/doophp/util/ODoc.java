@@ -16,7 +16,6 @@ public class ODoc {
     public static void set(ODocument doc, String field, Object value, OType type)
     {
         doc.field(field, value, type);
-        ORecordLazyList oo = new ORecordLazyList();
     }
 
     public static BooleanValue isType(Env env, Object obj, String type)
