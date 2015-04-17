@@ -1,4 +1,5 @@
 <?php
+
 import com.doophp.util.UUID;
 import io.vertx.lang.php.util.JSON;
 
@@ -25,10 +26,15 @@ if(empty($ip)){
     $ip = '0.0.0.0';
 }
 
-$config['SERVER_ID'] = 'proxy';
+if (empty($config['SERVER_ID'])) {
+    $config['SERVER_ID'] = 'proxy';
+}
 
-$server = Vertx::createHttpServer();
-$server->acceptBacklog(100000);
+//change server ID if passed in from vertx -conf
+if(isset($serverConf['serverId'])) {
+    $config['SERVER_ID'] = $serverConf['serverId'];
+}
+
 
 set_time_limit(0);
 $c = new DooConfig();
@@ -41,24 +47,18 @@ spl_autoload_register(function($class) use ($c){
     }
 });
 
-// =========== deploy http proxy server ===========
-Vertx::logger()->info("Proxy server deployed at port " . $port);
-Vertx::logger()->info("Server ID " . $config['SERVER_ID']);
-
-$server->setCompressionSupported(true);
-
-$server->requestHandler(function($request) use ($config, $route) {
+$httpReqHandler = function($request) use ($config, $route) {
 
     $conf = new DooConfig();
     $conf->set($config);
 
     $app = new DooWebApp();
-    $app->proxy = 'myapp.web';
+    $app->proxy = 'tc.migrate';
 //    $app->proxy = [
-//        '^/admin/.?' => 'myapp.admin',
-//        '^/api/user' => 'myapp.api.user',
-//        '^/api/email' => 'myapp.api.email',
-//        '_others'  => 'myapp.frontend'
+////        '^/admin/.?' => 'myapp.admin',
+////        '^/api/user' => 'myapp.api.user',
+//        '^/migrate/.?' => 'tc.migrate',
+//        '_others'  => 'tc.frontend'
 //    ];
 
     //server handle request 30 sec timeout
@@ -80,5 +80,37 @@ $server->requestHandler(function($request) use ($config, $route) {
     };
 
     $app->exec($conf, $route, $request);
+};
 
-})->listen($port, $ip);
+$server = Vertx::createHttpServer();
+$server->acceptBacklog(100000)
+    ->setCompressionSupported(true);
+
+// if SSL enabled
+if (isset($serverConf['sslKeyCert'])) {
+    $server->ssl(true);
+    $server->keyStorePath($serverConf['sslKeyCert']);
+
+    if (isset($serverConf['sslKeyPassword'])) {
+        $server->keyStorePassword($serverConf['sslKeyPassword']);
+    }
+    if (isset($serverConf['sslTrustCert'])) {
+        $server->trustStorePath($serverConf['sslTrustCert']);
+        if (isset($serverConf['sslTrustPassword'])) {
+            $server->trustStorePassword($serverConf['sslTrustPassword']);
+        }
+    }
+    $server->requestHandler($httpReqHandler)->listen($serverConf['portSsl'], $ip);
+
+    $serverNormal = Vertx::createHttpServer();
+    $serverNormal->acceptBacklog(100000)->setCompressionSupported(true);
+    $serverNormal->requestHandler($httpReqHandler)->listen($port, $ip);
+}
+else {
+    $server->requestHandler($httpReqHandler)->listen($port, $ip);
+}
+
+// =========== deploy http proxy server ===========
+Vertx::logger()->info("Proxy server deployed at port " . $port);
+Vertx::logger()->info("Server ID " . $config['SERVER_ID']);
+

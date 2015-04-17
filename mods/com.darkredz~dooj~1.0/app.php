@@ -1,6 +1,5 @@
 <?php
-import com.doophp.util.UUID;
-import io.vertx.lang.php.util.JSON;
+
 
 include './protected/config/common.conf.php';
 include './protected/config/routes.conf.php';
@@ -26,9 +25,6 @@ if(isset($serverConf['serverId'])) {
 }
 
 set_time_limit(0);
-$server = Vertx::createHttpServer();
-$server->acceptBacklog(100000);
-
 
 $c = new DooConfig();
 $c->set($config);
@@ -72,11 +68,11 @@ if(!empty($config['SESSION_ENABLE'])){
 Vertx::logger()->info("Http server deployed at port " . $port);
 Vertx::logger()->info("Server ID " . $config['SERVER_ID']);
 
-$server->requestHandler(function($request) use ($config, $route) {
+$httpReqHandler = function($request) use ($config, $route) {
 
     $conf = new DooConfig();
     $conf->set($config);
-    
+
     $app = new DooWebApp();
 
     $exceptionHandler = function($msg, $filename='', $line='', $className='', $funcName='') use ($app, $conf){
@@ -124,10 +120,36 @@ $server->requestHandler(function($request) use ($config, $route) {
         }
     };
 
-
     $app->exec($conf, $route, $request);
+};
 
-})->listen($port, $ip);
+$server = Vertx::createHttpServer();
+$server->acceptBacklog(100000)
+       ->setCompressionSupported(true);
+
+// if SSL enabled
+if (isset($serverConf['sslKeyCert'])) {
+    $server->ssl(true);
+    $server->keyStorePath($serverConf['sslKeyCert']);
+
+    if (isset($serverConf['sslKeyPassword'])) {
+        $server->keyStorePassword($serverConf['sslKeyPassword']);
+    }
+    if (isset($serverConf['sslTrustCert'])) {
+        $server->trustStorePath($serverConf['sslTrustCert']);
+        if (isset($serverConf['sslTrustPassword'])) {
+            $server->trustStorePassword($serverConf['sslTrustPassword']);
+        }
+    }
+    $server->requestHandler($httpReqHandler)->listen($serverConf['portSsl'], $ip);
+
+    $serverNormal = Vertx::createHttpServer();
+    $serverNormal->acceptBacklog(100000)->setCompressionSupported(true);
+    $serverNormal->requestHandler($httpReqHandler)->listen($port, $ip);
+}
+else {
+    $server->requestHandler($httpReqHandler)->listen($port, $ip);
+}
 
 
 Vertx::eventBus()->registerHandler('myapp.web', function($message) use ($config, $route) {
