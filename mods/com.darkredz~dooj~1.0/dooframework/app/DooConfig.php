@@ -96,6 +96,14 @@ class DooConfig{
      */
     public $SESSION_REDIS;
 
+
+    /**
+     * Session manager that handles read and write of session and checking of session ID from cookie/etc.
+     * Options are: DooVertxSessionManager
+     * @var string
+     */
+    public $SESSION_MANAGER_CLASS;
+
     /**
      * Server ID
      * @var int

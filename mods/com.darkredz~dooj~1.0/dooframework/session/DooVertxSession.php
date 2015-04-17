@@ -22,7 +22,7 @@ class DooVertxSession {
 
     public $lastAccess;
 
-    protected $_data;
+    public $_data;
     protected $_modified = false;
 
     public function isModified(){
@@ -33,13 +33,17 @@ class DooVertxSession {
         $this->_modified = $modified;
     }
 
+    public function setDataFromArray($arr){
+        $this->_data = $arr;
+    }
+
     public function __set($name, $value){
         $this->_data[$name] = $value;
         $this->_modified = true;
     }
 
     public function & __get($name){
-        return $this->get($k);
+        return $this->get($name);
     }
 
     /**
