@@ -604,7 +604,7 @@ class DooController {
             return FALSE;
 
         //Apache
-        if($this->app->_SERVER['HTTPS'] === 1) {
+        if($this->app->_SERVER['HTTPS'] == 1) {
             return TRUE;
         }
         //IIS
@@ -837,6 +837,8 @@ class DooController {
      * @param string $out Additional output to end with request
      */
     public function endReq($out=null){
+        if($this->app->async && $this->app->request->response->chunked==false)
+            $this->app->request->response->chunked = true;
         $this->app->end($out);
     }
 

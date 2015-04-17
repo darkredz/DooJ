@@ -120,7 +120,7 @@ class DooWebApp{
 
     public function trace($obj){
         if($this->conf->DEBUG_ENABLED){
-            $this->logger->debug( var_export($obj, true) );
+            $this->logger->debug( print_r($obj, true) );
         }
     }
 
@@ -263,19 +263,19 @@ class DooWebApp{
         $this->_SERVER['CONTENT_TYPE'] = $contentType;
         $this->_SERVER['CONTENT_LENGTH'] = $headers["Content-Length"];
 
-        $this->_SERVER['DOCUMENT_ROOT']	 = getcwd() + '/';
+        $this->_SERVER['DOCUMENT_ROOT']	 = getcwd() . '/';
         $this->_SERVER['REQUEST_METHOD'] = $method = strtoupper($this->request->method);
         $this->_SERVER['REQUEST_URI']	   = $this->request->uri;
         $this->_SERVER['HTTP_HOST']		   = $fullpath[2];
         $this->_SERVER['REMOTE_ADDR'] 	 = substr($this->request->remoteAddress->getAddress()->toString(), 1);
         $this->_SERVER['SERVER_PROTOCOL'] = $this->request->version();
-
         $this->_SERVER['HTTP_ACCEPT'] = $headers['Accept'];
         $this->_SERVER['HTTP_ACCEPT_LANGUAGE'] = $headers['Accept-Language'];
         $this->_SERVER['HTTP_ACCEPT_ENCODING'] = $headers['Accept-Encoding'];
         $this->_SERVER['HTTP_CACHE_CONTROL'] = $headers['Cache-Control'];
         $this->_SERVER['HTTP_USER_AGENT'] = $headers['User-Agent'];
         $this->_SERVER['HTTP_X_REQUESTED_WITH'] = $headers['X-Requested-With'];
+        $this->_SERVER['HTTPS'] = strpos($this->request->absoluteUri, 'https://') === 0;
 
         if($method == 'GET' || $method == 'OPTIONS' || $method == 'HEAD'){
             $this->processRequest();
@@ -393,13 +393,18 @@ class DooWebApp{
 
         //if async mode, do not end http request response in this method. end it manually in controller methods
         if($this->conf->SESSION_ENABLE == true){
-            $this->sessionManager = new DooVertxSessionManager();
+            if ($this->conf->SESSION_MANAGER_CLASS) {
+                $this->sessionManager = new $this->conf->SESSION_MANAGER_CLASS();
+            }
+            else{
+                $this->sessionManager = new DooVertxSessionManager();
+            }
             $this->sessionManager->app = &$this;
 
             //get session data and set it to app before running controller
             $this->getSession(function($session){
                 if(!empty($session)){
-                    $session->resetModified();
+//                    $session->resetModified();
                     $this->session = $session;
                 }
                 $this->run();
@@ -580,6 +585,29 @@ class DooWebApp{
         }
     }
 
+    /**
+     * Set a list or a single raw cookie string
+     * @param $cookies Array|String
+     */
+    public function setRawCookie($cookies) {
+        if (!empty($cookies)) {
+            if (is_array($cookies) && sizeof($cookies) > 1) {
+                $arr = [];
+                foreach ( $cookies as $cookie) {
+                    $arr[] = $cookie;
+                }
+                $this->request->response->putHeader('Set-Cookie', $arr);
+            }
+            else {
+                if (is_array($cookies)) {
+                    $this->request->response->putHeader('Set-Cookie', $cookies[0]);
+                }
+                else{
+                    $this->request->response->putHeader('Set-Cookie', $cookies);
+                }
+            }
+        }
+    }
 
     /**
      * Set cookies data
@@ -621,13 +649,14 @@ class DooWebApp{
      * Get cookies data sent from browser
      * @return array
      */
-    public function getCookie(){
-        if(!isset( $this->request->headers['Cookie'])) return;
-
-        $headers = $this->request->headers['Cookie'];
+    public function getCookie($cookieStr = null){
+        if ($cookieStr === null) {
+            if(!isset( $this->request->headers['Cookie'])) return;
+            $cookieStr = $this->request->headers['Cookie'];
+        }
 
         $cookie = [];
-        $parts = explode(";", $headers);
+        $parts = explode(";", $cookieStr);
         foreach($parts as $p){
             $dt = explode("=", $p);
             $cookie[trim($dt[0])] = $dt[1];
