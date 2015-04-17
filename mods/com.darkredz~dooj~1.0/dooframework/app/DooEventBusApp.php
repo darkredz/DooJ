@@ -486,6 +486,29 @@ class DooEventBusApp {
         }
     }
 
+    /**
+     * Set a list or a single raw cookie string
+     * @param $cookies Array|String
+     */
+    public function setRawCookie($cookies) {
+        if (!empty($cookies)) {
+            if (is_array($cookies) && sizeof($cookies) > 1) {
+                $arr = [];
+                foreach ( $cookies as $cookie) {
+                    $arr[] = $cookie;
+                }
+                $this->request->response->putHeader('Set-Cookie', $arr);
+            }
+            else {
+                if (is_array($cookies)) {
+                    $this->request->response->putHeader('Set-Cookie', $cookies[0]);
+                }
+                else{
+                    $this->request->response->putHeader('Set-Cookie', $cookies);
+                }
+            }
+        }
+    }
 
     /**
      * Set cookies data
