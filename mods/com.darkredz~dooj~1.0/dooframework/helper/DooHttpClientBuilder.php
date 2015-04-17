@@ -96,6 +96,9 @@ class DooHttpClientBuilder {
 
             $ssl = ($urlInfo['scheme']=='https');
 
+            $trustAll = (($urlInfo['trustAll'] == true));
+            $verifyHost = (($urlInfo['verifyHost'] == true));
+
             if($urlInfo['port']){
                 $port = $urlInfo['port'];
             }
@@ -118,7 +121,9 @@ class DooHttpClientBuilder {
                 ->keepAlive($keepAlive)
                 ->maxPoolSize($pool)
                 ->connectTimeout($timeout * 1000)
-                ->port($port);
+                ->port($port)
+                ->trustAll($trustAll)
+                ->verifyHost($verifyHost);
         }
 
         return $clients;
