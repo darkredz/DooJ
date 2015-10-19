@@ -121,7 +121,7 @@ class DooEventBusApp {
     public $route;
 
 
-    public function init($message, $config){
+    public function init($message, $config, $rawMessage = null){
         //msg format
         /*
             {
@@ -136,7 +136,12 @@ class DooEventBusApp {
             }
 
         */
-        $json = $message->body();
+        if ($rawMessage) {
+            $json = $rawMessage;
+        }
+        else {
+            $json = $message->body();
+        }
 
         if(empty($json)){
             $message->reply(['status' => 'error', 'value'=>'empty message body']);

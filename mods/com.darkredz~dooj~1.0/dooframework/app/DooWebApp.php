@@ -404,7 +404,7 @@ class DooWebApp{
             //get session data and set it to app before running controller
             $this->getSession(function($session){
                 if(!empty($session)){
-//                    $session->resetModified();
+                    $session->resetModified();
                     $this->session = $session;
                 }
                 $this->run();
