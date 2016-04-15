@@ -30,13 +30,13 @@ public class SharedJson {
                     } else {
                         // Something went wrong!
 //                        System.out.println("CANNOT get "+ sharedKey +" "+ res.cause());
-                        res.cause().printStackTrace();
+                        resGet.cause().printStackTrace();
                         value.toCallable(env, false).call(env, env.wrapJava(null));
                     }
                 });
             } else {
 //                System.out.println("MAP RETRIEVE FAILED. " + res.cause());
-//                res.cause().printStackTrace();
+                res.cause().printStackTrace();
                 value.toCallable(env, false).call(env, env.wrapJava(null));
             }
         });
@@ -56,15 +56,68 @@ public class SharedJson {
                         value.toCallable(env, false).call(env, env.wrapJava(true));
                     } else {
 //                        System.out.println("CANNOT set "+ sharedKey +" "+ resPut.cause());
-//                        resPut.cause().printStackTrace();
+                        resPut.cause().printStackTrace();
                         value.toCallable(env, false).call(env, env.wrapJava(false));
                     }
                 });
             } else {
 //                System.out.println("MAP RETRIEVE FAILED. " + res.cause());
-//                res.cause().printStackTrace();
+                res.cause().printStackTrace();
                 value.toCallable(env, false).call(env, env.wrapJava(false));
             }
         });
     }
+
+    public static void remove(Vertx vertx, final String mapName, final String sharedKey, final Value value)
+    {
+        SharedData sd = vertx.sharedData();
+        sd.<String, JsonObject>getClusterWideMap(mapName, res -> {
+            final Env env = Env.getCurrent();
+
+            if (res.succeeded()) {
+                AsyncMap<String, JsonObject> map = res.result();
+                map.remove(sharedKey, resDel -> {
+                    if (resDel.succeeded()) {
+                        // Successfully got the value
+                        Object val = resDel.result();
+                        value.toCallable(env, false).call(env, env.wrapJava(val));
+                    } else {
+                        resDel.cause().printStackTrace();
+                        value.toCallable(env, false).call(env, env.wrapJava(null));
+                    }
+                });
+            } else {
+//                System.out.println("MAP RETRIEVE FAILED. " + res.cause());
+                res.cause().printStackTrace();
+                value.toCallable(env, false).call(env, env.wrapJava(null));
+            }
+        });
+    }
+
+    public static void clear(Vertx vertx, final String mapName, final String sharedKey, final Value value)
+    {
+        SharedData sd = vertx.sharedData();
+        sd.<String, JsonObject>getClusterWideMap(mapName, res -> {
+            final Env env = Env.getCurrent();
+
+            if (res.succeeded()) {
+                AsyncMap<String, JsonObject> map = res.result();
+                map.clear(resDel -> {
+                    if (resDel.succeeded()) {
+                        // Successfully got the value
+                        Object val = resDel.result();
+                        value.toCallable(env, false).call(env, env.wrapJava(val));
+                    } else {
+                        resDel.cause().printStackTrace();
+                        value.toCallable(env, false).call(env, env.wrapJava(null));
+                    }
+                });
+            } else {
+//                System.out.println("MAP RETRIEVE FAILED. " + res.cause());
+                res.cause().printStackTrace();
+                value.toCallable(env, false).call(env, env.wrapJava(null));
+            }
+        });
+    }
+
 }
