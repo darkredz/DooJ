@@ -26,12 +26,17 @@ import org.jooq.impl.DSL;
 /**
  * Created by leng on 12/27/16.
  */
-public class SQLClient {
+public class SQLClient implements SQLClientInterface {
 
     protected VertxImpl vertx;
     protected Logger logger;
     protected DSLContext dsl;
     protected AsyncSQLClient sqlClient;
+    public boolean debugEnabled = true;
+
+    public String prefixLogInfo = "[INFO_DB]: ";
+    public String prefixLogDebug = "[DEBUG_DB]: ";
+    public String prefixLogError = "[ERROR_DB]: ";
 
     public DSLContext dsl() {
         return dsl;
@@ -47,32 +52,32 @@ public class SQLClient {
 
     public void logInfo(Object obj, Object obj2) {
         if (logger == null) return;
-        logger.info(obj, obj2);
+        logger.info(prefixLogInfo + obj, obj2);
     }
 
     public void logInfo(Object obj) {
         if (logger == null) return;
-        logger.info(obj);
+        logger.info(prefixLogInfo + obj);
     }
 
     public void logDebug(Object obj, Object obj2) {
-        if (logger == null) return;
-        logger.debug(obj, obj2);
+        if (logger == null || !debugEnabled) return;
+        logger.debug(prefixLogDebug + obj, obj2);
     }
 
     public void logDebug(Object obj) {
-        if (logger == null) return;
-        logger.debug(obj);
+        if (logger == null || !debugEnabled) return;
+        logger.debug(prefixLogDebug + obj);
     }
 
     public void logError(Object obj, Object obj2) {
         if (logger == null) return;
-        logger.error(obj, obj2);
+        logger.error(prefixLogError + obj, obj2);
     }
 
     public void logError(Object obj) {
         if (logger == null) return;
-        logger.error(obj);
+        logger.error(prefixLogError + obj);
     }
 
     public SQLClient(Env env, VertxImpl vertx, Value configValue, String poolName) {
@@ -170,12 +175,61 @@ public class SQLClient {
                 if (params == null) {
                     conn.query(sql, resultHandler);
                 } else {
+                    logDebug("Query Params = " + params.encode());
                     conn.queryWithParams(sql, params, resultHandler);
                 }
             } else {
                 // Failed to get connection - deal with it
                 if (res.failed()) {
-                    logDebug("SQL Connection Failed!", res.cause());
+                    logError("SQL Connection Failed!", res.cause());
+                }
+                if (errorHandler != null) {
+                    errorHandler.call(env, env.wrapJava(res.cause()));
+                }
+            }
+        });
+    }
+
+    public void queryWithHandler(Env env, String sql, JsonArray params, Handler<JsonArray> handler, Callable errorHandler) {
+        sqlClient.getConnection(res -> {
+            if (res.succeeded()) {
+                logDebug("Executing SQL Query: " + sql);
+                final SQLConnection conn = res.result();
+                Handler<AsyncResult<ResultSet>> resultHandler = new Handler<AsyncResult<ResultSet>>() {
+                    @Override
+                    public void handle(AsyncResult<ResultSet> res2) {
+                        if (res2.succeeded()) {
+                            ResultSet queryRes = res2.result();
+                            JsonArray rows = null;
+                            if (queryRes != null && queryRes.getNumRows() >= 0) {
+                                rows = new JsonArray(queryRes.getRows());
+                            }
+                            if (handler != null) {
+                                handler.handle(rows);
+                            }
+
+                        } else {
+                            if (res2.failed()) {
+                                logError("SQL Query Failed! " + sql, res2.cause());
+                            }
+                            if (errorHandler != null) {
+                                errorHandler.call(env, env.wrapJava(res2.cause()));
+                            }
+                        }
+                        conn.close();
+                    }
+                };
+
+                if (params == null) {
+                    conn.query(sql, resultHandler);
+                } else {
+                    logDebug("Query Params = " + params.encode());
+                    conn.queryWithParams(sql, params, resultHandler);
+                }
+            } else {
+                // Failed to get connection - deal with it
+                if (res.failed()) {
+                    logError("SQL Connection Failed!", res.cause());
                 }
                 if (errorHandler != null) {
                     errorHandler.call(env, env.wrapJava(res.cause()));
@@ -297,18 +351,216 @@ public class SQLClient {
                 if (params == null) {
                     conn.update(sql, resultHandler);
                 } else {
+                    logDebug("Query Params = " + params.encode());
                     conn.updateWithParams(sql, params, resultHandler);
                 }
             } else {
                 // Failed to get connection - deal with it
                 if (res.failed()) {
-                    logDebug("SQL Connection Failed!", res.cause());
+                    logError("SQL Connection Failed!", res.cause());
                 }
                 if (errorHandler != null) {
                     errorHandler.call(env, env.wrapJava(res.cause()));
                 }
             }
         });
+    }
+
+    public void deleteWithHandler(Env env, String sql, JsonArray params, Handler<UpdateResult> callbackHandler, Callable errorHandler) {
+        updateWithHandler(env, sql, params, callbackHandler, errorHandler);
+    }
+
+    public void insertWithHandler(Env env, String sql, JsonArray params, Handler<UpdateResult> callbackHandler, Callable errorHandler) {
+        updateWithHandler(env, sql, params, callbackHandler, errorHandler);
+    }
+
+    public void updateWithHandler(Env env, String sql, JsonArray params, Handler<UpdateResult> callbackHandler, Callable errorHandler) {
+        sqlClient.getConnection(res -> {
+            if (res.succeeded()) {
+                logDebug("Executing SQL Update Query : " + sql);
+                final SQLConnection conn = res.result();
+                Handler<AsyncResult<UpdateResult>> resultHandler = new Handler<AsyncResult<UpdateResult>>() {
+                    @Override
+                    public void handle(AsyncResult<UpdateResult> res2) {
+                        if (res2.succeeded()) {
+                            UpdateResult queryRes = res2.result();
+                            callbackHandler.handle(queryRes);
+                        } else {
+                            if (res2.failed()) {
+                                logError("SQL Update Query Failed! " + sql, res2.cause());
+                            }
+                            if (errorHandler != null) {
+                                errorHandler.call(env, env.wrapJava(res2.cause()));
+                            }
+                        }
+                        conn.close();
+                    }
+                };
+
+                if (params == null) {
+                    conn.update(sql, resultHandler);
+                } else {
+                    logDebug("Query Params = " + params.encode());
+                    conn.updateWithParams(sql, params, resultHandler);
+                }
+            } else {
+                // Failed to get connection - deal with it
+                if (res.failed()) {
+                    logError("SQL Connection Failed!", res.cause());
+                }
+                if (errorHandler != null) {
+                    errorHandler.call(env, env.wrapJava(res.cause()));
+                }
+            }
+        });
+    }
+
+    public void queryRaw(String sql, JsonArray params, Handler<JsonArray> handler, Handler<Throwable> errorHandler) {
+        sqlClient.getConnection(res -> {
+            if (res.succeeded()) {
+                final SQLConnection conn = res.result();
+                queryRaw(conn, sql, params, handler, errorHandler);
+            } else {
+                // Failed to get connection - deal with it
+                if (res.failed()) {
+                    logError("SQL Connection Failed!", res.cause());
+                }
+                if (errorHandler != null) {
+                    errorHandler.handle(res.cause());
+                }
+            }
+        });
+    }
+
+    public void queryRaw(SQLConnection conn, String sql, JsonArray params, Handler<JsonArray> handler, Handler<Throwable> errorHandler) {
+        Handler<AsyncResult<ResultSet>> resultHandler = new Handler<AsyncResult<ResultSet>>() {
+            @Override
+            public void handle(AsyncResult<ResultSet> res2) {
+                if (res2.succeeded()) {
+                    ResultSet queryRes = res2.result();
+                    JsonArray rows = null;
+                    if (queryRes != null && queryRes.getNumRows() >= 0) {
+                        rows = new JsonArray(queryRes.getRows());
+                    }
+                    if (handler != null) {
+                        if (rows == null) {
+                            handler.handle(null);
+                        } else {
+                            handler.handle(rows);
+                        }
+                    }
+
+                } else {
+                    if (res2.failed()) {
+                        logError("SQL Query Failed! " + sql, res2.cause());
+                    }
+                    if (errorHandler != null) {
+                        errorHandler.handle(res2.cause());
+                    }
+                }
+            }
+        };
+
+        logDebug("Executing SQL Query: " + sql);
+
+        if (params == null) {
+            conn.query(sql, resultHandler);
+        } else {
+            logDebug("Query Params = " + params.encode());
+            conn.queryWithParams(sql, params, resultHandler);
+        }
+    }
+
+    public void updateRaw(String sql, JsonArray params, Handler<JsonObject> handler, Handler<Throwable> errorHandler) {
+        sqlClient.getConnection(res -> {
+            if (res.succeeded()) {
+                final SQLConnection conn = res.result();
+                updateRaw(conn, sql, params, handler, errorHandler);
+            } else {
+                // Failed to get connection - deal with it
+                if (res.failed()) {
+                    logError("SQL Connection Failed!", res.cause());
+                }
+                if (errorHandler != null) {
+                    errorHandler.handle(res.cause());
+                }
+            }
+        });
+    }
+
+
+
+    public void updateRaw(SQLConnection conn, String sql, JsonArray params, Handler<JsonObject> handler, Handler<Throwable> errorHandler) {
+        Handler<AsyncResult<UpdateResult>> resultHandler = new Handler<AsyncResult<UpdateResult>>() {
+            @Override
+            public void handle(AsyncResult<UpdateResult> res2) {
+                if (res2.succeeded()) {
+                    UpdateResult queryRes = res2.result();
+                    handler.handle(queryRes.toJson());
+                } else {
+                    if (res2.failed()) {
+                        logError("SQL Update Query Failed! " + sql, res2.cause());
+                    }
+                    if (errorHandler != null) {
+                        errorHandler.handle(res2.cause());
+                    }
+                }
+            }
+        };
+
+        logDebug("Executing SQL Update Query : " + sql);
+
+        if (params == null) {
+            conn.update(sql, resultHandler);
+        } else {
+            logDebug("Query Params = " + params.encode());
+            conn.updateWithParams(sql, params, resultHandler);
+        }
+    }
+
+    public void connect(Handler<AsyncResult<SQLConnection>> res) {
+        sqlClient.getConnection(res);
+    }
+
+    public void startTx(SQLConnection conn, Handler<ResultSet> done) {
+        conn.setAutoCommit(false, res -> {
+            if (res.failed()) {
+                throw new RuntimeException(res.cause());
+            }
+
+            if (done != null) {
+                done.handle(null);
+            }
+        });
+    }
+
+    public void rollbackTx(SQLConnection conn, Handler<ResultSet> done) {
+        conn.rollback(res -> {
+            conn.close();
+
+            if (res.failed()) {
+                throw new RuntimeException(res.cause());
+            }
+
+            if (done != null) {
+                done.handle(null);
+            }
+        });
+    }
+
+    public void commit(SQLConnection conn, Handler<AsyncResult<Void>> done) {
+        conn.commit(res -> {
+            conn.close();
+
+            if (done != null) {
+                done.handle(null);
+            }
+        });
+
+    }
+
+    public Value toPhpArray(Env env, JsonArray rows) {
+        return PhpTypes.arrayFromJson(env, rows);
     }
 
 }
