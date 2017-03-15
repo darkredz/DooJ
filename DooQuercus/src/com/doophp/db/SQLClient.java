@@ -23,6 +23,9 @@ import org.jooq.conf.Settings;
 import org.jooq.conf.StatementType;
 import org.jooq.impl.DSL;
 
+import java.util.List;
+import java.util.ListIterator;
+
 /**
  * Created by leng on 12/27/16.
  */
@@ -520,6 +523,34 @@ public class SQLClient implements SQLClientInterface {
 
     public void connect(Handler<AsyncResult<SQLConnection>> res) {
         sqlClient.getConnection(res);
+    }
+
+
+    public void batchWithParams(Env env, String sql, List<JsonArray> batchParams, Handler<JsonArray> callbackHandler, Callable errorHandler) {
+//        List<JsonArray> batch = new ArrayList<>();
+//        batch.add(new JsonArray().add("value 1"));
+//        batch.add(new JsonArray().add("value 2"));
+
+        //Current driver does not support this in vertx async mysql postgre
+        connect(sqlConnectionAsyncResult -> {
+            SQLConnection conn = sqlConnectionAsyncResult.result();
+            conn.batchWithParams(sql, batchParams, res -> {
+                //batch returns list of IDs
+                if (res.succeeded()) {
+                    List<Integer> result = res.result();
+                    JsonArray arr = new JsonArray(result);
+                    callbackHandler.handle(arr);
+                } else {
+                    if (res.failed()) {
+                        logError("SQL Batch Query Failed! " + sql, res.cause());
+                    }
+                    if (errorHandler != null) {
+                        errorHandler.call(env, env.wrapJava(res.cause()));
+                    }
+                }
+                conn.close();
+            });
+        });
     }
 
     public void startTx(SQLConnection conn, Handler<ResultSet> done) {
