@@ -1,8 +1,6 @@
 package com.doophp.db.jooq;
 
-import com.caucho.quercus.env.Callable;
-import com.caucho.quercus.env.Env;
-import com.caucho.quercus.env.Value;
+import com.caucho.quercus.env.*;
 import com.doophp.db.SQLClient;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -29,6 +27,8 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.TimeZone;
 
 /**
@@ -291,6 +291,31 @@ public class BaseModel {
         return field.as(prefix + delimiter + field.getName());
     }
 
+    public Field alias(TableField<?, ?> field, TableImpl tablePrefix, TableField<?, ?> becomeField) {
+        return  alias(field, tablePrefix.getName(), becomeField, "-");
+    }
+
+    public Field alias(TableField<?, ?> field, String prefix, TableField<?, ?> becomeField) {
+        return  alias(field, prefix, becomeField, "-");
+    }
+
+    public Field alias(TableField<?, ?> field, String prefix, TableField<?, ?> becomeField, String delimiter) {
+        return field.as(prefix + delimiter + becomeField.getName());
+    }
+
+
+    public Field alias(TableField<?, ?> field, TableImpl tablePrefix, String becomeFieldName) {
+        return  alias(field, tablePrefix.getName(), becomeFieldName, "-");
+    }
+
+    public Field alias(TableField<?, ?> field, String prefix, String becomeFieldName) {
+        return  alias(field, prefix, becomeFieldName, "-");
+    }
+
+    public Field alias(TableField<?, ?> field, String prefix, String becomeFieldName, String delimiter) {
+        return field.as(prefix + delimiter + becomeFieldName);
+    }
+
     public ArrayList getAllFieldAlias(TableImpl[] tables, ArrayList<String> renames) {
         return getAllFieldAlias(tables, "-", (String[]) renames.toArray());
     }
@@ -391,13 +416,119 @@ public class BaseModel {
         client.queryWithHandler(env, sql, params, callbackHandler, errorHandler);
     }
 
+    //============== Batch operations ===============
+    public void batchWithParams(Env env, String sql, List<JsonArray> batchParams, Handler<JsonArray> callbackHandler, Callable errorHandler) {
+        client.batchWithParams(env, sql, batchParams, callbackHandler, errorHandler);
+    }
+
+    public void batchInsertWithParams(Env env, String sql, List<JsonArray> batchParams, final Callable handler, final Callable errorHandler) {
+        connect(connRes -> {
+            final SQLConnection conn = connRes.result();
+
+            Handler<Throwable> defaultErr = getDefaultErrorTx(env, conn, errorHandler);
+            final List<Integer> batchInsertIDs = new ArrayList<>();
+
+            startTx(conn, res1 -> {
+                nextBatchInsertOp(batchParams.listIterator(), batchInsertIDs, conn, sql, defaultErr, res2 -> {
+                    commit(conn, resCommit -> {
+                        if (handler != null) {
+                            JsonArray arr = new JsonArray(res2);
+                            handler.call(env, client.toPhpArray(env, arr));
+                        }
+                    });
+                });
+            });
+        });
+    }
+
+    protected void nextBatchInsertOp(ListIterator<JsonArray> iterator, List<Integer> batchInsertIDs, SQLConnection conn, String sql, Handler<Throwable> errorHandler, Handler<List<Integer>> doneBatchHandler) {
+        if (iterator.hasNext()) {
+            JsonArray param = iterator.next();
+
+            insertRaw(conn, sql, param, res -> {
+                if (batchInsertIDs != null) {
+                    batchInsertIDs.add(res.getJsonArray("keys").getInteger(0));
+                }
+                nextBatchInsertOp(iterator, batchInsertIDs, conn, sql, errorHandler, doneBatchHandler);
+            }, errorHandler);
+        }
+        //end of list
+        else {
+            doneBatchHandler.handle(batchInsertIDs);
+        }
+    }
+
+    public void batchUpdateWithParams(Env env, String sql, List<JsonArray> batchParams, Callable handler, Callable errorHandler) {
+        connect(connRes -> {
+            final SQLConnection conn = connRes.result();
+
+            Handler<Throwable> defaultErr = getDefaultErrorTx(env, conn, errorHandler);
+
+            startTx(conn, res1 -> {
+                nextBatchUpdateOp(batchParams.listIterator(), conn, sql, defaultErr, res2 -> {
+                    commit(conn, resCommit -> {
+                        handler.call(env, env.wrapJava(res2));
+                    });
+                });
+            });
+        });
+    }
+
+    protected void nextBatchUpdateOp(ListIterator<JsonArray> iterator, SQLConnection conn, String sql, Handler<Throwable> errorHandler, Handler<Boolean> doneBatchHandler) {
+        if (iterator.hasNext()) {
+            JsonArray param = iterator.next();
+
+            updateRaw(conn, sql, param, res -> {
+                nextBatchUpdateOp(iterator, conn, sql, errorHandler, doneBatchHandler);
+            }, errorHandler);
+        }
+        //end of list
+        else {
+            doneBatchHandler.handle(true);
+        }
+    }
+
+    public void batchDeleteWithParams(Env env, String sql, List<JsonArray> batchParams, Callable handler, Callable errorHandler) {
+        connect(connRes -> {
+            final SQLConnection conn = connRes.result();
+
+            Handler<Throwable> defaultErr = getDefaultErrorTx(env, conn, errorHandler);
+
+            startTx(conn, res1 -> {
+                nextBatchDeleteOp(batchParams.listIterator(), conn, sql, defaultErr, res2 -> {
+                    commit(conn, resCommit -> {
+                        handler.call(env, env.wrapJava(res2));
+                    });
+                });
+            });
+        });
+    }
+
+    protected void nextBatchDeleteOp(ListIterator<JsonArray> iterator, SQLConnection conn, String sql, Handler<Throwable> errorHandler, Handler<Boolean> doneBatchHandler) {
+        if (iterator.hasNext()) {
+            JsonArray param = iterator.next();
+
+            deleteRaw(conn, sql, param, res -> {
+                nextBatchDeleteOp(iterator, conn, sql, errorHandler, doneBatchHandler);
+            }, errorHandler);
+        }
+        //end of list
+        else {
+            doneBatchHandler.handle(true);
+        }
+    }
+
     // ===================== call back related ====================
     public Handler<Throwable> getDefaultErrorTx(Env env, SQLConnection conn, Callable errorHandler) {
         return new Handler<Throwable>() {
             @Override
             public void handle(Throwable error) {
                 rollbackTx(conn, null);
-                errorHandler.call(env, env.wrapJava(error.getCause()));
+                Throwable cause = error.getCause();
+                if (cause == null) {
+                    cause = error;
+                }
+                errorHandler.call(env, env.wrapJava(cause));
             }
         };
     }
@@ -407,7 +538,11 @@ public class BaseModel {
             @Override
             public void handle(Throwable error) {
                 conn.close();
-                errorHandler.call(env, env.wrapJava(error.getCause()));
+                Throwable cause = error.getCause();
+                if (cause == null) {
+                    cause = error;
+                }
+                errorHandler.call(env, env.wrapJava(cause));
             }
         };
     }
@@ -416,7 +551,11 @@ public class BaseModel {
         return new Handler<Throwable>() {
             @Override
             public void handle(Throwable error) {
-                errorHandler.call(env, env.wrapJava(error.getCause()));
+                Throwable cause = error.getCause();
+                if (cause == null) {
+                    cause = error;
+                }
+                errorHandler.call(env, env.wrapJava(cause));
             }
         };
     }
