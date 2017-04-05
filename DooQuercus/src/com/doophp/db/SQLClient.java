@@ -107,11 +107,31 @@ public class SQLClient implements SQLClientInterface {
         dsl = DSL.using(SQLDialect.valueOf(config.getString("sql_dialect").toUpperCase()), settings);
     }
 
+    public void initForPhp(Env env, final Callable handler) {
+        connect(connRes -> {
+            final SQLConnection conn = connRes.result();
+
+            startTx(conn, res1 -> {
+                updateRaw(conn, "SELECT 1", null, res2 -> {
+                    commit(conn, resCommit -> {
+                        handler.call(env, env.wrapJava(res2));
+                    });
+                }, null);
+            });
+        });
+
+        query(env, "SELECT 2", handler);
+//        insertWithHandler(env, "INSERT INTO NULL", null, updateResult -> {
+//            handler.call(env, env.wrapJava(updateResult));
+//        }, null);
+        handler.call(env, env.wrapJava(new UpdateResult()));
+    }
+
     public void query(Env env, String sql, JsonArray params) {
         query(env, sql, params, null, null);
     }
 
-    public void query(Env env, String sql, JsonArray params, Callable handler) {
+    public void query(Env env, String sql, JsonArray params, final Callable handler) {
         query(env, sql, params, handler, null);
     }
 
@@ -119,15 +139,15 @@ public class SQLClient implements SQLClientInterface {
         query(env, sql, PhpTypes.arrayToJsonArray(env, paramsArr), null, null);
     }
 
-    public void query(Env env, String sql, Callable handler) {
+    public void query(Env env, String sql, final Callable handler) {
         query(env, sql, null, handler, null);
     }
 
-    public void query(Env env, String sql, Callable handler, Callable errorHandler) {
+    public void query(Env env, String sql, final Callable handler, final Callable errorHandler) {
         query(env, sql, null, handler, errorHandler);
     }
 
-    public void query(Env env, String sql, Value paramsArr, Callable handler) {
+    public void query(Env env, String sql, Value paramsArr, final Callable handler) {
         if (paramsArr == null) {
             query(env, sql, null, handler, null);
         } else {
@@ -135,14 +155,14 @@ public class SQLClient implements SQLClientInterface {
         }
     }
 
-    public void query(Env env, String sql, JsonArray params, Callable handler, Callable errorHandler) {
+    public void query(Env env, String sql, JsonArray params, final Callable handler, final Callable errorHandler) {
         sqlClient.getConnection(res -> {
             if (res.succeeded()) {
                 logDebug("Executing SQL Query: " + sql);
                 final SQLConnection conn = res.result();
                 Handler<AsyncResult<ResultSet>> resultHandler = new Handler<AsyncResult<ResultSet>>() {
                     @Override
-                    public void handle(AsyncResult<ResultSet> res2) {
+                    public void handle(final AsyncResult<ResultSet> res2) {
                         if (res2.succeeded()) {
                             ResultSet queryRes = res2.result();
                             JsonArray rows = null;
@@ -193,14 +213,14 @@ public class SQLClient implements SQLClientInterface {
         });
     }
 
-    public void queryWithHandler(Env env, String sql, JsonArray params, Handler<JsonArray> handler, Callable errorHandler) {
+    public void queryWithHandler(Env env, String sql, JsonArray params, Handler<JsonArray> handler, final Callable errorHandler) {
         sqlClient.getConnection(res -> {
             if (res.succeeded()) {
                 logDebug("Executing SQL Query: " + sql);
                 final SQLConnection conn = res.result();
                 Handler<AsyncResult<ResultSet>> resultHandler = new Handler<AsyncResult<ResultSet>>() {
                     @Override
-                    public void handle(AsyncResult<ResultSet> res2) {
+                    public void handle(final AsyncResult<ResultSet> res2) {
                         if (res2.succeeded()) {
                             ResultSet queryRes = res2.result();
                             JsonArray rows = null;
@@ -246,7 +266,7 @@ public class SQLClient implements SQLClientInterface {
         update(env, sql, params, null, null);
     }
 
-    public void insert(Env env, String sql, JsonArray params, Callable handler) {
+    public void insert(Env env, String sql, JsonArray params, final Callable handler) {
         update(env, sql, params, handler, null);
     }
 
@@ -254,15 +274,15 @@ public class SQLClient implements SQLClientInterface {
         update(env, sql, PhpTypes.arrayToJsonArray(env, paramsArr), null, null);
     }
 
-    public void insert(Env env, String sql, Callable handler) {
+    public void insert(Env env, String sql, final Callable handler) {
         update(env, sql, null, handler, null);
     }
 
-    public void insert(Env env, String sql, Callable handler, Callable errorHandler) {
+    public void insert(Env env, String sql, final Callable handler, final Callable errorHandler) {
         update(env, sql, null, handler, errorHandler);
     }
 
-    public void insert(Env env, String sql, Value paramsArr, Callable handler) {
+    public void insert(Env env, String sql, Value paramsArr, final Callable handler) {
         if (paramsArr == null) {
             update(env, sql, null, handler, null);
         } else {
@@ -274,7 +294,7 @@ public class SQLClient implements SQLClientInterface {
         update(env, sql, params, null, null);
     }
 
-    public void delete(Env env, String sql, JsonArray params, Callable handler) {
+    public void delete(Env env, String sql, JsonArray params, final Callable handler) {
         update(env, sql, params, handler, null);
     }
 
@@ -282,15 +302,15 @@ public class SQLClient implements SQLClientInterface {
         update(env, sql, PhpTypes.arrayToJsonArray(env, paramsArr), null, null);
     }
 
-    public void delete(Env env, String sql, Callable handler) {
+    public void delete(Env env, String sql, final Callable handler) {
         update(env, sql, null, handler, null);
     }
 
-    public void delete(Env env, String sql, Callable handler, Callable errorHandler) {
+    public void delete(Env env, String sql, final Callable handler, final Callable errorHandler) {
         update(env, sql, null, handler, errorHandler);
     }
 
-    public void delete(Env env, String sql, Value paramsArr, Callable handler) {
+    public void delete(Env env, String sql, Value paramsArr, final Callable handler) {
         if (paramsArr == null) {
             update(env, sql, null, handler, null);
         } else {
@@ -302,7 +322,7 @@ public class SQLClient implements SQLClientInterface {
         update(env, sql, params, null, null);
     }
 
-    public void update(Env env, String sql, JsonArray params, Callable handler) {
+    public void update(Env env, String sql, JsonArray params, final Callable handler) {
         update(env, sql, params, handler, null);
     }
 
@@ -310,15 +330,15 @@ public class SQLClient implements SQLClientInterface {
         update(env, sql, PhpTypes.arrayToJsonArray(env, paramsArr), null, null);
     }
 
-    public void update(Env env, String sql, Callable handler) {
+    public void update(Env env, String sql, final Callable handler) {
         update(env, sql, null, handler, null);
     }
 
-    public void update(Env env, String sql, Callable handler, Callable errorHandler) {
+    public void update(Env env, String sql, final Callable handler, final Callable errorHandler) {
         update(env, sql, null, handler, errorHandler);
     }
 
-    public void update(Env env, String sql, Value paramsArr, Callable handler) {
+    public void update(Env env, String sql, Value paramsArr, final Callable handler) {
         if (paramsArr == null) {
             update(env, sql, null, handler, null);
         } else {
@@ -326,14 +346,14 @@ public class SQLClient implements SQLClientInterface {
         }
     }
 
-    public void update(Env env, String sql, JsonArray params, Callable handler, Callable errorHandler) {
+    public void update(Env env, String sql, JsonArray params, final Callable handler, final Callable errorHandler) {
         sqlClient.getConnection(res -> {
             if (res.succeeded()) {
                 logDebug("Executing SQL Update Query : " + sql);
                 final SQLConnection conn = res.result();
                 Handler<AsyncResult<UpdateResult>> resultHandler = new Handler<AsyncResult<UpdateResult>>() {
                     @Override
-                    public void handle(AsyncResult<UpdateResult> res2) {
+                    public void handle(final AsyncResult<UpdateResult> res2) {
                         if (res2.succeeded()) {
                             UpdateResult queryRes = res2.result();
                             if (handler != null) {
@@ -369,22 +389,22 @@ public class SQLClient implements SQLClientInterface {
         });
     }
 
-    public void deleteWithHandler(Env env, String sql, JsonArray params, Handler<UpdateResult> callbackHandler, Callable errorHandler) {
+    public void deleteWithHandler(Env env, String sql, JsonArray params, final Handler<UpdateResult> callbackHandler, final Callable errorHandler) {
         updateWithHandler(env, sql, params, callbackHandler, errorHandler);
     }
 
-    public void insertWithHandler(Env env, String sql, JsonArray params, Handler<UpdateResult> callbackHandler, Callable errorHandler) {
+    public void insertWithHandler(Env env, String sql, JsonArray params, final Handler<UpdateResult> callbackHandler, final Callable errorHandler) {
         updateWithHandler(env, sql, params, callbackHandler, errorHandler);
     }
 
-    public void updateWithHandler(Env env, String sql, JsonArray params, Handler<UpdateResult> callbackHandler, Callable errorHandler) {
+    public void updateWithHandler(Env env, String sql, JsonArray params, final Handler<UpdateResult> callbackHandler, final Callable errorHandler) {
         sqlClient.getConnection(res -> {
             if (res.succeeded()) {
                 logDebug("Executing SQL Update Query : " + sql);
                 final SQLConnection conn = res.result();
                 Handler<AsyncResult<UpdateResult>> resultHandler = new Handler<AsyncResult<UpdateResult>>() {
                     @Override
-                    public void handle(AsyncResult<UpdateResult> res2) {
+                    public void handle(final AsyncResult<UpdateResult> res2) {
                         if (res2.succeeded()) {
                             UpdateResult queryRes = res2.result();
                             callbackHandler.handle(queryRes);
@@ -438,7 +458,7 @@ public class SQLClient implements SQLClientInterface {
     public void queryRaw(SQLConnection conn, String sql, JsonArray params, Handler<JsonArray> handler, Handler<Throwable> errorHandler) {
         Handler<AsyncResult<ResultSet>> resultHandler = new Handler<AsyncResult<ResultSet>>() {
             @Override
-            public void handle(AsyncResult<ResultSet> res2) {
+            public void handle(final AsyncResult<ResultSet> res2) {
                 if (res2.succeeded()) {
                     ResultSet queryRes = res2.result();
                     JsonArray rows = null;
@@ -496,7 +516,7 @@ public class SQLClient implements SQLClientInterface {
     public void updateRaw(SQLConnection conn, String sql, JsonArray params, Handler<JsonObject> handler, Handler<Throwable> errorHandler) {
         Handler<AsyncResult<UpdateResult>> resultHandler = new Handler<AsyncResult<UpdateResult>>() {
             @Override
-            public void handle(AsyncResult<UpdateResult> res2) {
+            public void handle(final AsyncResult<UpdateResult> res2) {
                 if (res2.succeeded()) {
                     UpdateResult queryRes = res2.result();
                     handler.handle(queryRes.toJson());
@@ -526,7 +546,7 @@ public class SQLClient implements SQLClientInterface {
     }
 
 
-    public void batchWithParams(Env env, String sql, List<JsonArray> batchParams, Handler<JsonArray> callbackHandler, Callable errorHandler) {
+    public void batchWithParams(Env env, String sql, List<JsonArray> batchParams, Handler<JsonArray> callbackHandler, final Callable errorHandler) {
 //        List<JsonArray> batch = new ArrayList<>();
 //        batch.add(new JsonArray().add("value 1"));
 //        batch.add(new JsonArray().add("value 2"));

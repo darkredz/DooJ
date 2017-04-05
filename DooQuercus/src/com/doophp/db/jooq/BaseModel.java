@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.TimeZone;
+import static org.jooq.impl.DSL.*;
 
 /**
  * Created by leng on 12/27/16.
@@ -155,7 +156,7 @@ public class BaseModel {
 //        client.query(env, sql, params, null, null);
 //    }
 
-//    public void query(Env env, String sql, JsonArray params, Callable handler) {
+//    public void query(Env env, String sql, JsonArray params, final Callable handler) {
 //        client.query(env, sql, params, handler, null);
 //    }
 
@@ -163,15 +164,15 @@ public class BaseModel {
 //        client.query(env, sql, PhpTypes.arrayToJsonArray(env, paramsArr), null, null);
 //    }
 
-//    public void query(Env env, String sql, Callable handler) {
+//    public void query(Env env, String sql, final Callable handler) {
 //        client.query(env, sql, null, handler, null);
 //    }
 
-    public void query(Env env, String sql, Callable handler, Callable errorHandler) {
+    public void query(Env env, String sql, final Callable handler, final Callable errorHandler) {
         client.query(env, sql, null, handler, errorHandler);
     }
 
-//    public void query(Env env, String sql, Value paramsArr, Callable handler) {
+//    public void query(Env env, String sql, Value paramsArr, final Callable handler) {
 //        if (paramsArr == null) {
 //            client.query(env, sql, null, handler, null);
 //        } else {
@@ -179,7 +180,7 @@ public class BaseModel {
 //        }
 //    }
 
-    public void query(Env env, String sql, JsonArray params, Callable handler, Callable errorHandler) {
+    public void query(Env env, String sql, JsonArray params, final Callable handler, final Callable errorHandler) {
         client.query(env, sql, params, handler, errorHandler);
     }
 
@@ -187,7 +188,7 @@ public class BaseModel {
         client.update(env, sql, params, null, null);
     }
 
-//    public void update(Env env, String sql, JsonArray params, Callable handler) {
+//    public void update(Env env, String sql, JsonArray params, final Callable handler) {
 //        client.update(env, sql, params, handler, null);
 //    }
 
@@ -195,15 +196,15 @@ public class BaseModel {
         client.update(env, sql, PhpTypes.arrayToJsonArray(env, paramsArr), null, null);
     }
 
-//    public void update(Env env, String sql, Callable handler) {
+//    public void update(Env env, String sql, final Callable handler) {
 //        client.update(env, sql, null, handler, null);
 //    }
 
-    public void update(Env env, String sql, Callable handler, Callable errorHandler) {
+    public void update(Env env, String sql, final Callable handler, final Callable errorHandler) {
         client.update(env, sql, null, handler, errorHandler);
     }
 
-//    public void update(Env env, String sql, Value paramsArr, Callable handler) {
+//    public void update(Env env, String sql, Value paramsArr, final Callable handler) {
 //        if (paramsArr == null) {
 //            client.update(env, sql, null, handler, null);
 //        } else {
@@ -211,7 +212,7 @@ public class BaseModel {
 //        }
 //    }
 
-    public void update(Env env, String sql, JsonArray params, Callable handler, Callable errorHandler) {
+    public void update(Env env, String sql, JsonArray params, final Callable handler, final Callable errorHandler) {
         client.update(env, sql, params, handler, errorHandler);
     }
 
@@ -219,7 +220,7 @@ public class BaseModel {
         client.update(env, sql, params, null, null);
     }
 
-//    public void insert(Env env, String sql, JsonArray params, Callable handler) {
+//    public void insert(Env env, String sql, JsonArray params, final Callable handler) {
 //        client.update(env, sql, params, handler, null);
 //    }
 
@@ -227,15 +228,15 @@ public class BaseModel {
         client.update(env, sql, PhpTypes.arrayToJsonArray(env, paramsArr), null, null);
     }
 
-//    public void insert(Env env, String sql, Callable handler) {
+//    public void insert(Env env, String sql, final Callable handler) {
 //        client.update(env, sql, null, handler, null);
 //    }
 
-    public void insert(Env env, String sql, Callable handler, Callable errorHandler) {
+    public void insert(Env env, String sql, final Callable handler, final Callable errorHandler) {
         client.update(env, sql, null, handler, errorHandler);
     }
 
-//    public void insert(Env env, String sql, Value paramsArr, Callable handler) {
+//    public void insert(Env env, String sql, Value paramsArr, final Callable handler) {
 //        if (paramsArr == null) {
 //            client.update(env, sql, null, handler, null);
 //        } else {
@@ -243,7 +244,7 @@ public class BaseModel {
 //        }
 //    }
 
-    public void insert(Env env, String sql, JsonArray params, Callable handler, Callable errorHandler) {
+    public void insert(Env env, String sql, JsonArray params, final Callable handler, final Callable errorHandler) {
         client.update(env, sql, params, handler, errorHandler);
     }
 
@@ -251,7 +252,7 @@ public class BaseModel {
         client.update(env, sql, params, null, null);
     }
 
-//    public void delete(Env env, String sql, JsonArray params, Callable handler) {
+//    public void delete(Env env, String sql, JsonArray params, final Callable handler) {
 //        client.update(env, sql, params, handler, null);
 //    }
 
@@ -259,15 +260,15 @@ public class BaseModel {
         client.update(env, sql, PhpTypes.arrayToJsonArray(env, paramsArr), null, null);
     }
 
-//    public void delete(Env env, String sql, Callable handler) {
+//    public void delete(Env env, String sql, final Callable handler) {
 //        client.update(env, sql, null, handler, null);
 //    }
 
-    public void delete(Env env, String sql, Callable handler, Callable errorHandler) {
+    public void delete(Env env, String sql, final Callable handler, final Callable errorHandler) {
         client.update(env, sql, null, handler, errorHandler);
     }
 
-//    public void delete(Env env, String sql, Value paramsArr, Callable handler) {
+//    public void delete(Env env, String sql, Value paramsArr, final Callable handler) {
 //        if (paramsArr == null) {
 //            client.update(env, sql, null, handler, null);
 //        } else {
@@ -275,12 +276,36 @@ public class BaseModel {
 //        }
 //    }
 
-    public void delete(Env env, String sql, JsonArray params, Callable handler, Callable errorHandler) {
+    public void delete(Env env, String sql, JsonArray params, final Callable handler, final Callable errorHandler) {
         client.update(env, sql, params, handler, errorHandler);
     }
 
     public Field alias(TableImpl table, TableField<?, ?> field) {
         return alias(table.getName(), field, "-");
+    }
+
+    public Field aliasMax(TableImpl table, TableField<?, ?> field) {
+        return max(field).as(table.getName() + "-" + field.getName());
+    }
+
+    public Field aliasMin(TableImpl table, TableField<?, ?> field) {
+        return min(field).as(table.getName() + "-" + field.getName());
+    }
+
+    public Field aliasCount(TableImpl table, TableField<?, ?> field) {
+        return count(field).as(table.getName() + "-" + field.getName());
+    }
+
+    public Field aliasSum(TableImpl table, TableField<?, Number> field) {
+        return sum(field).as(table.getName() + "-" + field.getName());
+    }
+
+    public Field aliasAvg(TableImpl table, TableField<?, Number> field) {
+        return avg(field).as(table.getName() + "-" + field.getName());
+    }
+
+    public Field aliasMedian(TableImpl table, TableField<?, Number> field) {
+        return median(field).as(table.getName() + "-" + field.getName());
     }
 
     public Field alias(String prefix, TableField<?, ?> field) {
@@ -293,6 +318,30 @@ public class BaseModel {
 
     public Field alias(TableField<?, ?> field, TableImpl tablePrefix, TableField<?, ?> becomeField) {
         return  alias(field, tablePrefix.getName(), becomeField, "-");
+    }
+
+    public Field aliasMax(TableField<?, ?> field, TableImpl tablePrefix, TableField<?, ?> becomeField) {
+        return max(field).as(tablePrefix.getName() + "-" + becomeField.getName());
+    }
+
+    public Field aliasMin(TableField<?, ?> field, TableImpl tablePrefix, TableField<?, ?> becomeField) {
+        return min(field).as(tablePrefix.getName() + "-" + becomeField.getName());
+    }
+
+    public Field aliasCount(TableField<?, ?> field, TableImpl tablePrefix, TableField<?, ?> becomeField) {
+        return count(field).as(tablePrefix.getName() + "-" + becomeField.getName());
+    }
+
+    public Field aliasSum(TableField<?, Number> field, TableImpl tablePrefix, TableField<?, ?> becomeField) {
+        return sum(field).as(tablePrefix.getName() + "-" + becomeField.getName());
+    }
+
+    public Field aliasAvg(TableField<?, Number> field, TableImpl tablePrefix, TableField<?, ?> becomeField) {
+        return avg(field).as(tablePrefix.getName() + "-" + becomeField.getName());
+    }
+
+    public Field aliasMedian(TableField<?, Number> field, TableImpl tablePrefix, TableField<?, ?> becomeField) {
+        return median(field).as(tablePrefix.getName() + "-" + becomeField.getName());
     }
 
     public Field alias(TableField<?, ?> field, String prefix, TableField<?, ?> becomeField) {
@@ -400,24 +449,24 @@ public class BaseModel {
     }
 
 
-    public void deleteWithHandler(Env env, String sql, JsonArray params, Handler<UpdateResult> callbackHandler, Callable errorHandler) {
+    public void deleteWithHandler(Env env, String sql, JsonArray params, Handler<UpdateResult> callbackHandler, final Callable errorHandler) {
         client.deleteWithHandler(env, sql, params, callbackHandler, errorHandler);
     }
 
-    public void insertWithHandler(Env env, String sql, JsonArray params, Handler<UpdateResult> callbackHandler, Callable errorHandler) {
+    public void insertWithHandler(Env env, String sql, JsonArray params, Handler<UpdateResult> callbackHandler, final Callable errorHandler) {
         client.insertWithHandler(env, sql, params, callbackHandler, errorHandler);
     }
 
-    public void updateWithHandler(Env env, String sql, JsonArray params, Handler<UpdateResult> callbackHandler, Callable errorHandler) {
+    public void updateWithHandler(Env env, String sql, JsonArray params, Handler<UpdateResult> callbackHandler, final Callable errorHandler) {
         client.updateWithHandler(env, sql, params, callbackHandler, errorHandler);
     }
 
-    public void queryWithHandler(Env env, String sql, JsonArray params, Handler<JsonArray> callbackHandler, Callable errorHandler) {
+    public void queryWithHandler(Env env, String sql, JsonArray params, Handler<JsonArray> callbackHandler, final Callable errorHandler) {
         client.queryWithHandler(env, sql, params, callbackHandler, errorHandler);
     }
 
     //============== Batch operations ===============
-    public void batchWithParams(Env env, String sql, List<JsonArray> batchParams, Handler<JsonArray> callbackHandler, Callable errorHandler) {
+    public void batchWithParams(Env env, String sql, List<JsonArray> batchParams, Handler<JsonArray> callbackHandler, final Callable errorHandler) {
         client.batchWithParams(env, sql, batchParams, callbackHandler, errorHandler);
     }
 
@@ -458,7 +507,7 @@ public class BaseModel {
         }
     }
 
-    public void batchUpdateWithParams(Env env, String sql, List<JsonArray> batchParams, Callable handler, Callable errorHandler) {
+    public void batchUpdateWithParams(Env env, String sql, List<JsonArray> batchParams, final Callable handler, final Callable errorHandler) {
         connect(connRes -> {
             final SQLConnection conn = connRes.result();
 
@@ -488,7 +537,7 @@ public class BaseModel {
         }
     }
 
-    public void batchDeleteWithParams(Env env, String sql, List<JsonArray> batchParams, Callable handler, Callable errorHandler) {
+    public void batchDeleteWithParams(Env env, String sql, List<JsonArray> batchParams, final Callable handler, final Callable errorHandler) {
         connect(connRes -> {
             final SQLConnection conn = connRes.result();
 
@@ -519,7 +568,7 @@ public class BaseModel {
     }
 
     // ===================== call back related ====================
-    public Handler<Throwable> getDefaultErrorTx(Env env, SQLConnection conn, Callable errorHandler) {
+    public Handler<Throwable> getDefaultErrorTx(Env env, SQLConnection conn, final Callable errorHandler) {
         return new Handler<Throwable>() {
             @Override
             public void handle(Throwable error) {
@@ -533,7 +582,7 @@ public class BaseModel {
         };
     }
 
-    public Handler<Throwable> getDefaultError(Env env, SQLConnection conn, Callable errorHandler) {
+    public Handler<Throwable> getDefaultError(Env env, SQLConnection conn, final Callable errorHandler) {
         return new Handler<Throwable>() {
             @Override
             public void handle(Throwable error) {
@@ -547,7 +596,7 @@ public class BaseModel {
         };
     }
 
-    public Handler<Throwable> getDefaultError(Env env, Callable errorHandler) {
+    public Handler<Throwable> getDefaultError(Env env, final Callable errorHandler) {
         return new Handler<Throwable>() {
             @Override
             public void handle(Throwable error) {
