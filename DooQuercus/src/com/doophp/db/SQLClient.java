@@ -13,6 +13,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.ext.asyncsql.AsyncSQLClient;
 import io.vertx.ext.asyncsql.MySQLClient;
+import io.vertx.ext.asyncsql.PostgreSQLClient;
 import io.vertx.ext.sql.ResultSet;
 import io.vertx.ext.sql.SQLConnection;
 import io.vertx.ext.sql.UpdateResult;
@@ -47,6 +48,10 @@ public class SQLClient implements SQLClientInterface {
 
     public AsyncSQLClient sqlClient() {
         return sqlClient;
+    }
+
+    public VertxImpl getVertx() {
+        return this.vertx;
     }
 
     public void setLogger(Logger logger) {
@@ -86,25 +91,40 @@ public class SQLClient implements SQLClientInterface {
     public SQLClient(Env env, VertxImpl vertx, Value configValue, String poolName) {
         JsonObject config = PhpTypes.arrayToJsonObject(env, configValue);
         this.vertx = vertx;
-        sqlClient = MySQLClient.createShared(vertx, config, poolName);
+        final String dialect = config.getString("sql_dialect").toUpperCase();
+        if (dialect.equals("POSTGRES")) {
+            sqlClient = PostgreSQLClient.createShared(vertx, config, poolName);
+        } else {
+            sqlClient = MySQLClient.createShared(vertx, config, poolName);
+        }
         Settings settings = new Settings().withStatementType(StatementType.PREPARED_STATEMENT);
-        dsl = DSL.using(SQLDialect.valueOf(config.getString("sql_dialect").toUpperCase()), settings);
+        dsl = DSL.using(SQLDialect.valueOf(dialect), settings);
     }
 
     public SQLClient(VertxImpl vertx, String configStr, String poolName) {
         JsonObject config = new JsonObject(configStr);
         this.vertx = vertx;
-        sqlClient = MySQLClient.createShared(vertx, config, poolName);
+        final String dialect = config.getString("sql_dialect").toUpperCase();
+        if (dialect.equals("POSTGRES")) {
+            sqlClient = PostgreSQLClient.createShared(vertx, config, poolName);
+        } else {
+            sqlClient = MySQLClient.createShared(vertx, config, poolName);
+        }
         Settings settings = new Settings().withStatementType(StatementType.PREPARED_STATEMENT);
-        dsl = DSL.using(SQLDialect.valueOf(config.getString("sql_dialect").toUpperCase()), settings);
+        dsl = DSL.using(SQLDialect.valueOf(dialect), settings);
     }
 
     public SQLClient(VertxImpl vertx, JsonObject config, String poolName) {
 //        JsonObject mySQLClientConfig = new JsonObject().put("sql_dialect", "MYSQL").put("host", "127.0.0.1").put("database", "test").put("username", "root").put("password", "root").put("charset", "UTF-8");
         this.vertx = vertx;
-        sqlClient = MySQLClient.createShared(vertx, config, poolName);
+        final String dialect = config.getString("sql_dialect").toUpperCase();
+        if (dialect.equals("POSTGRES")) {
+            sqlClient = PostgreSQLClient.createShared(vertx, config, poolName);
+        } else {
+            sqlClient = MySQLClient.createShared(vertx, config, poolName);
+        }
         Settings settings = new Settings().withStatementType(StatementType.PREPARED_STATEMENT);
-        dsl = DSL.using(SQLDialect.valueOf(config.getString("sql_dialect").toUpperCase()), settings);
+        dsl = DSL.using(SQLDialect.valueOf(dialect), settings);
     }
 
     public void initForPhp(Env env, final Callable handler) {
@@ -472,7 +492,6 @@ public class SQLClient implements SQLClientInterface {
                             handler.handle(rows);
                         }
                     }
-
                 } else {
                     if (res2.failed()) {
                         logError("SQL Query Failed! " + sql, res2.cause());

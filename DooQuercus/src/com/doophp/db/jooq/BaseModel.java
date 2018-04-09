@@ -21,6 +21,7 @@ import org.jooq.types.ULong;
 import org.jooq.types.UShort;
 
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -46,6 +47,10 @@ public class BaseModel {
     // =================== jooq feed fake data for sql generation =====================
     public Timestamp feedTime() {
         return Timestamp.valueOf("2010-10-10 10:10:10.000");
+    }
+
+    public Date feedDate() {
+        return new Date(123);
     }
 
     public Byte feedByte() {
