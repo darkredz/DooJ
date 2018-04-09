@@ -301,7 +301,11 @@ class DooConfig{
      * @var bool
      */
     public $FROM_CLI = false;
-	
+
+    public $UPLOAD_FOLDER;
+    public $UPLOAD_MAX_SIZE = -1;
+    public $BODY_MAX_SIZE = -1;
+
     /**
      * Set the configurations. SITE_PATH, BASE_PATH and APP_URL is required
      * @param array $confArr associative array of the configs.
