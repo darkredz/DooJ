@@ -16,7 +16,8 @@
  * @package doo.session
  * @since 2.0
  */
-class DooVertxSession {
+class DooVertxSession
+{
 
     public $id;
 
@@ -25,24 +26,29 @@ class DooVertxSession {
     public $_data;
     protected $_modified = false;
 
-    public function isModified(){
+    public function isModified()
+    {
         return $this->_modified;
     }
 
-    public function resetModified($modified = false){
+    public function resetModified($modified = false)
+    {
         $this->_modified = $modified;
     }
 
-    public function setDataFromArray($arr){
+    public function setDataFromArray($arr)
+    {
         $this->_data = $arr;
     }
 
-    public function __set($name, $value){
+    public function __set($name, $value)
+    {
         $this->_data[$name] = $value;
         $this->_modified = true;
     }
 
-    public function & __get($name){
+    public function & __get($name)
+    {
         return $this->get($name);
     }
 
@@ -53,19 +59,22 @@ class DooVertxSession {
      *
      * @return mixed
      */
-    public function &get($name) {
-        if (!isset($this->_data[$name])){
+    public function &get($name)
+    {
+        if (!isset($this->_data[$name])) {
             return null;
         } else {
             return $this->_data[$name];
         }
     }
 
-    public function __isset($name) {
+    public function __isset($name)
+    {
         return isset($this->_data[$name]);
     }
 
-    public function __unset($name) {
+    public function __unset($name)
+    {
         if (isset($this->_data[$name])) {
             unset($this->_data[$name]);
             return true;
