@@ -16,12 +16,16 @@
  * @package doo.app
  * @since 2.0
  */
-class DooEventBusRequest {
+class DooEventBusRequest
+{
 
     public $absoluteUri;
     public $uri;
     public $method;
-    public $headers;
+    /**
+     * @var DooEventRequestHeader
+     */
+    public $headerObj;
     public $body;
     public $remoteAddress;
 
@@ -30,12 +34,30 @@ class DooEventBusRequest {
      */
     public $response;
 
-    public function params(){
+    public function response()
+    {
+        return $this->response;
+    }
+
+    public function params()
+    {
         $q = explode('?', $this->uri, 2);
-        if(sizeof($q) < 2) return [];
+        if (sizeof($q) < 2) {
+            return [];
+        }
         $q = $q[1];
         parse_str($q, $queryVars);
 //        Vertx::logger()->info( var_export($queryVars, true) );
         return $queryVars;
+    }
+
+    public function createHeader($arr)
+    {
+        $this->headerObj = new DooEventRequestHeader($arr);
+    }
+
+    public function headers()
+    {
+        return $this->headerObj;
     }
 }

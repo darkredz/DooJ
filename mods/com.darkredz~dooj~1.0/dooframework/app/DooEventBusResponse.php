@@ -16,7 +16,8 @@
  * @package doo.app
  * @since 2.0
  */
-class DooEventBusResponse {
+class DooEventBusResponse
+{
 
     public $statusCode = 200;
     public $statusMessage = 'OK';
@@ -26,33 +27,70 @@ class DooEventBusResponse {
     public $sendOnlyBody = false;
     public $debug = false;
 
-    public function putHeader($key, $value) {
+
+    /*
+     * setStatusCode
+     * setStatusMessage
+     * setChunked
+     * isChunked() true/false
+     * write()
+     * getStatusCode()
+     * putHeader()
+     */
+
+    public function setStatusCode($statusCode)
+    {
+        $this->statusCode = $statusCode;
+    }
+
+    public function setStatusMessage($msg)
+    {
+        $this->statusMessage = $msg;
+    }
+
+    public function getStatusCode()
+    {
+        return $this->statusCode;
+    }
+
+    public function isChunked()
+    {
+        return false;
+    }
+
+    public function setChunked($set)
+    {
+    }
+
+    public function putHeader($key, $value)
+    {
         $this->replyHeaders[$key] = $value;
     }
 
-    public function write($output) {
+    public function write($output)
+    {
         $this->replyOutput .= $output;
     }
 
-    public function end($output='') {
-//        Vertx::logger()->info('ending request');
+    public function end($output = '')
+    {
         $this->replyOutput .= $output;
 
-        if($this->sendOnlyBody){
+        if ($this->sendOnlyBody) {
             $this->ebMessage->reply($this->replyOutput);
-        }
-        else{
+        } else {
             $msg = [
-                'headers'        => $this->replyHeaders,
-                'statusCode'     => $this->statusCode,
-                'statusMessage'  => $this->statusMessage,
-                'body'           => $this->replyOutput
+                'headers' => $this->replyHeaders,
+                'statusCode' => $this->statusCode,
+                'statusMessage' => $this->statusMessage,
+                'body' => $this->replyOutput,
             ];
 
-            if($this->debug){
-                Vertx::logger()->info('Send: ' . var_export($msg, true));
+            if ($this->debug) {
+                $logger = \LoggerFactory::getLogger(__CLASS__);
+                $logger->info('Send: ' . var_export($msg, true));
             }
-            $this->ebMessage->reply($msg);
+            $this->ebMessage->reply(\jto($msg));
         }
     }
 }
