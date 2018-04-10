@@ -1,6 +1,6 @@
 <?php
 /**
- * DooCountryCode trait file.
+ * DooCountryCode class file.
  *
  * @author Leng Sheng Hong <darkredz@gmail.com>
  * @link http://www.doophp.com/
@@ -16,7 +16,8 @@
  * @package doo.controller
  * @since 2.0
  */
-class DooCountryCode {
+class DooCountryCode
+{
 
     public $iso_3166_1 = [
         "AD" => "Andorra",
@@ -267,24 +268,83 @@ class DooCountryCode {
         "YT" => "Mayotte",
         "ZA" => "South Africa",
         "ZM" => "Zambia",
-        "ZW" => "Zimbabwe"
+        "ZW" => "Zimbabwe",
     ];
 
     public $iso_3166_1_code;
 
-    public $usaStateCode = ['AL','AK','AZ','AR','CA','CO','CT','DC','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY','GU','VI','PR','AS'];
+    public $usaStateCode = [
+        'AL',
+        'AK',
+        'AZ',
+        'AR',
+        'CA',
+        'CO',
+        'CT',
+        'DC',
+        'DE',
+        'FL',
+        'GA',
+        'HI',
+        'ID',
+        'IL',
+        'IN',
+        'IA',
+        'KS',
+        'KY',
+        'LA',
+        'ME',
+        'MD',
+        'MA',
+        'MI',
+        'MN',
+        'MS',
+        'MO',
+        'MT',
+        'NE',
+        'NV',
+        'NH',
+        'NJ',
+        'NM',
+        'NY',
+        'NC',
+        'ND',
+        'OH',
+        'OK',
+        'OR',
+        'PA',
+        'RI',
+        'SC',
+        'SD',
+        'TN',
+        'TX',
+        'UT',
+        'VT',
+        'VA',
+        'WA',
+        'WV',
+        'WI',
+        'WY',
+        'GU',
+        'VI',
+        'PR',
+        'AS',
+    ];
 
-    public function __construct(){
+    public function __construct()
+    {
         $this->iso_3166_1_code = array_keys($this->iso_3166_1);
     }
 
-    public function getCodes($iso='3166-1'){
+    public function getCodes($iso = '3166-1')
+    {
         $iso = str_replace('-', '_', $iso);
         $iso = 'iso_' . $iso . '_code';
         return $this->$iso;
     }
 
-    public function getCountries($iso='3166-1'){
+    public function getCountries($iso = '3166-1')
+    {
         $iso = str_replace('-', '_', $iso);
         $iso = 'iso_' . $iso;
         return $this->$iso;

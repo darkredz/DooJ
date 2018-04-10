@@ -44,18 +44,19 @@
  * echo $pager->components['page_size'];
  * //echo $pager->components['next_link'];
  * </code>
- * 
+ *
  * @author Leng Sheng Hong <darkredz@gmail.com>
  * @version $Id: DooPager.php 1000 2009-08-21 15:27:22
  * @package doo.helper
  * @since 1.0
  */
-class DooPager{
+class DooPager
+{
     /**
      * CSS class name for the Pages links
      * @var string
      */
-    public $pagesCss='paginate';
+    public $pagesCss = 'paginate';
 
     /**
      * CSS class name for the Pages DropDown menu
@@ -121,7 +122,7 @@ class DooPager{
      * Items to be displayed per page
      * @var int
      */
-    public $itemPerPage=10;
+    public $itemPerPage = 10;
 
     /**
      * The current page number
@@ -166,7 +167,7 @@ class DooPager{
      * @var string
      */
     public $low;
-    
+
     /**
      * Position of the record to end the pagination LIMIT query
      * @var string
@@ -183,7 +184,7 @@ class DooPager{
      * To display/hide the next/prev button links
      * @var bool
      */
-     protected $_noNextPrev=false;
+    protected $_noNextPrev = false;
 
     /**
      * Default css for testing
@@ -227,7 +228,15 @@ a:hover .paginate{
      * @param string $prevText Text for the Previous button link
      * @param string $nextText Text for the Next button link
      */
-    function  __construct($baseURL='', $totalItems=120, $itemPerPage=10, $maxlength=10, $prevText='&laquo;', $nextText='&raquo;'){
+    function __construct(
+        $baseURL = '',
+        $totalItems = 120,
+        $itemPerPage = 10,
+        $maxlength = 10,
+        $prevText = '&laquo;',
+        $nextText = '&raquo;'
+    )
+    {
         $this->baseUrl = $baseURL;
         $this->totalItem = $totalItems;
         $this->maxLength = $maxlength;
@@ -239,7 +248,8 @@ a:hover .paginate{
     /**
      * Hide next & prev links from the output
      */
-    public function noNextPrev(){
+    public function noNextPrev()
+    {
         $this->_noNextPrev = true;
     }
 
@@ -254,7 +264,16 @@ a:hover .paginate{
      * @param string $dropDownName
      * @param string $pageSizeName
      */
-    public function setCss($pagesName='paginate', $inactiveName='inactive', $currentName='current', $nextName='next', $prevName='prev', $dropDownName='pagerDropDown', $pageSizeName='pageSize'){
+    public function setCss(
+        $pagesName = 'paginate',
+        $inactiveName = 'inactive',
+        $currentName = 'current',
+        $nextName = 'next',
+        $prevName = 'prev',
+        $dropDownName = 'pagerDropDown',
+        $pageSizeName = 'pageSize'
+    )
+    {
         $this->pagesCss = $pagesName;
         $this->inactiveCss = $inactiveName;
         $this->currentCss = $currentName;
@@ -266,109 +285,117 @@ a:hover .paginate{
 
     /**
      * Paginate the list of items and prepare pager components to be use in View.
-     * 
+     *
      * @param int $page The current page number
      * @param int $itemPerPage Items per page
      * @return array An array of pager component, access via <strong>pages, jump_menu, page_size, current_page, total_page, next_link, prev_link</strong>
      */
-    public function paginate($page, $itemPerPage=0){
-        if($itemPerPage===0){
+    public function paginate($page, $itemPerPage = 0)
+    {
+        if ($itemPerPage === 0) {
             $itemPerPage = $this->itemPerPage;
-        }else{
+        } else {
             $this->itemPerPage = $itemPerPage;
         }
 
-        $this->totalPage = ceil($this->totalItem/$itemPerPage);
+        $this->totalPage = ceil($this->totalItem / $itemPerPage);
 
-        $this->currentPage = (int) $page; 
+        $this->currentPage = (int)$page;
 
-        if($this->currentPage < 1 || !is_numeric($this->currentPage))
+        if ($this->currentPage < 1 || !is_numeric($this->currentPage)) {
             $this->currentPage = 1;
+        }
 
-        if($this->currentPage > $this->totalPage)
+        if ($this->currentPage > $this->totalPage) {
             $this->currentPage = $this->totalPage;
+        }
 
-        $prev_page = $this->currentPage-1;
-        $next_page = $this->currentPage+1;
+        $prev_page = $this->currentPage - 1;
+        $next_page = $this->currentPage + 1;
 
-        if($this->_noNextPrev)
-            $this->components['prev_link'] = ($this->currentPage != 1 && $this->totalItem >= $this->maxLength) ? "<a class=\"{$this->prevCss}\" href=\"{$this->baseUrl}/{$prev_page}\">{$this->prevText}</a> ":"<span class=\"{$this->inactivePrevCss}\">{$this->prevText}</span> ";
-        else
-            $this->output = ($this->currentPage != 1 && $this->totalItem >= $this->maxLength) ? "<a class=\"{$this->prevCss}\" href=\"{$this->baseUrl}/{$prev_page}\">{$this->prevText}</a> ":"<span class=\"{$this->inactivePrevCss}\">{$this->prevText}</span> ";
+        if ($this->_noNextPrev) {
+            $this->components['prev_link'] = ($this->currentPage != 1 && $this->totalItem >= $this->maxLength) ? "<a class=\"{$this->prevCss}\" href=\"{$this->baseUrl}/{$prev_page}\">{$this->prevText}</a> " : "<span class=\"{$this->inactivePrevCss}\">{$this->prevText}</span> ";
+        } else {
+            $this->output = ($this->currentPage != 1 && $this->totalItem >= $this->maxLength) ? "<a class=\"{$this->prevCss}\" href=\"{$this->baseUrl}/{$prev_page}\">{$this->prevText}</a> " : "<span class=\"{$this->inactivePrevCss}\">{$this->prevText}</span> ";
+        }
 
-        if($this->totalPage > $this->maxLength){
-            $midRange = $this->maxLength-2;
-            
-            $start_range = $this->currentPage - floor($midRange/2);
-            $end_range = $this->currentPage + floor($midRange/2);
+        if ($this->totalPage > $this->maxLength) {
+            $midRange = $this->maxLength - 2;
 
-            if($start_range <= 0){
-                $end_range += abs($start_range)+1;
+            $start_range = $this->currentPage - floor($midRange / 2);
+            $end_range = $this->currentPage + floor($midRange / 2);
+
+            if ($start_range <= 0) {
+                $end_range += abs($start_range) + 1;
                 $start_range = 1;
             }
 
-            if($end_range > $this->totalPage){
-                $start_range -= $end_range-$this->totalPage;
+            if ($end_range > $this->totalPage) {
+                $start_range -= $end_range - $this->totalPage;
                 $end_range = $this->totalPage;
             }
 
-            while($end_range-$start_range+1<$this->maxLength-1){
+            while ($end_range - $start_range + 1 < $this->maxLength - 1) {
                 $end_range++;
             }
-            
-            $modulus = (int) $this->maxLength%2==0;
-            $center = floor($this->maxLength/2);
-                
-            if($this->currentPage > $center ){
-                $end_range --;
+
+            $modulus = (int)$this->maxLength % 2 == 0;
+            $center = floor($this->maxLength / 2);
+
+            if ($this->currentPage > $center) {
+                $end_range--;
             }
-            
-            if($modulus==0 && $this->totalPage - $this->currentPage+1 <= $center){
-                while($end_range-$start_range+1<$this->maxLength-1){
+
+            if ($modulus == 0 && $this->totalPage - $this->currentPage + 1 <= $center) {
+                while ($end_range - $start_range + 1 < $this->maxLength - 1) {
                     $start_range--;
                 }
             }
-            $range = range($start_range,$end_range);
+            $range = range($start_range, $end_range);
 
-            for($i=1;$i<=$this->totalPage;$i++){
+            for ($i = 1; $i <= $this->totalPage; $i++) {
                 // loop through all pages. if first, last, or in range, display
-                if($i==1 || $i==$this->totalPage || in_array($i,$range)){
+                if ($i == 1 || $i == $this->totalPage || in_array($i, $range)) {
                     $lastDot = '';
 
-                    if($modulus==1){
-                        if($i==$this->totalPage && $this->currentPage<($this->totalPage-($this->maxLength-$center-$modulus)))
+                    if ($modulus == 1) {
+                        if ($i == $this->totalPage && $this->currentPage < ($this->totalPage - ($this->maxLength - $center - $modulus))) {
                             $lastDot = '...';
-                    }else{
-                        if($i==$this->totalPage && $this->currentPage<=($this->totalPage-($this->maxLength-$center)))
+                        }
+                    } else {
+                        if ($i == $this->totalPage && $this->currentPage <= ($this->totalPage - ($this->maxLength - $center))) {
                             $lastDot = '...';
+                        }
                     }
-                    $this->output .= ($i == $this->currentPage) ? "<a class =\"{$this->currentCss}\" href=\"javascript:void(0);\">$i":"<a class=\"{$this->pagesCss}\"  href=\"{$this->baseUrl}/$i\">$lastDot $i";
+                    $this->output .= ($i == $this->currentPage) ? "<a class =\"{$this->currentCss}\" href=\"javascript:void(0);\">$i" : "<a class=\"{$this->pagesCss}\"  href=\"{$this->baseUrl}/$i\">$lastDot $i";
 
-                    if($range[0] > 2 && $i == 1)
+                    if ($range[0] > 2 && $i == 1) {
                         $this->output .= " ...</a> ";
-                    else
+                    } else {
                         $this->output .= '</a> ';
+                    }
                 }
             }
 
-            if($this->_noNextPrev)
+            if ($this->_noNextPrev) {
                 $this->components['next_link'] = ($this->currentPage != $this->totalPage && $this->totalItem >= $this->maxLength) ? "<a class=\"{$this->nextCss}\" href=\"{$this->baseUrl}/$next_page\">{$this->nextText}</a>\n" : "<span class=\"{$this->inactiveNextCss}\">{$this->nextText}</span>\n";
-            else
+            } else {
                 $this->output .= ($this->currentPage != $this->totalPage && $this->totalItem >= $this->maxLength) ? "<a class=\"{$this->nextCss}\" href=\"{$this->baseUrl}/$next_page\">{$this->nextText}</a>\n" : "<span class=\"{$this->inactiveNextCss}\">{$this->nextText}</span>\n";
-        }
-        else{
-            for($i=1;$i<=$this->totalPage;$i++){
-                $this->output .= ($i == $this->currentPage) ? "<a class=\"{$this->currentCss}\" href=\"javascript:void(0);\">$i</a> ":"<a class=\"{$this->pagesCss}\" href=\"{$this->baseUrl}/$i\">$i</a> ";
+            }
+        } else {
+            for ($i = 1; $i <= $this->totalPage; $i++) {
+                $this->output .= ($i == $this->currentPage) ? "<a class=\"{$this->currentCss}\" href=\"javascript:void(0);\">$i</a> " : "<a class=\"{$this->pagesCss}\" href=\"{$this->baseUrl}/$i\">$i</a> ";
             }
 
-            if($this->_noNextPrev)
+            if ($this->_noNextPrev) {
                 $this->components['next_link'] = ($this->currentPage != $this->totalPage && $this->totalItem >= $this->maxLength) ? "<a class=\"{$this->nextCss}\" href=\"{$this->baseUrl}/$next_page\">{$this->nextText}</a>\n" : "<span class=\"{$this->inactiveNextCss}\">{$this->nextText}</span>\n";
-            else
+            } else {
                 $this->output .= ($this->currentPage != $this->totalPage && $this->totalItem >= $this->maxLength) ? "<a class=\"{$this->nextCss}\" href=\"{$this->baseUrl}/$next_page\">{$this->nextText}</a>\n" : "<span class=\"{$this->inactiveNextCss}\">{$this->nextText}</span>\n";
+            }
         }
 
-        $this->low = ($this->currentPage-1) * $this->itemPerPage;
-        $this->high = ($this->currentPage * $this->itemPerPage)-1;
+        $this->low = ($this->currentPage - 1) * $this->itemPerPage;
+        $this->high = ($this->currentPage * $this->itemPerPage) - 1;
         $this->limit = " $this->low,$this->itemPerPage";
 
         $this->components['pages'] = $this->output;
@@ -386,13 +413,16 @@ a:hover .paginate{
      * @param array $sizeArr Array of page size
      * @return string Drop down menu for the page sizes
      */
-    public function showPageSize($sizeArr=null){
+    public function showPageSize($sizeArr = null)
+    {
         $items = '';
-        if($sizeArr==null)
-            $ipp_array = array(10,25,50,100);
+        if ($sizeArr == null) {
+            $ipp_array = [10, 25, 50, 100];
+        }
 
-        foreach($ipp_array as $ipp_opt)
-            $items .= ($ipp_opt == $this->itemPerPage) ? "<option selected value=\"$ipp_opt\">$ipp_opt</option>\n":"<option value=\"$ipp_opt\">$ipp_opt</option>\n";
+        foreach ($ipp_array as $ipp_opt) {
+            $items .= ($ipp_opt == $this->itemPerPage) ? "<option selected value=\"$ipp_opt\">$ipp_opt</option>\n" : "<option value=\"$ipp_opt\">$ipp_opt</option>\n";
+        }
 
         return "<select class=\"{$this->pageSizeCss}\" onchange=\"window.location='{$this->baseUrl}/1/'+this[this.selectedIndex].value; return false\">$items</select>\n";
     }
@@ -403,13 +433,15 @@ a:hover .paginate{
      * @param bool $withPageSize Navigate with page size
      * @return string Drop down menu for all page numer
      */
-    public function showJumpMenu($withPageSize=false){
+    public function showJumpMenu($withPageSize = false)
+    {
         $option = '';
-        for($i=1;$i<=$this->totalPage;$i++){
-            $option .= ($i==$this->currentPage) ? "<option value=\"$i\" selected>$i</option>\n":"<option value=\"$i\">$i</option>\n";
+        for ($i = 1; $i <= $this->totalPage; $i++) {
+            $option .= ($i == $this->currentPage) ? "<option value=\"$i\" selected>$i</option>\n" : "<option value=\"$i\">$i</option>\n";
         }
-        if($withPageSize)
+        if ($withPageSize) {
             return "<select class=\"{$this->dropDownCss}\" onchange=\"window.location='{$this->baseUrl}/'+this[this.selectedIndex].value+'/$this->itemPerPage';return false\">$option</select>\n";
+        }
         return "<select class=\"{$this->dropDownCss}\" onchange=\"window.location='{$this->baseUrl}/'+this[this.selectedIndex].value;return false\">$option</select>\n";
     }
 

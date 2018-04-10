@@ -16,7 +16,8 @@
  * @package doo.controller
  * @since 2.0
  */
-class DooHttpClientBuilder {
+class DooHttpClientBuilder
+{
 
     /**
      * Create Http client with options specified in $urls
@@ -62,30 +63,29 @@ class DooHttpClientBuilder {
      * @param array $createOnly Array of services name to be created (to filter out values in $urls)
      * @return array An associative array of Http clients with service name as its key
      */
-    public static function build($urls, $mode, $createOnly=null, $defaultTimeout=25, $defaultPool=10){
+    public static function build($urls, $mode, $createOnly = null, $defaultTimeout = 25, $defaultPool = 10)
+    {
 
         $clients = [];
         $urlList = [];
 
-        if($createOnly){
-            foreach($urls[$mode] as $serviceName => $urlData){
-                if(in_array($serviceName, $createOnly)){
+        if ($createOnly) {
+            foreach ($urls[$mode] as $serviceName => $urlData) {
+                if (in_array($serviceName, $createOnly)) {
                     $urlList[$serviceName] = $urlData;
                 }
             }
-        }
-        else{
+        } else {
             $urlList = $urls[$mode];
         }
 
-        foreach($urlList as $serviceName => $urlData){
-            if(is_array($urlData)){
+        foreach ($urlList as $serviceName => $urlData) {
+            if (is_array($urlData)) {
                 $url = $urlData['url'];
                 $pool = (isset($urlData['pool'])) ? $urlData['pool'] : $defaultPool;
                 $timeout = (isset($urlData['timeout'])) ? $urlData['timeout'] : $defaultTimeout;
                 $keepAlive = (isset($urlData['keepAlive'])) ? $urlData['keepAlive'] : true;
-            }
-            else{
+            } else {
                 $url = $urlData;
                 $pool = 10;
                 $timeout = 25;
@@ -94,15 +94,14 @@ class DooHttpClientBuilder {
 
             $urlInfo = \parse_url($url);
 
-            $ssl = ($urlInfo['scheme']=='https');
+            $ssl = ($urlInfo['scheme'] == 'https');
 
             $trustAll = (($urlInfo['trustAll'] == true));
             $verifyHost = (($urlInfo['verifyHost'] == true));
 
-            if($urlInfo['port']){
+            if ($urlInfo['port']) {
                 $port = $urlInfo['port'];
-            }
-            else{
+            } else {
                 $port = ($ssl) ? 443 : 80;
             }
 

@@ -293,24 +293,28 @@ class DooApiController extends DooController
     {
         if ($validateRes->resultType === \DooInputValidatorResult::VALID) {
             return $validateRes->inputValues;
-        }
-        else if ($validateRes->resultType === \DooInputValidatorResult::VALID) {
-            return $validateRes->inputValues;
-        }
-        else if ($validateRes->resultType === \DooInputValidatorResult::INVALID_NO_INPUT) {
-            $this->deleteUploadTmpFiles();
-            $this->sendError('No data input');
-            return false;
-        }
-        else if ($validateRes->resultType === \DooInputValidatorResult::INVALID_NO_RULES) {
-            $this->deleteUploadTmpFiles();
-            $this->sendError('Please set the field rules for this API action');
-            return false;
-        }
-        else if ($validateRes->resultType === \DooInputValidatorResult::INVALID_RULE_ERRORS) {
-            $this->deleteUploadTmpFiles();
-            $this->sendError($validateRes->errors);
-            return false;
+        } else {
+            if ($validateRes->resultType === \DooInputValidatorResult::VALID) {
+                return $validateRes->inputValues;
+            } else {
+                if ($validateRes->resultType === \DooInputValidatorResult::INVALID_NO_INPUT) {
+                    $this->deleteUploadTmpFiles();
+                    $this->sendError('No data input');
+                    return false;
+                } else {
+                    if ($validateRes->resultType === \DooInputValidatorResult::INVALID_NO_RULES) {
+                        $this->deleteUploadTmpFiles();
+                        $this->sendError('Please set the field rules for this API action');
+                        return false;
+                    } else {
+                        if ($validateRes->resultType === \DooInputValidatorResult::INVALID_RULE_ERRORS) {
+                            $this->deleteUploadTmpFiles();
+                            $this->sendError($validateRes->errors);
+                            return false;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -330,11 +334,11 @@ class DooApiController extends DooController
     protected function setupServiceValidationHook($service)
     {
         $controller = &$this;
-        $validateHook = function($serviceName, $serviceProvider, $params) use ($controller) {
+        $validateHook = function ($serviceName, $serviceProvider, $params) use ($controller) {
             $input = $params[0];
             $rules = $controller->{$controller->actionField};
 
-            $controllerCleanupCallback = function($validateRes) use ($controller) {
+            $controllerCleanupCallback = function ($validateRes) use ($controller) {
                 return $controller->validationCleanup($validateRes);
             };
 

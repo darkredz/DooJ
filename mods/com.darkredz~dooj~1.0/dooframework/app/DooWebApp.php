@@ -16,7 +16,8 @@
  * @package doo.app
  * @since 2.0
  */
-class DooWebApp implements DooAppInterface {
+class DooWebApp implements DooAppInterface
+{
     /**
      * @var DooConfig
      */
@@ -62,7 +63,7 @@ class DooWebApp implements DooAppInterface {
      */
     public $session;
 
-    public $httpCodes = array(
+    public $httpCodes = [
         100 => 'Continue',
         101 => 'Switching Protocols',
         102 => 'Processing',
@@ -119,8 +120,8 @@ class DooWebApp implements DooAppInterface {
         505 => 'HTTP Version Not Supported',
         506 => 'Variant Also Negotiates',
         507 => 'Insufficient Storage',
-        509 => 'Bandwidth Limit Exceeded'
-    );
+        509 => 'Bandwidth Limit Exceeded',
+    ];
 
     /**
      * @var array Headers to be sent to client
@@ -135,7 +136,12 @@ class DooWebApp implements DooAppInterface {
     public $route;
 
 
-    public function getServerErrorHandler($msg = '{"error":"Service Unavailable"}', $contentType = 'application/json', $status = 503) {
+    public function getServerErrorHandler(
+        $msg = '{"error":"Service Unavailable"}',
+        $contentType = 'application/json',
+        $status = 503
+    )
+    {
         return function () use ($msg, $contentType, $status) {
             if (!$this->ended && !$this->request->response()->ended()) {
                 $this->setHeader('Content-Type', $contentType);
@@ -150,36 +156,46 @@ class DooWebApp implements DooAppInterface {
         };
     }
 
-    public function execServerErrorHandler($msg = '{"error":"Service Unavailable"}', $contentType = 'application/json', $status = 503) {
+    public function execServerErrorHandler(
+        $msg = '{"error":"Service Unavailable"}',
+        $contentType = 'application/json',
+        $status = 503
+    )
+    {
         $callable = $this->getServerErrorHandler($msg, $contentType, $status);
         $callable();
     }
 
-    public function trace($obj) {
+    public function trace($obj)
+    {
         if ($this->conf->DEBUG_ENABLED) {
-            $this->logger->debug( print_r($obj, true) );
+            $this->logger->debug(print_r($obj, true));
         }
     }
 
-    public function logInfo($msg) {
+    public function logInfo($msg)
+    {
         $this->logger->info($this->logPrefixInfo . $msg);
     }
 
-    public function logError($msg) {
+    public function logError($msg)
+    {
         $this->logError($this->logPrefixError . $msg);
     }
 
-    public function logDebug($msg) {
+    public function logDebug($msg)
+    {
         if ($this->conf->DEBUG_ENABLED) {
             $this->logger->debug($this->logPrefixDebug . $msg);
         }
     }
 
-    public function parseQueryString( $str ) {
+    public function parseQueryString($str)
+    {
         $params = [];
 
         //ensure that the dots are not converted to underscores
-        parse_str( $str, $params );
+        parse_str($str, $params);
 
         if (strpos($str, '.') === false) {
             return $params;
@@ -188,33 +204,32 @@ class DooWebApp implements DooAppInterface {
         $separator = '&';
 
         // go through $params and ensure that the dots are not converted to underscores
-        $args = explode( $separator, $str );
-        foreach ( $args as $arg ) {
-            $parts = explode( '=', $arg, 2 );
-            if ( !isset( $parts[1] ) ) {
+        $args = explode($separator, $str);
+        foreach ($args as $arg) {
+            $parts = explode('=', $arg, 2);
+            if (!isset($parts[1])) {
                 $parts[1] = null;
             }
 
-            if ( substr_count( $parts[0], '[' ) === 0 ) {
+            if (substr_count($parts[0], '[') === 0) {
                 $key = $parts[0];
-            }
-            else {
-                $key = substr( $parts[0], 0, strpos( $parts[0], '[' ) );
+            } else {
+                $key = substr($parts[0], 0, strpos($parts[0], '['));
             }
 
-            $paramKey = str_replace( '.', '_', $key );
-            if ( isset( $params[$paramKey] ) && strpos( $paramKey, '_' ) !== false ) {
+            $paramKey = str_replace('.', '_', $key);
+            if (isset($params[$paramKey]) && strpos($paramKey, '_') !== false) {
                 $newKey = '';
-                for ( $i = 0; $i < strlen( $paramKey ); $i++ ) {
-                    $newKey .= ( $paramKey{$i} === '_' && $key{$i} === '.' ) ? '.' : $paramKey{$i};
+                for ($i = 0; $i < strlen($paramKey); $i++) {
+                    $newKey .= ($paramKey{$i} === '_' && $key{$i} === '.') ? '.' : $paramKey{$i};
                 }
 
-                $keys = array_keys( $params );
-                if ( ( $pos = array_search( $paramKey, $keys ) ) !== false ) {
+                $keys = array_keys($params);
+                if (($pos = array_search($paramKey, $keys)) !== false) {
                     $keys[$pos] = $newKey;
                 }
-                $values = array_values( $params );
-                $params = array_combine( $keys, $values );
+                $values = array_values($params);
+                $params = array_combine($keys, $values);
             }
         }
 
@@ -226,7 +241,8 @@ class DooWebApp implements DooAppInterface {
      * @param array $route
      * @param $request
      */
-    public function exec($conf, $route, $request) {
+    public function exec($conf, $route, $request)
+    {
 
         $this->conf = $conf;
         $this->route = $route;
@@ -237,7 +253,7 @@ class DooWebApp implements DooAppInterface {
         }
 
         $fullpath = explode('/', $this->request->absoluteURI());
-        $lastpart = $fullpath[sizeof($fullpath)-1];
+        $lastpart = $fullpath[sizeof($fullpath) - 1];
 
         $headers = [];
 
@@ -248,21 +264,21 @@ class DooWebApp implements DooAppInterface {
 
         //serve static files
         if (isset($conf->WEB_STATIC_PATH)) {
-            if (strpos($lastpart, '.') !== false ) {
+            if (strpos($lastpart, '.') !== false) {
                 $file = $this->request->path();
                 $file = $conf->WEB_STATIC_PATH . $file;
 
                 if (file_exists($file)) {
                     if ($conf->WEB_STATIC_INCLUDE_LAST_MODIFIED) {
                         $lastModified = filemtime($file);
-                        $lastModified = gmdate("D, d M Y H:i:s", $lastModified)." GMT";
+                        $lastModified = gmdate("D, d M Y H:i:s", $lastModified) . " GMT";
                         $this->request->response()->putHeader('Last-Modified', $lastModified);
                     }
 
                     if ($conf->WEB_STATIC_ETAG || $this->request->uri() == '/favicon.ico') {
                         $etag = md5_file($file);
 
-                        if (trim($headers['If-None-Match']) == '"'.$etag.'"') {
+                        if (trim($headers['If-None-Match']) == '"' . $etag . '"') {
                             $this->request->response()->statusCode = 304;
                             $this->request->response()->statusMessage = $this->httpCodes[304];
                             $this->request->response()->end();
@@ -273,16 +289,20 @@ class DooWebApp implements DooAppInterface {
                             return;
                         }
 
-                        $this->request->response()->putHeader('Etag', '"'.$etag.'"');
+                        $this->request->response()->putHeader('Etag', '"' . $etag . '"');
                     }
 
                     if (isset($conf->WEB_STATIC_CACHE_CONTROL_EXPIRY)) {
-                        $this->request->response()->putHeader('Cache-Control', "public, max-age=". $conf->WEB_STATIC_CACHE_CONTROL_EXPIRY);
-                        $this->request->response()->putHeader('Expires', gmdate("D, d M Y H:i:s", time() + $conf->WEB_STATIC_CACHE_CONTROL_EXPIRY)." GMT");
-                    }
-                    else if ($this->request->uri() == '/favicon.ico') {
-                        $this->request->response()->putHeader('Cache-Control', "public, max-age=86400");
-                        $this->request->response()->putHeader('Expires', gmdate("D, d M Y H:i:s", time() + 86400)." GMT");
+                        $this->request->response()->putHeader('Cache-Control',
+                            "public, max-age=" . $conf->WEB_STATIC_CACHE_CONTROL_EXPIRY);
+                        $this->request->response()->putHeader('Expires',
+                            gmdate("D, d M Y H:i:s", time() + $conf->WEB_STATIC_CACHE_CONTROL_EXPIRY) . " GMT");
+                    } else {
+                        if ($this->request->uri() == '/favicon.ico') {
+                            $this->request->response()->putHeader('Cache-Control', "public, max-age=86400");
+                            $this->request->response()->putHeader('Expires',
+                                gmdate("D, d M Y H:i:s", time() + 86400) . " GMT");
+                        }
                     }
 
                     $this->ended = true;
@@ -297,19 +317,20 @@ class DooWebApp implements DooAppInterface {
         }
 
         $this->_GET = [];
-        if (strpos($this->request->uri(),'?') !== false) {
-            $this->_GET = $this->parseQueryString( explode('?', $this->request->uri(),2)[1] );  //$this->request->params()->map;
+        if (strpos($this->request->uri(), '?') !== false) {
+            $this->_GET = $this->parseQueryString(explode('?', $this->request->uri(),
+                2)[1]);  //$this->request->params()->map;
         }
 
         $contentType = $headers["Content-Type"];
         $this->_SERVER['CONTENT_TYPE'] = $contentType;
         $this->_SERVER['CONTENT_LENGTH'] = $headers["Content-Length"];
 
-        $this->_SERVER['DOCUMENT_ROOT']	 = getcwd() . '/';
+        $this->_SERVER['DOCUMENT_ROOT'] = getcwd() . '/';
         $this->_SERVER['REQUEST_METHOD'] = $method = strtoupper($this->request->method());
-        $this->_SERVER['REQUEST_URI']	   = $this->request->uri();
-        $this->_SERVER['HTTP_HOST']		   = $fullpath[2];
-        $this->_SERVER['REMOTE_ADDR'] 	 = $this->request->remoteAddress()->host();
+        $this->_SERVER['REQUEST_URI'] = $this->request->uri();
+        $this->_SERVER['HTTP_HOST'] = $fullpath[2];
+        $this->_SERVER['REMOTE_ADDR'] = $this->request->remoteAddress()->host();
         $this->_SERVER['SERVER_PROTOCOL'] = $this->request->version();
         $this->_SERVER['HTTP_ACCEPT'] = $headers['Accept'];
         $this->_SERVER['HTTP_ACCEPT_LANGUAGE'] = $headers['Accept-Language'];
@@ -321,8 +342,7 @@ class DooWebApp implements DooAppInterface {
 
         if ($method == 'GET' || $method == 'OPTIONS' || $method == 'HEAD') {
             $this->processRequest();
-        }
-        else {
+        } else {
             //try processing input for POST, PUT, DELETE and etc HTTP methods
 //             $logger->info('transfer-encoding = ' . $headers['Transfer-Encoding']);
 //             $logger->info('content-length = ' . $headers['Content-Length']);
@@ -359,7 +379,7 @@ class DooWebApp implements DooAppInterface {
                 }
             }
 
-            $endHandler = function() use ($body, $app, $contentType, $isMultipart, $boundary) {
+            $endHandler = function () use ($body, $app, $contentType, $isMultipart, $boundary) {
 //                $app->logDebug('filesUploadFound ' . $app->filesUploadFound . ' processed '. $app->filesUploadProcessed);
                 if ($app->filesUploadFound > 0 && $app->filesUploadFound != $app->filesUploadProcessed) {
 //                    $app->logDebug('still have files to upload ' . ($app->filesUploadFound - $app->filesUploadProcessed));
@@ -374,14 +394,16 @@ class DooWebApp implements DooAppInterface {
                             $formData = explode($boundary, $body->toString());
 
                             foreach ($formData as $dt) {
-                                preg_match('/Content\-Disposition\: form\-data\; name\=\"([a-zA-Z0-9\-\_\[\]]+)\"\s?\n([.\S\s]+)/', $dt, $matches);
+                                preg_match('/Content\-Disposition\: form\-data\; name\=\"([a-zA-Z0-9\-\_\[\]]+)\"\s?\n([.\S\s]+)/',
+                                    $dt, $matches);
                                 if (!empty($matches)) {
                                     $val = trim($matches[2]);
                                     if (substr($val, -4) == "\r\n--") {
                                         $val = substr($val, 0, strlen($val) - 4);
-                                    }
-                                    else if (substr($val, -3) == "\n--") {
-                                        $val = substr($val, 0, strlen($val) - 3);
+                                    } else {
+                                        if (substr($val, -3) == "\n--") {
+                                            $val = substr($val, 0, strlen($val) - 3);
+                                        }
                                     }
                                     $app->_POST[$matches[1]] = $val;
                                 }
@@ -389,13 +411,14 @@ class DooWebApp implements DooAppInterface {
                         }
 
 //                        $app->logDebug($body->toString());
-                    }
-                    else if (empty($contentType) || stripos($contentType, 'application/x-www-form-urlencoded') !== false ) {
-                        $app->_POST = $this->parseQueryString($body->toString());
+                    } else {
+                        if (empty($contentType) || stripos($contentType,
+                                'application/x-www-form-urlencoded') !== false) {
+                            $app->_POST = $this->parseQueryString($body->toString());
 
-                    }
-                    else {
-                        $app->_POST = $body->toString();
+                        } else {
+                            $app->_POST = $body->toString();
+                        }
                     }
 
                     if (!empty($app->_FILES)) {
@@ -406,8 +429,7 @@ class DooWebApp implements DooAppInterface {
                             //make file field uploadField[] into indexed array
                             if ($key == $value['tmp_name']) {
                                 $app->_FILES[$k] = array_values($f);
-                            }
-                            else {
+                            } else {
                                 $parts = explode('[', $k);
                                 if (sizeof($parts) == 2 && substr($parts[1], -1) == ']') {
                                     $main = $parts[0];
@@ -439,7 +461,7 @@ class DooWebApp implements DooAppInterface {
                 $keyName = $upload->name();
                 $ext = explode('.', $filename);
                 $ext = $ext[sizeof($ext) - 1];
-                $filename = \UUID::randomUUID() .'.'. $ext;
+                $filename = \UUID::randomUUID() . '.' . $ext;
                 $tmpName = $app->conf->UPLOAD_FOLDER . $filename; // .'___'. $filename;
 
                 if (strpos($keyName, '[]') !== false) {
@@ -447,10 +469,19 @@ class DooWebApp implements DooAppInterface {
                     if (!isset($app->_FILES[$keyName])) {
                         $app->_FILES[$keyName] = [];
                     }
-                    $app->_FILES[$keyName][$tmpName] = ['filename' => $filename, 'original_name' => $filenameOri, 'tmp_name' => $tmpName, 'type' => $upload->contentType()];
-                }
-                else {
-                    $app->_FILES[$keyName] = ['filename' => $filename, 'original_name' => $filenameOri, 'tmp_name' => $tmpName, 'type' => $upload->contentType()];
+                    $app->_FILES[$keyName][$tmpName] = [
+                        'filename' => $filename,
+                        'original_name' => $filenameOri,
+                        'tmp_name' => $tmpName,
+                        'type' => $upload->contentType(),
+                    ];
+                } else {
+                    $app->_FILES[$keyName] = [
+                        'filename' => $filename,
+                        'original_name' => $filenameOri,
+                        'tmp_name' => $tmpName,
+                        'type' => $upload->contentType(),
+                    ];
                 }
 
                 $upload->exceptionHandler(g(function ($cause) use ($upload, $app, $endHandler, $tmpName) {
@@ -459,8 +490,7 @@ class DooWebApp implements DooAppInterface {
                     if (strpos($keyName, '[]') !== false) {
                         $keyName = str_replace('[]', '', $keyName);
                         $app->_FILES[$keyName][$tmpName]['error'] = $cause->getMessage();
-                    }
-                    else {
+                    } else {
                         $app->_FILES[$keyName]['error'] = $cause->getMessage();
                     }
                     $app->filesUploadFound = $app->filesUploadProcessed = 0;
@@ -474,8 +504,7 @@ class DooWebApp implements DooAppInterface {
                     if (strpos($keyName, '[]') !== false) {
                         $keyName = str_replace('[]', '', $keyName);
                         $item = &$app->_FILES[$keyName][$tmpName];
-                    }
-                    else {
+                    } else {
                         $item = &$app->_FILES[$keyName];
                     }
 
@@ -486,12 +515,13 @@ class DooWebApp implements DooAppInterface {
                     if ($app->conf->UPLOAD_MAX_SIZE > -1 && $fileSize > $app->conf->UPLOAD_MAX_SIZE) {
                         $item['error'] = UPLOAD_ERR_INI_SIZE;
 
-                        $app->vertx->setTimer(50, g(function($tid) use ($app, $tmpName) {
-                            $app->vertx->fileSystem()->exists($tmpName, a(function ($result, $error) use ($app, $tmpName) {
-                                if ($result) {
-                                    $app->vertx->fileSystem()->delete($tmpName, null);
-                                }
-                            }));
+                        $app->vertx->setTimer(50, g(function ($tid) use ($app, $tmpName) {
+                            $app->vertx->fileSystem()->exists($tmpName,
+                                a(function ($result, $error) use ($app, $tmpName) {
+                                    if ($result) {
+                                        $app->vertx->fileSystem()->delete($tmpName, null);
+                                    }
+                                }));
                         }));
                     }
 
@@ -503,7 +533,7 @@ class DooWebApp implements DooAppInterface {
             }));
 
             // enable the parsing at Vert.x level
-            $this->request->handler(g(function($buffer) use ($app, $body, $boundary) {
+            $this->request->handler(g(function ($buffer) use ($app, $body, $boundary) {
 //                 $app->logger->info('$buffer = ' . $buffer->toString());
                 if ($this->conf->BODY_MAX_SIZE > -1 && $body->length() > $this->conf->BODY_MAX_SIZE) {
                     $app->logError('Body size exceed limit ' . $this->conf->BODY_MAX_SIZE);
@@ -513,7 +543,8 @@ class DooWebApp implements DooAppInterface {
                 $body->appendBuffer($buffer);
 
                 if (!empty($boundary)) {
-                    preg_match_all('/[\-]{2,}['. preg_quote($boundary) .']+\s?\nContent\-Disposition\: form\-data\; name\=\"[a-zA-Z0-9\-\_\[\]]+\"; filename=\"(.+)\"\s?\n[^\-]+/', $body->toString(), $mathces);
+                    preg_match_all('/[\-]{2,}[' . preg_quote($boundary) . ']+\s?\nContent\-Disposition\: form\-data\; name\=\"[a-zA-Z0-9\-\_\[\]]+\"; filename=\"(.+)\"\s?\n[^\-]+/',
+                        $body->toString(), $mathces);
                     if ($mathces && isset($mathces[0])) {
                         $this->filesUploadFound = sizeof($mathces[0]);
                     }
@@ -524,55 +555,57 @@ class DooWebApp implements DooAppInterface {
         }
     }
 
-    protected function processRequest() {
+    protected function processRequest()
+    {
         //if proxy enable, send request to other servers
         if (isset($this->proxy)) {
             //forward all if there's only one address (proxy is a string)
             if (is_string($this->proxy)) {
                 $this->sendProxyRequest($this->proxy);
                 return;
-            }
-            else if (is_array($this->proxy)) {
-                $uri = $this->request->uri();
-                if (strpos($uri,'?') !== false) {
-                    $uri = explode('?', $uri,2)[0];
-                }
-
-                foreach ($this->proxy as $regex => $address) {
-                    if ($regex == '_others') continue;
-
-                    //if regex contain domain and port (Virtual Host), try matching it against full URL (exclude query string)
-                    if (strpos($regex, '^http:') === 0 || strpos($regex, '^http\:') === 0
-                        || strpos($regex, '^https:') === 0 || strpos($regex, '^https\:') === 0) {
-                        $host = $this->request->headers()->get('Host');
-                        $uriParts = parse_url($this->request->absoluteURI());
-
-                        if ($uriParts['port'] == 80) {
-                            $fullUrl = $uriParts['scheme'] .'://'. $host . $uriParts['path'];
-                        }
-                        else {
-                            $fullUrl = $uriParts['scheme'] .'://'. $host .':'. $uriParts['port'] . $uriParts['path'];
-                        }
-
-                        $match = preg_match('/'. $regex .'/', $fullUrl);
-                    }
-                    else {
-                        $match = preg_match('/'. $regex .'/', $uri);
+            } else {
+                if (is_array($this->proxy)) {
+                    $uri = $this->request->uri();
+                    if (strpos($uri, '?') !== false) {
+                        $uri = explode('?', $uri, 2)[0];
                     }
 
-                    if ($match) {
-                        if ($this->conf->DEBUG_ENABLED) {
-                            $this->logInfo("Proxy $regex to $address");
+                    foreach ($this->proxy as $regex => $address) {
+                        if ($regex == '_others') {
+                            continue;
                         }
 
-                        $this->sendProxyRequest($address);
+                        //if regex contain domain and port (Virtual Host), try matching it against full URL (exclude query string)
+                        if (strpos($regex, '^http:') === 0 || strpos($regex, '^http\:') === 0
+                            || strpos($regex, '^https:') === 0 || strpos($regex, '^https\:') === 0) {
+                            $host = $this->request->headers()->get('Host');
+                            $uriParts = parse_url($this->request->absoluteURI());
+
+                            if ($uriParts['port'] == 80) {
+                                $fullUrl = $uriParts['scheme'] . '://' . $host . $uriParts['path'];
+                            } else {
+                                $fullUrl = $uriParts['scheme'] . '://' . $host . ':' . $uriParts['port'] . $uriParts['path'];
+                            }
+
+                            $match = preg_match('/' . $regex . '/', $fullUrl);
+                        } else {
+                            $match = preg_match('/' . $regex . '/', $uri);
+                        }
+
+                        if ($match) {
+                            if ($this->conf->DEBUG_ENABLED) {
+                                $this->logInfo("Proxy $regex to $address");
+                            }
+
+                            $this->sendProxyRequest($address);
+                            return;
+                        }
+                    }
+
+                    if ($this->proxy['_others']) {
+                        $this->sendProxyRequest($this->proxy['_others']);
                         return;
                     }
-                }
-
-                if ($this->proxy['_others']) {
-                    $this->sendProxyRequest($this->proxy['_others']);
-                    return;
                 }
             }
         }
@@ -581,14 +614,13 @@ class DooWebApp implements DooAppInterface {
         if ($this->conf->SESSION_ENABLE == true) {
             if ($this->conf->SESSION_MANAGER_CLASS) {
                 $this->sessionManager = new $this->conf->SESSION_MANAGER_CLASS();
-            }
-            else {
+            } else {
                 $this->sessionManager = new DooVertxSessionManager();
             }
             $this->sessionManager->app = &$this;
 
             //get session data and set it to app before running controller
-            $this->getSession(function($session) {
+            $this->getSession(function ($session) {
 //                $this->logDebug('[APP]:getting session ' . $dmp);
                 if (!empty($session)) {
                     $session->resetModified();
@@ -596,13 +628,13 @@ class DooWebApp implements DooAppInterface {
                 }
                 $this->run();
             });
-        }
-        else {
+        } else {
             $this->run();
         }
     }
 
-    public function sendProxyRequest($addr) {
+    public function sendProxyRequest($addr)
+    {
         $headers = [];
 
         $headersJav = $this->request->headers();
@@ -626,11 +658,11 @@ class DooWebApp implements DooAppInterface {
             }
         */
         $msg = [
-            'headers'        => $headers,
-            'absoluteUri'    => $this->request->absoluteURI(),
-            'uri'            => $this->request->uri(),
-            'method'         => $this->request->method(),
-            'remoteAddress'  => $this->request->remoteAddress()->host(),
+            'headers' => $headers,
+            'absoluteUri' => $this->request->absoluteURI(),
+            'uri' => $this->request->uri(),
+            'method' => $this->request->method(),
+            'remoteAddress' => $this->request->remoteAddress()->host(),
         ];
 
         $msg['body'] = $this->_POST;
@@ -639,7 +671,7 @@ class DooWebApp implements DooAppInterface {
         $delivery = new \DeliveryOptions();
         $delivery->setSendTimeout($this->proxyTimeout);
 
-        $this->eventBus()->send($addr, $msg, $delivery, g(function($reply, $error) {
+        $this->eventBus()->send($addr, $msg, $delivery, g(function ($reply, $error) {
             if (!$error) {
                 $res = $reply->body();
 
@@ -648,12 +680,10 @@ class DooWebApp implements DooAppInterface {
                     $this->headers = $res['headers'];
                     $this->statusCode = $res['statusCode'];
                     $this->endBlock($res['body']);
-                }
-                else {
+                } else {
                     $this->endBlock($res['body']);
                 }
-            }
-            else {
+            } else {
                 $this->statusCode = 503;
                 $this->end();
                 $this->logInfo('Error proxy timeout');
@@ -665,7 +695,8 @@ class DooWebApp implements DooAppInterface {
     /**
      * Start new session. Generates new session ID and new session instance. Do not write any response to client before starting a new session.
      */
-    public function startNewSession() {
+    public function startNewSession()
+    {
 //        $this->logDebug('[APP]:start new session');
         $this->session = $this->sessionManager->startSession();
         $this->session->resetModified(true);
@@ -674,7 +705,8 @@ class DooWebApp implements DooAppInterface {
     /**
      * Start new session. Do not write any response to client before starting a new session.
      */
-    public function destroyCurrentSession() {
+    public function destroyCurrentSession()
+    {
         if ($this->session) {
             $this->logDebug('[APP]:Destroy current session');
             $this->sessionManager->destroySession($this->session);
@@ -685,7 +717,8 @@ class DooWebApp implements DooAppInterface {
      * Get session for this request if available
      * @param callable $callback Callback function once session is retrieve from session cluster
      */
-    public function getSession(callable $callback) {
+    public function getSession(callable $callback)
+    {
         $this->sessionManager->getSession($callback);
     }
 
@@ -694,19 +727,24 @@ class DooWebApp implements DooAppInterface {
      * @param DooVertxSession $obj
      * @param callable $callback Callback function once session data is saved
      */
-    public function saveSessionData(DooVertxSession $obj, callable $callback=null) {
-        if ($this->sessionManager == null) return;
+    public function saveSessionData(DooVertxSession $obj, callable $callback = null)
+    {
+        if ($this->sessionManager == null) {
+            return;
+        }
 //        $this->logDebug('[APP]:save session data');
         $obj->resetModified();
         $this->sessionManager->saveSessionData($obj, $callback);
     }
 
-    public function endBlock($result) {
+    public function endBlock($result)
+    {
         //blocking mode
         $this->end($result);
     }
 
-    public function eventBus() {
+    public function eventBus()
+    {
         return $this->vertx->eventBus();
     }
 
@@ -714,8 +752,11 @@ class DooWebApp implements DooAppInterface {
      * End the app process for current request
      * @param string $out Additional output to end with request
      */
-    public function end($output=null) {
-        if ($this->ended || $this->request->response()->ended()) return;
+    public function end($output = null)
+    {
+        if ($this->ended || $this->request->response()->ended()) {
+            return;
+        }
         $this->setCookiesInHeader();
         $appHeaders = $this->headers;
         $statusCode = $this->statusCode;
@@ -724,8 +765,7 @@ class DooWebApp implements DooAppInterface {
 
         if (sizeof($appHeaders) === 0) {
             $this->request->response()->putHeader('Content-Type', 'text/html');
-        }
-        else {
+        } else {
             foreach ($appHeaders as $key => $value) {
                 $this->request->response()->putHeader($key, $value);
             }
@@ -735,7 +775,7 @@ class DooWebApp implements DooAppInterface {
         }
 
         //auto save session
-        if ($this->conf->SESSION_ENABLE == true && $this->session!=null && $this->session->isModified()) {
+        if ($this->conf->SESSION_ENABLE == true && $this->session != null && $this->session->isModified()) {
             $this->saveSessionData($this->session);
         }
 
@@ -753,8 +793,7 @@ class DooWebApp implements DooAppInterface {
                     $this->endBlock($result);
                 }
                 return;
-            }
-            else {
+            } else {
                 ob_start();
                 include $this->conf->SITE_PATH . $errPage;
                 $output = utf8_decode(ob_get_contents());
@@ -763,19 +802,16 @@ class DooWebApp implements DooAppInterface {
         }
 
         //end response for async mode since end() method is explicitly called from controller once process if done and not needed.
-        if ($this->async==true) {
+        if ($this->async == true) {
             if ($output == null) {
                 $this->request->response()->end();
-            }
-            else {
+            } else {
                 $this->request->response()->end($output);
             }
-        }
-        else {
+        } else {
             if ($output == null) {
                 $this->request->response()->end();
-            }
-            else {
+            } else {
                 $this->request->response()->end($output);
             }
         }
@@ -791,21 +827,20 @@ class DooWebApp implements DooAppInterface {
      * Set a list or a single raw cookie string
      * @param $cookies Array|String
      */
-    public function setRawCookie($cookies) {
+    public function setRawCookie($cookies)
+    {
         if (!empty($cookies)) {
             if (is_array($cookies) && sizeof($cookies) > 1) {
                 $arr = new \Java('java.util.HashSet');
-                foreach ( $cookies as $cookie) {
+                foreach ($cookies as $cookie) {
                     $arr->add($cookie);
                 }
 //                $this->request->response()->putHeader('Set-Cookie', $arr);
                 \ResponseHeader::put($this->request->response(), 'Set-Cookie', $arr);
-            }
-            else {
+            } else {
                 if (is_array($cookies)) {
                     $this->request->response()->putHeader('Set-Cookie', $cookies[0]);
-                }
-                else {
+                } else {
                     $this->request->response()->putHeader('Set-Cookie', $cookies);
                 }
             }
@@ -819,15 +854,17 @@ class DooWebApp implements DooAppInterface {
      * @param string $path The path on the server in which the cookie will be available on. If set to '/', the cookie will be available within the entire domain. If set to '/foo/', the cookie will only be available within the /foo/ directory and all sub-directories such as /foo/bar/ of domain. The default value is the current directory that the cookie is being set in.
      * @param string $domain The domain that the cookie is available to. Setting the domain to 'www.example.com' will make the cookie available in the www subdomain and higher subdomains. Cookies available to a lower domain, such as 'example.com' will be available to higher subdomains, such as 'www.example.com'. Older browsers still implementing the deprecated » RFC 2109 may require a leading . to match all subdomains.
      */
-    public function setCookie($cookieArr, $expires=null, $path='/', $domain=null) {
-        if ($expires!=null) {
-            $expires = ' expires=' . date('D, d-M-Y H:i:s', $expires) .' GMT;';
+    public function setCookie($cookieArr, $expires = null, $path = '/', $domain = null)
+    {
+        if ($expires != null) {
+            $expires = ' expires=' . date('D, d-M-Y H:i:s', $expires) . ' GMT;';
         }
-        if ($domain!=null) {
-            $domain = ' domain=' . $domain .';';
-        }
-        else if ($this->conf->COOKIE_DOMAIN!=null) {
-            $domain = ' domain=' . $this->conf->COOKIE_DOMAIN .';';
+        if ($domain != null) {
+            $domain = ' domain=' . $domain . ';';
+        } else {
+            if ($this->conf->COOKIE_DOMAIN != null) {
+                $domain = ' domain=' . $this->conf->COOKIE_DOMAIN . ';';
+            }
         }
 
         $httpOnly = '';
@@ -839,8 +876,8 @@ class DooWebApp implements DooAppInterface {
             $secure = ' Secure;';
         }
 
-        foreach ($cookieArr as $k=>$v) {
-            $cookieStr = "$k=$v; path=$path;". $expires . $domain . $httpOnly. $secure;
+        foreach ($cookieArr as $k => $v) {
+            $cookieStr = "$k=$v; path=$path;" . $expires . $domain . $httpOnly . $secure;
             $this->cookiesToSet[] = $cookieStr;
         }
 
@@ -849,7 +886,8 @@ class DooWebApp implements DooAppInterface {
 //        \ResponseHeader::put($this->request->response(), 'Set-Cookie', $cookies);
     }
 
-    public function setCookiesInHeader() {
+    public function setCookiesInHeader()
+    {
         $cookies = new \Java('java.util.HashSet');
         foreach ($this->cookiesToSet as $str) {
             $cookies->add($str);
@@ -861,10 +899,13 @@ class DooWebApp implements DooAppInterface {
      * Get cookies data sent from browser
      * @return array
      */
-    public function getCookie($cookieStr = null) {
+    public function getCookie($cookieStr = null)
+    {
         if ($cookieStr === null) {
             $cookieStr = $this->request->headers()->get('Cookie');
-            if (!isset($cookieStr)) return;
+            if (!isset($cookieStr)) {
+                return;
+            }
         }
 
         $cookie = [];
@@ -880,8 +921,9 @@ class DooWebApp implements DooAppInterface {
     /**
      * Main function to run the web application
      */
-    public function run() {
-        $this->throwHeader( $this->routeTo() );
+    public function run()
+    {
+        $this->throwHeader($this->routeTo());
         if ($this->async == false) {
             $result = utf8_decode(ob_get_clean());
             $this->endBlock($result);
@@ -891,7 +933,8 @@ class DooWebApp implements DooAppInterface {
     /**
      * Run the web application from a http request or a CLI execution.
      */
-    public function autorun() {
+    public function autorun()
+    {
         $opt = getopt('u:');
         if (isset($opt['u']) === true) {
             $this->runFromCli();
@@ -911,13 +954,15 @@ class DooWebApp implements DooAppInterface {
      *   -m="get"
      * </code>
      */
-    public function runFromCli() {
+    public function runFromCli()
+    {
         $opt = getopt('u:m::');
         if (isset($opt['u']) === true) {
             $uri = $opt['u'];
 
-            if ($uri[0] != '/')
+            if ($uri[0] != '/') {
                 $uri = '/' . $uri;
+            }
 
             $this->conf->SUBFOLDER = '/';
             $this->_SERVER['REQUEST_URI'] = $uri;
@@ -927,11 +972,13 @@ class DooWebApp implements DooAppInterface {
         }
     }
 
-    public function resolveConstructor($controllerName) {
+    public function resolveConstructor($controllerName)
+    {
         return $this->container->resolveConstructor($controllerName, true);
     }
 
-    public function getProtectedRootPath() {
+    public function getProtectedRootPath()
+    {
         if (isset($this->conf->PROTECTED_FOLDER_ORI) === true) {
             return $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER_ORI;
         }
@@ -944,7 +991,8 @@ class DooWebApp implements DooAppInterface {
      * It can be used with or without the <i>index.php</i> in the URI
      * @return mixed HTTP status code such as 404 or URL for redirection
      */
-    public function routeTo() {
+    public function routeTo()
+    {
         $router = new DooUriRouter;
         $router->app = $this;
         $router->conf = $this->conf;
@@ -963,32 +1011,32 @@ class DooWebApp implements DooAppInterface {
 
             if ($routeRs[0][0] !== '[') {
                 if (strpos($routeRs[0], '\\') !== false) {
-                    $nsClassFile = str_replace('\\','/', $routeRs[0]);
-                    $nsClassFile = explode($this->conf->APP_NAMESPACE_ID.'/', $nsClassFile, 2);
+                    $nsClassFile = str_replace('\\', '/', $routeRs[0]);
+                    $nsClassFile = explode($this->conf->APP_NAMESPACE_ID . '/', $nsClassFile, 2);
                     $nsClassFile = $nsClassFile[1];
-                    require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . $nsClassFile .'.php';
+                    require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . $nsClassFile . '.php';
                 } else {
                     require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "controller/{$routeRs[0]}.php";
                 }
             } else {
                 $moduleParts = explode(']', $routeRs[0]);
-                $moduleName = substr($moduleParts[0],1);
+                $moduleName = substr($moduleParts[0], 1);
 
                 if (isset($this->conf->PROTECTED_FOLDER_ORI) === true) {
-                    require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER_ORI . 'module/'. $moduleName .'/controller/'.$moduleParts[1].'.php';
+                    require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER_ORI . 'module/' . $moduleName . '/controller/' . $moduleParts[1] . '.php';
                 } else {
-                    require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . 'module/'. $moduleName .'/controller/'.$moduleParts[1].'.php';
+                    require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . 'module/' . $moduleName . '/controller/' . $moduleParts[1] . '.php';
                     $this->conf->PROTECTED_FOLDER_ORI = $this->conf->PROTECTED_FOLDER;
                 }
 
                 //set class name
                 $routeRs[0] = $moduleParts[1];
-                $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI . 'module/'.$moduleName.'/';
+                $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI . 'module/' . $moduleName . '/';
             }
 
             if (strpos($routeRs[0], '/') !== false) {
                 $clsname = explode('/', $routeRs[0]);
-                $routeRs[0] = $clsname[ sizeof($clsname)-1 ];
+                $routeRs[0] = $clsname[sizeof($clsname) - 1];
             }
 
             //if defined class name, use the class name to create the Controller object
@@ -998,8 +1046,7 @@ class DooWebApp implements DooAppInterface {
                 $resolver = $this->resolveConstructor($controllerName);
                 $controller = $resolver[0];
                 $classRef = $resolver[1];
-            }
-            else {
+            } else {
                 $controllerName = $routeRs[0];
                 $resolver = $this->resolveConstructor($routeRs[0]);
                 $controller = $resolver[0];
@@ -1026,15 +1073,15 @@ class DooWebApp implements DooAppInterface {
                 unset($controller->params['__routematch']);
             }
 
-            if ($this->_SERVER['REQUEST_METHOD'] === 'PUT')
+            if ($this->_SERVER['REQUEST_METHOD'] === 'PUT') {
                 $controller->init_put_vars();
+            }
 
             if ($controller->async == false) {
 //                Vertx::logger()->info('Blocking mode start');
                 $this->async = false;
                 ob_start();
-            }
-            else {
+            } else {
                 $this->async = true;
             }
 
@@ -1054,13 +1101,11 @@ class DooWebApp implements DooAppInterface {
                 $routeRs = $this->container->invokeMethod($controller, $controllerName, $classRef, $routeRs[1]);
                 $controller->afterRun($routeRs);
                 return $routeRs;
-            }
-            else {
-                $func = function($rs = null) use ($controller, $routeRs, $controllerName, $classRef) {
+            } else {
+                $func = function ($rs = null) use ($controller, $routeRs, $controllerName, $classRef) {
                     if (!empty($rs)) {
                         $this->throwHeader($rs);
-                    }
-                    else {
+                    } else {
 //                        $routeRs = $controller->$routeRs[1]();
                         $routeRs = $this->container->invokeMethod($controller, $controllerName, $classRef, $routeRs[1]);
                         $controller->afterRun($routeRs);
@@ -1073,172 +1118,212 @@ class DooWebApp implements DooAppInterface {
                     $controller->beforeRun($routeRs[0], $routeRs[1], $func);
                 }
             }
-        }
-        //if auto route is on, then auto search Controller->method if route not defined by user
-        else if ($this->conf->AUTOROUTE) {
-
-            list($controllerName, $methodName, $methodNameOri, $params, $moduleName) = $router->autoConnect($this->conf->SUBFOLDER, (isset($this->route['autoroute_alias']) === true)?$this->route['autoroute_alias']:null );
-
-            if (empty($this->route['autoroute_force_dash']) === false) {
-                if ($methodName !== 'index' && $methodName === $methodNameOri && $methodNameOri[0] !== '_' && ctype_lower($methodNameOri) === false) {
-                    $this->throwHeader(404);
-                    return;
-                }
-            }
-
-            if (in_array($methodName, array('destroyCurrentSession','startNewSession','setCookie','getCookie','endReq','replyReq','getInput','setHeader','setRawHeader','initPutVars','load','db','acl','beforeRun','cache','saveRendered','saveRenderedC','view','render','renderc','language','acceptType','setContentType','clientIP','afterRun','getKeyParam','getKeyParams','viewRenderAutomation','isAjax','isSSL','toXML','toJSON'))) {
-                $this->throwHeader(404);
-                return;
-            }
-
-            if (empty($this->route['autoroute_force_dash']) === false && strpos($moduleName, '-') !== false) {
-                $moduleName = str_replace('-', '_', $moduleName);
-            }
-
-            if (isset($moduleName) === true) {
-                $this->conf->PROTECTED_FOLDER_ORI = $this->conf->PROTECTED_FOLDER;
-                $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI . 'module/'.$moduleName.'/';
-            }
-
-            $controller_file = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "controller/{$controllerName}.php";
-
-            if (file_exists($controller_file)) {
-                require_once $controller_file;
-
-                $methodsArray = get_class_methods($controllerName);
-
-                //if controller name matches 2 classes with the same name, namespace and W/O namespace
-                if ($methodsArray !== null) {
-                    $unfoundInMethods = (in_array($methodName, $methodsArray) === false &&
-                        in_array($methodName .'_'. strtolower($this->_SERVER['REQUEST_METHOD']), $methodsArray) === false );
-                    if ($unfoundInMethods) {
-                        $methodsArray = null;
-                    }
-                }
-
-                //if the method not in controller class, check for a namespaced class with the same file name.
-                if ($methodsArray === null && isset($this->conf->APP_NAMESPACE_ID) === true) {
-                    if (isset($moduleName) === true) {
-                        $controllerName = $this->conf->APP_NAMESPACE_ID . '\\module\\'. $moduleName .'\\controller\\' . $controllerName;
-                    } else {
-                        $controllerName = $this->conf->APP_NAMESPACE_ID . '\\controller\\' . $controllerName;
-                    }
-                    $methodsArray = get_class_methods($controllerName);
-                }
-
-                //if method not found in both both controller and namespaced controller, 404 error
-                if ($methodsArray === null) {
-                    if (isset($this->conf->PROTECTED_FOLDER_ORI) === true)
-                        $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
-                    $this->throwHeader(404);
-                    return;
-                }
-            }
-            else if (isset($moduleName) === true && isset($this->conf->APP_NAMESPACE_ID) === true) {
-                if (isset($this->conf->PROTECTED_FOLDER_ORI) === true)
-                    $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
-
-                $controller_file = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . '/controller/'.$moduleName.'/'.$controllerName .'.php';
-
-                if (file_exists($controller_file) === false) {
-                    $this->throwHeader(404);
-                    return;
-                }
-                $controllerName = $this->conf->APP_NAMESPACE_ID .'\\controller\\'.$moduleName.'\\'.$controllerName;
-                #echo 'module = '.$moduleName.'<br>';
-                #echo $controller_file.'<br>';
-                #echo $controllerName.'<br>';
-                $methodsArray = get_class_methods($controllerName);
-            }
-            else {
-                if (isset($this->conf->PROTECTED_FOLDER_ORI) === true)
-                    $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
-                $this->throwHeader(404);
-                return;
-            }
-
-            //check for REST request as well, utilized method_GET(), method_PUT(), method_POST, method_DELETE()
-            $restMethod = $methodName .'_'. strtolower($this->_SERVER['REQUEST_METHOD']);
-            $inRestMethod = in_array($restMethod, $methodsArray);
-
-            //check if method() and method_GET() etc. doesn't exist in the controller, 404 error
-            if ( in_array($methodName, $methodsArray) === false && $inRestMethod === false ) {
-                if (isset($this->conf->PROTECTED_FOLDER_ORI) === true)
-                    $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
-                $this->throwHeader(404);
-                return;
-            }
-
-            //use method_GET() etc. if available
-            if ( $inRestMethod === true ) {
-                $methodName = $restMethod;
-            }
-
-            $resolver = $this->resolveConstructor($controllerName);
-            $controller = $resolver[0];
-            $classRef = $resolver[1];
-            $controller->app = &$this;
-            $controller->container = &$this->container;
-            $controller->_GET = &$this->_GET;
-            $controller->_POST = &$this->_POST;
-            $controller->_FILES = &$this->_FILES;
-
-            if ($this->conf->SESSION_ENABLE == true) {
-                $controller->session = &$this->session;
-            }
-
-            //if autoroute in this controller is disabled, 404 error
-            if ($controller->autoroute === false) {
-                if (isset($this->conf->PROTECTED_FOLDER_ORI) === true)
-                    $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
-                $this->throwHeader(404);
-                return;
-            }
-
-            if ($params != null)
-                $controller->params = $params;
-
-            if ($this->_SERVER['REQUEST_METHOD'] === 'PUT')
-                $controller->initPutVars();
-
-            if ($controller->async == false) {
-//                Vertx::logger()->info('Blocking mode start');
-                $this->async = false;
-                ob_start();
-            }
-            else {
-                $this->async = true;
-            }
-
-            //before run, normally used for ACL auth
-            if (!$controller->asyncBeforeRun) {
-                if ($rs = $controller->beforeRun($controllerName, $methodName)) {
-                    return $rs;
-                }
-//                $routeRs = $controller->$methodName();
-                $routeRs = $this->container->invokeMethod($controller, $controllerName, $classRef, $methodName);
-                $controller->afterRun($routeRs);
-
-                return $routeRs;
-            }
-            else {
-                $func = function($rs = null) use ($controller, $routeRs, $controllerName, $classRef, $methodName) {
-                    if (!empty($rs)) {
-                        $this->throwHeader($rs);
-                    }
-                    else {
-//                        $routeRs = $controller->$methodName();
-                        $routeRs = $this->container->invokeMethod($controller, $controllerName, $classRef, $methodName);
-                        $controller->afterRun($routeRs);
-                        $this->throwHeader($routeRs);
-                    }
-                };
-                $controller->beforeRun($controllerName, $methodName, $func);
-            }
-        }
+        } //if auto route is on, then auto search Controller->method if route not defined by user
         else {
-            $this->throwHeader(404);
-            return;
+            if ($this->conf->AUTOROUTE) {
+
+                list($controllerName, $methodName, $methodNameOri, $params, $moduleName) = $router->autoConnect($this->conf->SUBFOLDER,
+                    (isset($this->route['autoroute_alias']) === true) ? $this->route['autoroute_alias'] : null);
+
+                if (empty($this->route['autoroute_force_dash']) === false) {
+                    if ($methodName !== 'index' && $methodName === $methodNameOri && $methodNameOri[0] !== '_' && ctype_lower($methodNameOri) === false) {
+                        $this->throwHeader(404);
+                        return;
+                    }
+                }
+
+                if (in_array($methodName, [
+                    'destroyCurrentSession',
+                    'startNewSession',
+                    'setCookie',
+                    'getCookie',
+                    'endReq',
+                    'replyReq',
+                    'getInput',
+                    'setHeader',
+                    'setRawHeader',
+                    'initPutVars',
+                    'load',
+                    'db',
+                    'acl',
+                    'beforeRun',
+                    'cache',
+                    'saveRendered',
+                    'saveRenderedC',
+                    'view',
+                    'render',
+                    'renderc',
+                    'language',
+                    'acceptType',
+                    'setContentType',
+                    'clientIP',
+                    'afterRun',
+                    'getKeyParam',
+                    'getKeyParams',
+                    'viewRenderAutomation',
+                    'isAjax',
+                    'isSSL',
+                    'toXML',
+                    'toJSON',
+                ])) {
+                    $this->throwHeader(404);
+                    return;
+                }
+
+                if (empty($this->route['autoroute_force_dash']) === false && strpos($moduleName, '-') !== false) {
+                    $moduleName = str_replace('-', '_', $moduleName);
+                }
+
+                if (isset($moduleName) === true) {
+                    $this->conf->PROTECTED_FOLDER_ORI = $this->conf->PROTECTED_FOLDER;
+                    $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI . 'module/' . $moduleName . '/';
+                }
+
+                $controller_file = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "controller/{$controllerName}.php";
+
+                if (file_exists($controller_file)) {
+                    require_once $controller_file;
+
+                    $methodsArray = get_class_methods($controllerName);
+
+                    //if controller name matches 2 classes with the same name, namespace and W/O namespace
+                    if ($methodsArray !== null) {
+                        $unfoundInMethods = (in_array($methodName, $methodsArray) === false &&
+                            in_array($methodName . '_' . strtolower($this->_SERVER['REQUEST_METHOD']),
+                                $methodsArray) === false);
+                        if ($unfoundInMethods) {
+                            $methodsArray = null;
+                        }
+                    }
+
+                    //if the method not in controller class, check for a namespaced class with the same file name.
+                    if ($methodsArray === null && isset($this->conf->APP_NAMESPACE_ID) === true) {
+                        if (isset($moduleName) === true) {
+                            $controllerName = $this->conf->APP_NAMESPACE_ID . '\\module\\' . $moduleName . '\\controller\\' . $controllerName;
+                        } else {
+                            $controllerName = $this->conf->APP_NAMESPACE_ID . '\\controller\\' . $controllerName;
+                        }
+                        $methodsArray = get_class_methods($controllerName);
+                    }
+
+                    //if method not found in both both controller and namespaced controller, 404 error
+                    if ($methodsArray === null) {
+                        if (isset($this->conf->PROTECTED_FOLDER_ORI) === true) {
+                            $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
+                        }
+                        $this->throwHeader(404);
+                        return;
+                    }
+                } else {
+                    if (isset($moduleName) === true && isset($this->conf->APP_NAMESPACE_ID) === true) {
+                        if (isset($this->conf->PROTECTED_FOLDER_ORI) === true) {
+                            $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
+                        }
+
+                        $controller_file = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . '/controller/' . $moduleName . '/' . $controllerName . '.php';
+
+                        if (file_exists($controller_file) === false) {
+                            $this->throwHeader(404);
+                            return;
+                        }
+                        $controllerName = $this->conf->APP_NAMESPACE_ID . '\\controller\\' . $moduleName . '\\' . $controllerName;
+                        #echo 'module = '.$moduleName.'<br>';
+                        #echo $controller_file.'<br>';
+                        #echo $controllerName.'<br>';
+                        $methodsArray = get_class_methods($controllerName);
+                    } else {
+                        if (isset($this->conf->PROTECTED_FOLDER_ORI) === true) {
+                            $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
+                        }
+                        $this->throwHeader(404);
+                        return;
+                    }
+                }
+
+                //check for REST request as well, utilized method_GET(), method_PUT(), method_POST, method_DELETE()
+                $restMethod = $methodName . '_' . strtolower($this->_SERVER['REQUEST_METHOD']);
+                $inRestMethod = in_array($restMethod, $methodsArray);
+
+                //check if method() and method_GET() etc. doesn't exist in the controller, 404 error
+                if (in_array($methodName, $methodsArray) === false && $inRestMethod === false) {
+                    if (isset($this->conf->PROTECTED_FOLDER_ORI) === true) {
+                        $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
+                    }
+                    $this->throwHeader(404);
+                    return;
+                }
+
+                //use method_GET() etc. if available
+                if ($inRestMethod === true) {
+                    $methodName = $restMethod;
+                }
+
+                $resolver = $this->resolveConstructor($controllerName);
+                $controller = $resolver[0];
+                $classRef = $resolver[1];
+                $controller->app = &$this;
+                $controller->container = &$this->container;
+                $controller->_GET = &$this->_GET;
+                $controller->_POST = &$this->_POST;
+                $controller->_FILES = &$this->_FILES;
+
+                if ($this->conf->SESSION_ENABLE == true) {
+                    $controller->session = &$this->session;
+                }
+
+                //if autoroute in this controller is disabled, 404 error
+                if ($controller->autoroute === false) {
+                    if (isset($this->conf->PROTECTED_FOLDER_ORI) === true) {
+                        $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
+                    }
+                    $this->throwHeader(404);
+                    return;
+                }
+
+                if ($params != null) {
+                    $controller->params = $params;
+                }
+
+                if ($this->_SERVER['REQUEST_METHOD'] === 'PUT') {
+                    $controller->initPutVars();
+                }
+
+                if ($controller->async == false) {
+//                Vertx::logger()->info('Blocking mode start');
+                    $this->async = false;
+                    ob_start();
+                } else {
+                    $this->async = true;
+                }
+
+                //before run, normally used for ACL auth
+                if (!$controller->asyncBeforeRun) {
+                    if ($rs = $controller->beforeRun($controllerName, $methodName)) {
+                        return $rs;
+                    }
+//                $routeRs = $controller->$methodName();
+                    $routeRs = $this->container->invokeMethod($controller, $controllerName, $classRef, $methodName);
+                    $controller->afterRun($routeRs);
+
+                    return $routeRs;
+                } else {
+                    $func = function ($rs = null) use ($controller, $routeRs, $controllerName, $classRef, $methodName) {
+                        if (!empty($rs)) {
+                            $this->throwHeader($rs);
+                        } else {
+//                        $routeRs = $controller->$methodName();
+                            $routeRs = $this->container->invokeMethod($controller, $controllerName, $classRef,
+                                $methodName);
+                            $controller->afterRun($routeRs);
+                            $this->throwHeader($routeRs);
+                        }
+                    };
+                    $controller->beforeRun($controllerName, $methodName, $func);
+                }
+            } else {
+                $this->throwHeader(404);
+                return;
+            }
         }
     }
 
@@ -1247,22 +1332,26 @@ class DooWebApp implements DooAppInterface {
      * @param string $routeuri route uri to redirect to
      * @param bool $is404 send a 404 status in header
      */
-    public function reroute($routeuri, $is404=false) {
+    public function reroute($routeuri, $is404 = false)
+    {
 
-        if ($this->conf->SUBFOLDER != '/')
-            $this->_SERVER['REQUEST_URI'] = substr($this->conf->SUBFOLDER, 0, strlen($this->conf->SUBFOLDER)-1) . $routeuri;
-        else
+        if ($this->conf->SUBFOLDER != '/') {
+            $this->_SERVER['REQUEST_URI'] = substr($this->conf->SUBFOLDER, 0,
+                    strlen($this->conf->SUBFOLDER) - 1) . $routeuri;
+        } else {
             $this->_SERVER['REQUEST_URI'] = $routeuri;
+        }
 
         if (isset($this->conf->PROTECTED_FOLDER_ORI) === true) {
             $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
-            unset( $this->conf->PROTECTED_FOLDER_ORI );
+            unset($this->conf->PROTECTED_FOLDER_ORI);
         }
 
-        if ($is404 === true)
+        if ($is404 === true) {
             $this->setHeader('HTTP/1.1', '404 Not Found');
+        }
         //$this->routeTo();
-        $this->throwHeader( $this->routeTo() );
+        $this->throwHeader($this->routeTo());
     }
 
     /**
@@ -1305,12 +1394,15 @@ class DooWebApp implements DooAppInterface {
      * @param array $params Parameters to be passed in to the Module
      * @return string Output of the module
      */
-    public function module($moduleUri, $action=null, $params=null) {
+    public function module($moduleUri, $action = null, $params = null)
+    {
         if ($moduleUri[0] == '/') {
-            if ($this->conf->SUBFOLDER != '/')
-                $this->_SERVER['REQUEST_URI'] = substr($this->conf->SUBFOLDER, 0, strlen($this->conf->SUBFOLDER)-1) . $moduleUri;
-            else
+            if ($this->conf->SUBFOLDER != '/') {
+                $this->_SERVER['REQUEST_URI'] = substr($this->conf->SUBFOLDER, 0,
+                        strlen($this->conf->SUBFOLDER) - 1) . $moduleUri;
+            } else {
                 $this->_SERVER['REQUEST_URI'] = $moduleUri;
+            }
 
             $tmp = $this->conf->PROTECTED_FOLDER;
             if (isset($this->conf->PROTECTED_FOLDER_ORI) === true) {
@@ -1325,88 +1417,96 @@ class DooWebApp implements DooAppInterface {
 
             $this->conf->PROTECTED_FOLDER = $tmp;
 
-            if (isset($tmpOri) === true)
+            if (isset($tmpOri) === true) {
                 $this->conf->PROTECTED_FOLDER_ORI = $tmpOri;
+            }
 
             return $data;
-        }
-        //if Controller name passed in:  Doo::app()->module('admin/SomeController', 'login',  array('nav'=>'home'));
-        else if (is_string($moduleUri)) {
-            $controllerName = $moduleUri;
-            if (strpos($moduleUri, '/') !== false) {
-                $arr = explode('/', $moduleUri);
-                $controllerName = $arr[sizeof($arr)-1];
-            }
-            require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "controller/$moduleUri.php";
-
-            $resolver = $this->resolveConstructor($controllerName);
-            $controller = $resolver[0];
-            $controller->app = &$this;
-            $controller->container = &$this->container;
-            $controller->_GET = &$this->_GET;
-            $controller->_POST = &$this->_POST;
-            $controller->_FILES = &$this->_FILES;
-            $controller->params = $params;
-
-            if ($this->conf->SESSION_ENABLE == true) {
-                $controller->session = &$this->session;
-            }
-
-            if ($rs = $controller->beforeRun($controllerName, $action)) {
-                $this->throwHeader( $rs );
-                return;
-            }
-
-            ob_start();
-            $rs = $controller->{$action}();
-
-            if ($controller->autorender === true) {
-                $this->conf->AUTO_VIEW_RENDER_PATH = array(strtolower(substr($controllerName, 0, -10)), strtolower(preg_replace('/(?<=\\w)(?=[A-Z])/','-$1', $action)));
-            }
-            $controller->afterRun($rs);
-
-            $this->throwHeader( $rs );
-
-            $data = utf8_decode(ob_get_contents());
-            ob_end_clean();
-            return $data;
-        }
-        //if array passed in. For controller file name != controller class name.
-        //eg. Doo::app()->module(array('admin/Admin', 'AdminController'), 'login',  array('nav'=>'home'));
+        } //if Controller name passed in:  Doo::app()->module('admin/SomeController', 'login',  array('nav'=>'home'));
         else {
-            require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "controller/{$moduleUri[0]}.php";
+            if (is_string($moduleUri)) {
+                $controllerName = $moduleUri;
+                if (strpos($moduleUri, '/') !== false) {
+                    $arr = explode('/', $moduleUri);
+                    $controllerName = $arr[sizeof($arr) - 1];
+                }
+                require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "controller/$moduleUri.php";
 
-            $resolver = $this->resolveConstructor($moduleUri[1]);
-            $controller = $resolver[0];
-            $controller->app = &$this;
-            $controller->container = &$this->container;
-            $controller->_GET = &$this->_GET;
-            $controller->_POST = &$this->_POST;
-            $controller->_FILES = &$this->_FILES;
-            $controller->params = $params;
+                $resolver = $this->resolveConstructor($controllerName);
+                $controller = $resolver[0];
+                $controller->app = &$this;
+                $controller->container = &$this->container;
+                $controller->_GET = &$this->_GET;
+                $controller->_POST = &$this->_POST;
+                $controller->_FILES = &$this->_FILES;
+                $controller->params = $params;
 
-            if ($this->conf->SESSION_ENABLE == true) {
-                $controller->session = &$this->session;
+                if ($this->conf->SESSION_ENABLE == true) {
+                    $controller->session = &$this->session;
+                }
+
+                if ($rs = $controller->beforeRun($controllerName, $action)) {
+                    $this->throwHeader($rs);
+                    return;
+                }
+
+                ob_start();
+                $rs = $controller->{$action}();
+
+                if ($controller->autorender === true) {
+                    $this->conf->AUTO_VIEW_RENDER_PATH = [
+                        strtolower(substr($controllerName, 0, -10)),
+                        strtolower(preg_replace('/(?<=\\w)(?=[A-Z])/', '-$1', $action)),
+                    ];
+                }
+                $controller->afterRun($rs);
+
+                $this->throwHeader($rs);
+
+                $data = utf8_decode(ob_get_contents());
+                ob_end_clean();
+                return $data;
             }
+            //if array passed in. For controller file name != controller class name.
+            //eg. Doo::app()->module(array('admin/Admin', 'AdminController'), 'login',  array('nav'=>'home'));
+            else {
+                require_once $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "controller/{$moduleUri[0]}.php";
 
-            if ($rs = $controller->beforeRun($moduleUri[1], $action)) {
-                $this->throwHeader( $rs );
-                return;
+                $resolver = $this->resolveConstructor($moduleUri[1]);
+                $controller = $resolver[0];
+                $controller->app = &$this;
+                $controller->container = &$this->container;
+                $controller->_GET = &$this->_GET;
+                $controller->_POST = &$this->_POST;
+                $controller->_FILES = &$this->_FILES;
+                $controller->params = $params;
+
+                if ($this->conf->SESSION_ENABLE == true) {
+                    $controller->session = &$this->session;
+                }
+
+                if ($rs = $controller->beforeRun($moduleUri[1], $action)) {
+                    $this->throwHeader($rs);
+                    return;
+                }
+
+                ob_start();
+                $rs = $controller->{$action}();
+
+                if ($controller->autorender === true) {
+                    $this->conf->AUTO_VIEW_RENDER_PATH = [
+                        strtolower(substr($controllerName, 0, -10)),
+                        strtolower(preg_replace('/(?<=\\w)(?=[A-Z])/', '-$1', $action)),
+                    ];
+                }
+                $controller->afterRun($rs);
+
+                $this->throwHeader($rs);
+
+                $data = utf8_decode(ob_get_contents());
+                ob_end_clean();
+                return $data;
             }
-
-            ob_start();
-            $rs = $controller->{$action}();
-
-            if ($controller->autorender === true) {
-                $this->conf->AUTO_VIEW_RENDER_PATH = array(strtolower(substr($controllerName, 0, -10)), strtolower(preg_replace('/(?<=\\w)(?=[A-Z])/','-$1', $action)));
-            }
-            $controller->afterRun($rs);
-
-            $this->throwHeader( $rs );
-
-            $data = utf8_decode(ob_get_contents());
-            ob_end_clean();
-            return $data;
         }
     }
 
@@ -1421,21 +1521,21 @@ class DooWebApp implements DooAppInterface {
      * @param array $params Parameters to be passed in to the Module
      * @return string Output of the module
      */
-    public function getModule($moduleName, $moduleUri, $action=null, $params=null) {
+    public function getModule($moduleName, $moduleUri, $action = null, $params = null)
+    {
         if (empty($moduleName) === false) {
             if (isset($this->conf->PROTECTED_FOLDER_ORI) === false) {
                 $this->conf->PROTECTED_FOLDER_ORI = $tmp = $this->conf->PROTECTED_FOLDER;
-                $this->conf->PROTECTED_FOLDER = $tmp . 'module/'.$moduleName.'/';
+                $this->conf->PROTECTED_FOLDER = $tmp . 'module/' . $moduleName . '/';
                 $result = $this->module($moduleUri, $action, $params);
                 $this->conf->PROTECTED_FOLDER = $tmp;
             } else {
                 $tmp = $this->conf->PROTECTED_FOLDER;
-                $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI . 'module/'.$moduleName.'/';
+                $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI . 'module/' . $moduleName . '/';
                 $result = $this->module($moduleUri, $action, $params);
                 $this->conf->PROTECTED_FOLDER = $tmp;
             }
-        }
-        else {
+        } else {
             $tmp = $this->conf->PROTECTED_FOLDER;
             $this->conf->PROTECTED_FOLDER = $this->conf->PROTECTED_FOLDER_ORI;
             $result = $this->module($moduleUri, $action, $params);
@@ -1444,7 +1544,8 @@ class DooWebApp implements DooAppInterface {
         return $result;
     }
 
-    public function redirect($url) {
+    public function redirect($url)
+    {
         $this->throwHeader($url);
         $this->end();
     }
@@ -1465,7 +1566,8 @@ class DooWebApp implements DooAppInterface {
      * </code>
      * @param mixed $code
      */
-    public function throwHeader($code) {
+    public function throwHeader($code)
+    {
         if ($code != null) {
             if (is_int($code)) {
                 if ($code === 404) {
@@ -1480,14 +1582,14 @@ class DooWebApp implements DooAppInterface {
                         ob_end_clean();
                         $this->end($data);
                         return 404;
+                    } //execute route to handler 404 display if ERROR_404_ROUTE is defined, the route handler shouldn't send any headers or return 404
+                    else {
+                        if (!empty($this->conf->ERROR_404_ROUTE)) {
+                            $this->reroute($this->conf->ERROR_404_ROUTE, true);
+                            return 404;
+                        }
                     }
-                    //execute route to handler 404 display if ERROR_404_ROUTE is defined, the route handler shouldn't send any headers or return 404
-                    else if (!empty($this->conf->ERROR_404_ROUTE)) {
-                        $this->reroute($this->conf->ERROR_404_ROUTE, true);
-                        return 404;
-                    }
-                }
-                //if not 404, just send the header code
+                } //if not 404, just send the header code
                 else {
                     $this->statusCode = $code;
 
@@ -1506,8 +1608,7 @@ class DooWebApp implements DooAppInterface {
                                 $this->endBlock($result);
                             }
                             return;
-                        }
-                        else {
+                        } else {
                             ob_start();
                             include $this->conf->SITE_PATH . $errPage;
                             $output = utf8_decode(ob_get_contents());
@@ -1517,40 +1618,36 @@ class DooWebApp implements DooAppInterface {
                         $this->end($output);
                     }
                 }
-            }
-            elseif (is_string($code)) {
+            } elseif (is_string($code)) {
                 //Controller return the redirect location, it sends 302 Found
                 // DooUriRouter::redirect($code, false);
                 $this->statusCode = 302;
                 $this->setHeader('Location', $code);
-            }
-            elseif (is_array($code)) {
+            } elseif (is_array($code)) {
                 //Controller return array('/some/routes/here', 'internal')
                 if ($code[1] == 'internal') {
                     return $this->reroute($code[0]);
-                }
-                //Controller return array('http://location.to.redirect', 301)
+                } //Controller return array('http://location.to.redirect', 301)
                 elseif ($code[1] === 404) {
                     return $this->reroute($code[0], true);
-                }
-                // if array('http://location.to.redirect', 302), 302 Found is sent before Location:
+                } // if array('http://location.to.redirect', 302), 302 Found is sent before Location:
                 elseif ($code[1] === 302) {
                     $this->statusCode = 302;
                     $this->setHeader('Location', $code[0]);
 //                    DooUriRouter::redirect($code[0],false, $code[1], array("HTTP/1.1 302 Found"));
-                }
-                //else redirect with the http status defined,eg. 307 Moved Temporarily
-                else if ($code[1] > 299 && $code[1] < 400) {
-                    $this->statusCode = $code[1];
-                    $this->setHeader('Location', $code[0]);
-//                    DooUriRouter::redirect($code[0],false, $code[1]);
-                }
+                } //else redirect with the http status defined,eg. 307 Moved Temporarily
                 else {
-                    if (!empty($code[1])) {
+                    if ($code[1] > 299 && $code[1] < 400) {
                         $this->statusCode = $code[1];
+                        $this->setHeader('Location', $code[0]);
+//                    DooUriRouter::redirect($code[0],false, $code[1]);
+                    } else {
+                        if (!empty($code[1])) {
+                            $this->statusCode = $code[1];
+                        }
+                        // $this->setHeader(null, true, $code[1]);
+                        return $this->reroute($code[0]);
                     }
-                    // $this->setHeader(null, true, $code[1]);
-                    return $this->reroute($code[0]);
                 }
             }
         }
@@ -1562,7 +1659,8 @@ class DooWebApp implements DooAppInterface {
      * @param string $name Header name
      * @param string $content Header content
      */
-    public function setHeader($name, $content) {
+    public function setHeader($name, $content)
+    {
         $this->headers[$name] = $content;
     }
 
@@ -1572,7 +1670,8 @@ class DooWebApp implements DooAppInterface {
      * @param bool $replace Whether to replace the same header that is previously set
      * @param int $code HTTP status code
      */
-    public function setRawHeader($rawHeader, $replace=true, $code=null) {
+    public function setRawHeader($rawHeader, $replace = true, $code = null)
+    {
         // Vertx::logger()->info("Don't use setRawHeader for vertx");
         var_dump("Don't use setRawHeader for vertx");
     }
@@ -1581,7 +1680,8 @@ class DooWebApp implements DooAppInterface {
      * To debug variables with DooPHP's diagnostic view
      * @param mixed $var The variable to view in diagnostics.
      */
-    public function debug($var) {
+    public function debug($var)
+    {
         throw new DooDebugException($var);
     }
 

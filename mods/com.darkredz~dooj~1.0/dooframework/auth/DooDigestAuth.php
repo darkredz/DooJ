@@ -24,7 +24,8 @@
  * @package doo.auth
  * @since 1.0
  */
-class DooDigestAuth{
+class DooDigestAuth
+{
 
     /**
      * Authenticate against a list of username and passwords.
@@ -39,92 +40,101 @@ class DooDigestAuth{
      * @param boolean $passwordHashed Use hashed password to authenticate.
      * @return string The username if login success.
      */
-    public static function auth($realm, $users, $failMsg=NULL, $failURL=NULL, $passwordHashed=false){
+    public static function auth($realm, $users, $failMsg = null, $failURL = null, $passwordHashed = false)
+    {
         //user => password, eg.
         //$users = array('admin' => '1234', 'guest' => 'guest');
-        if(!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION']) && strpos($_SERVER['REDIRECT_HTTP_AUTHORIZATION'], 'Digest')===0){
+        if (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION']) && strpos($_SERVER['REDIRECT_HTTP_AUTHORIZATION'],
+                'Digest') === 0) {
             $_SERVER['PHP_AUTH_DIGEST'] = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
         }
 
         if (empty($_SERVER['PHP_AUTH_DIGEST'])) {
-            Doo::app()->setRawHeader('WWW-Authenticate: Digest realm="'.$realm.
-                   '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($realm).'"');
+            Doo::app()->setRawHeader('WWW-Authenticate: Digest realm="' . $realm .
+                '",qop="auth",nonce="' . uniqid() . '",opaque="' . md5($realm) . '"');
             Doo::app()->setRawHeader('HTTP/1.1 401 Unauthorized');
-            if($failMsg!=NULL)
+            if ($failMsg != null) {
                 die($failMsg);
-            if($failURL!=NULL)
+            }
+            if ($failURL != null) {
                 die("<script>window.location.href = '$failURL'</script>");
+            }
             exit;
         }
 
         // analyze the PHP_AUTH_DIGEST variable
-        if (!($data = self::httpDigestParse($_SERVER['PHP_AUTH_DIGEST'])) || !isset($users[$data['username']])){
-            Doo::app()->setRawHeader('WWW-Authenticate: Digest realm="'.$realm.
-                   '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($realm).'"');
+        if (!($data = self::httpDigestParse($_SERVER['PHP_AUTH_DIGEST'])) || !isset($users[$data['username']])) {
+            Doo::app()->setRawHeader('WWW-Authenticate: Digest realm="' . $realm .
+                '",qop="auth",nonce="' . uniqid() . '",opaque="' . md5($realm) . '"');
             Doo::app()->setRawHeader('HTTP/1.1 401 Unauthorized');
-            if($failMsg!=NULL)
+            if ($failMsg != null) {
                 die($failMsg);
-            if($failURL!=NULL)
+            }
+            if ($failURL != null) {
                 die("<script>window.location.href = '$failURL'</script>");
+            }
             exit;
         }
 
         // generate the valid response
-        if ($passwordHashed) { 
-            $A1 = $users[$data['username']];             
-        } else { 
-            $A1 = md5($data['username'] .':'. self::getRealm($realm) .':'. $users[$data['username']]);             
-        } 
-        $A2 = md5($_SERVER['REQUEST_METHOD'].':'.$data['uri']);
-        $valid_response = md5($A1.':'.$data['nonce'].':'.$data['nc'].':'.$data['cnonce'].':'.$data['qop'].':'.$A2);
+        if ($passwordHashed) {
+            $A1 = $users[$data['username']];
+        } else {
+            $A1 = md5($data['username'] . ':' . self::getRealm($realm) . ':' . $users[$data['username']]);
+        }
+        $A2 = md5($_SERVER['REQUEST_METHOD'] . ':' . $data['uri']);
+        $valid_response = md5($A1 . ':' . $data['nonce'] . ':' . $data['nc'] . ':' . $data['cnonce'] . ':' . $data['qop'] . ':' . $A2);
 
-        if ($data['response'] != $valid_response){
+        if ($data['response'] != $valid_response) {
             Doo::app()->setRawHeader('HTTP/1.1 401 Unauthorized');
-            Doo::app()->setRawHeader('WWW-Authenticate: Digest realm="'.$realm.
-                   '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($realm).'"');
-            if($failMsg!=NULL)
+            Doo::app()->setRawHeader('WWW-Authenticate: Digest realm="' . $realm .
+                '",qop="auth",nonce="' . uniqid() . '",opaque="' . md5($realm) . '"');
+            if ($failMsg != null) {
                 die($failMsg);
-            if($failURL!=NULL)
+            }
+            if ($failURL != null) {
                 die("<script>window.location.href = '$failURL'</script>");
+            }
             exit;
         }
 
         // ok, valid username & password
         return $data['username'];
     }
-    
+
     /**
      * @deprecated Deprecated since 1.5
      */
-    public static function http_auth($realm, $users, $fail_msg=NULL, $fail_url=NULL, $passwordHashed=false){
+    public static function http_auth($realm, $users, $fail_msg = null, $fail_url = null, $passwordHashed = false)
+    {
         return self::auth($realm, $users, $fail_msg, $fail_url, $passwordHashed);
     }
 
     /**
      * Authenticate using a function/method to process the auth logic. You can use this method to authenticate against a database data.
-     * For HTTP digest auth, password key in by the user in the login dialog cannot be retrieved in plain text. 
+     * For HTTP digest auth, password key in by the user in the login dialog cannot be retrieved in plain text.
      * Thus, storing of hased password is required, eg.:
      * <code>
      * //Hash format
      * md5($username .':'. $realm .':'. $password)
-     * 
+     *
      * //Or use this method to generate the hash
      * DooDigestAuth::hashPassphrase($username, $password, $realm);
      * </code>
-     * 
+     *
      * Example usage to authenticate with a database:
      * First, store the hash in a table.
      * <code>
      *   // after creating a user, store this
      *   // Table: user_realm_hash, Model: UserRealmHash
-     *   // columns: username, realm, hash, user_id 
+     *   // columns: username, realm, hash, user_id
      *   $realmHash = new UserRealmHash();
      *   $realmHash->username = 'admin';
      *   $realmHash->realm = 'Admin Section';
-     *   $realmHash->hash = DooDigestAuth::hashPassphrase('admin', 'password', 'Admin Section'); 
-     *   $realmHash->insert();        
+     *   $realmHash->hash = DooDigestAuth::hashPassphrase('admin', 'password', 'Admin Section');
+     *   $realmHash->insert();
      * </code>
-     * 
+     *
      * To begin the authentication process, put this line in your controller/method where you need to authenticate the user
      * <code>
      * // use $this->authUser
@@ -133,7 +143,7 @@ class DooDigestAuth{
      *          DooDigestAuth::authWithFunc('Admin Login', array($this, 'authUser'), 'Login Failed!', null, true);
      *          //... CRUD code follows ...
      *      }
-     * 
+     *
      *      public function authUser( $username, $realm ){
      *          $u = new UserRealmHash();
      *          $u->realm = $realm;
@@ -156,80 +166,88 @@ class DooDigestAuth{
      * @param boolean $passwordHashed Use hashed password to authenticate.
      * @return string The username if login success.
      */
-    public static function authWithFunc($realm, $func, $failMsg=NULL, $failURL=NULL, $passwordHashed=false){
-        if(!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION']) && strpos($_SERVER['REDIRECT_HTTP_AUTHORIZATION'], 'Digest')===0){
+    public static function authWithFunc($realm, $func, $failMsg = null, $failURL = null, $passwordHashed = false)
+    {
+        if (!empty($_SERVER['REDIRECT_HTTP_AUTHORIZATION']) && strpos($_SERVER['REDIRECT_HTTP_AUTHORIZATION'],
+                'Digest') === 0) {
             $_SERVER['PHP_AUTH_DIGEST'] = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
         }
 
         if (empty($_SERVER['PHP_AUTH_DIGEST'])) {
-            Doo::app()->setRawHeader('WWW-Authenticate: Digest realm="'.$realm.
-                   '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($realm).'"');
+            Doo::app()->setRawHeader('WWW-Authenticate: Digest realm="' . $realm .
+                '",qop="auth",nonce="' . uniqid() . '",opaque="' . md5($realm) . '"');
             Doo::app()->setRawHeader('HTTP/1.1 401 Unauthorized');
-            if($failMsg!=NULL)
+            if ($failMsg != null) {
                 die($failMsg);
-            if($failURL!=NULL)
+            }
+            if ($failURL != null) {
                 die("<script>window.location.href = '$failURL'</script>");
+            }
             exit;
         }
-        
+
         $data = self::httpDigestParse($_SERVER['PHP_AUTH_DIGEST']);
-        
-        if(is_string($func)){
+
+        if (is_string($func)) {
             $hashedPassword = $func($data['username'], $realm);
+        } else {
+            $hashedPassword = $func[0]->{$func[1]}($data['username'], $realm);
         }
-        else{
-            $hashedPassword = $func[0]->{$func[1]}( $data['username'], $realm );
-        }
-        
+
         // analyze the PHP_AUTH_DIGEST variable
-        if (!$data || !isset($hashedPassword)){
-            Doo::app()->setRawHeader('WWW-Authenticate: Digest realm="'.$realm.
-                   '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($realm).'"');
+        if (!$data || !isset($hashedPassword)) {
+            Doo::app()->setRawHeader('WWW-Authenticate: Digest realm="' . $realm .
+                '",qop="auth",nonce="' . uniqid() . '",opaque="' . md5($realm) . '"');
             Doo::app()->setRawHeader('HTTP/1.1 401 Unauthorized');
-            if($failMsg!=NULL)
+            if ($failMsg != null) {
                 die($failMsg);
-            if($failURL!=NULL)
+            }
+            if ($failURL != null) {
                 die("<script>window.location.href = '$failURL'</script>");
+            }
             exit;
         }
 
         // generate the valid response
-        if ($passwordHashed) { 
-            $A1 = $hashedPassword;             
-        } else { 
-            $A1 = md5($data['username'] .':'. self::getRealm($realm) .':'. $hashedPassword);             
-        } 
-        $A2 = md5($_SERVER['REQUEST_METHOD'].':'.$data['uri']);
-        $valid_response = md5($A1.':'.$data['nonce'].':'.$data['nc'].':'.$data['cnonce'].':'.$data['qop'].':'.$A2);
+        if ($passwordHashed) {
+            $A1 = $hashedPassword;
+        } else {
+            $A1 = md5($data['username'] . ':' . self::getRealm($realm) . ':' . $hashedPassword);
+        }
+        $A2 = md5($_SERVER['REQUEST_METHOD'] . ':' . $data['uri']);
+        $valid_response = md5($A1 . ':' . $data['nonce'] . ':' . $data['nc'] . ':' . $data['cnonce'] . ':' . $data['qop'] . ':' . $A2);
 
-        if ($data['response'] != $valid_response){
+        if ($data['response'] != $valid_response) {
             Doo::app()->setRawHeader('HTTP/1.1 401 Unauthorized');
-            Doo::app()->setRawHeader('WWW-Authenticate: Digest realm="'.$realm.
-                   '",qop="auth",nonce="'.uniqid().'",opaque="'.md5($realm).'"');
-            if($failMsg!=NULL)
+            Doo::app()->setRawHeader('WWW-Authenticate: Digest realm="' . $realm .
+                '",qop="auth",nonce="' . uniqid() . '",opaque="' . md5($realm) . '"');
+            if ($failMsg != null) {
                 die($failMsg);
-            if($failURL!=NULL)
+            }
+            if ($failURL != null) {
                 die("<script>window.location.href = '$failURL'</script>");
+            }
             exit;
         }
 
         // ok, valid username & password
         return $data['username'];
-    }    
-    
-    
-    /** 
-     * Get realm for HTTP Digest (works for safe mode = on/off) 
-     * @return string
-     */ 
-    public static function getRealm($realm) { 
-        if (ini_get('safe_mode')) { 
-            return $realm . '-' . getmyuid();             
-        } else { 
-            return $realm;             
-        } 
     }
-    
+
+
+    /**
+     * Get realm for HTTP Digest (works for safe mode = on/off)
+     * @return string
+     */
+    public static function getRealm($realm)
+    {
+        if (ini_get('safe_mode')) {
+            return $realm . '-' . getmyuid();
+        } else {
+            return $realm;
+        }
+    }
+
     /**
      * Generates a hashed passphrase for a certain realm used in HTTP digest authentication.
      * Use this method to generate a hash value and store it in DB if you planned to use HTTP digest auth with hased password
@@ -238,10 +256,11 @@ class DooDigestAuth{
      * @param string $realm
      * @return string
      */
-    public static function hashPassphrase($username, $password, $realm){
-        return md5($username .':'. self::getRealm($realm) .':'. $password);
+    public static function hashPassphrase($username, $password, $realm)
+    {
+        return md5($username . ':' . self::getRealm($realm) . ':' . $password);
     }
-    
+
     /**
      * Method to parse the http auth header, works with IE.
      *
@@ -253,7 +272,7 @@ class DooDigestAuth{
     protected static function httpDigestParse($txt)
     {
         $res = preg_match("/username=\"([^\"]+)\"/i", $txt, $match);
-        $data['username'] = (isset($match[1]))?$match[1]:null;
+        $data['username'] = (isset($match[1])) ? $match[1] : null;
         $res = preg_match('/nonce=\"([^\"]+)\"/i', $txt, $match);
         $data['nonce'] = $match[1];
         $res = preg_match('/nc=([0-9]+)/i', $txt, $match);
@@ -261,7 +280,7 @@ class DooDigestAuth{
         $res = preg_match('/cnonce=\"([^\"]+)\"/i', $txt, $match);
         $data['cnonce'] = $match[1];
         $res = preg_match('/qop=([^,]+)/i', $txt, $match);
-        $data['qop'] = str_replace('"','',$match[1]);
+        $data['qop'] = str_replace('"', '', $match[1]);
         $res = preg_match('/uri=\"([^\"]+)\"/i', $txt, $match);
         $data['uri'] = $match[1];
         $res = preg_match('/response=\"([^\"]+)\"/i', $txt, $match);

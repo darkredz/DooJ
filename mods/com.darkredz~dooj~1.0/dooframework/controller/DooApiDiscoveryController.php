@@ -16,7 +16,8 @@
  * @package doo.controller
  * @since 2.0
  */
-class DooApiDiscoveryController extends DooController {
+class DooApiDiscoveryController extends DooController
+{
 
     public $namespace;
     public $apiSuperClass;
@@ -26,7 +27,8 @@ class DooApiDiscoveryController extends DooController {
 
     public $async = true;
 
-    public function listApi(){
+    public function listApi()
+    {
         $fm = new DooFile();
 //        $rs = $fm->getFilePathList($this->app->conf->SITE_PATH . $this->app->conf->PROTECTED_FOLDER);
         $rs = $fm->getFilePathList($this->modulePath);
@@ -43,15 +45,19 @@ class DooApiDiscoveryController extends DooController {
 
         $classes = [];
         $oriClasses = [];
-        foreach($rs as $fname => $fpath) {
+        foreach ($rs as $fname => $fpath) {
 
 //            if(in_array($fname, ['ApiFormController.php', 'ApiRootController.php'])) continue;
-            if(in_array($fname, $this->excludeClasses) || substr($fname, -4) != '.php') continue;
+            if (in_array($fname, $this->excludeClasses) || substr($fname, -4) != '.php') {
+                continue;
+            }
 
-            $fname = substr($fname,0,-4);
-            $cls = $this->namespace .'\\'. $fname;
+            $fname = substr($fname, 0, -4);
+            $cls = $this->namespace . '\\' . $fname;
 
-            if (in_array($fname, array_values($this->excludeClasses)) && empty($this->excludeClasses[$fname])) continue;
+            if (in_array($fname, array_values($this->excludeClasses)) && empty($this->excludeClasses[$fname])) {
+                continue;
+            }
 
 
             $class = new ReflectionClass($cls);
@@ -62,7 +68,8 @@ class DooApiDiscoveryController extends DooController {
             foreach ($methodsPub as $mth) {
                 $m = $mth->name;
 
-                if ($mth->isPublic() && !in_array($mth->name, $superMethods) && !in_array($m, $this->excludeClasses[$fname])) {
+                if ($mth->isPublic() && !in_array($mth->name, $superMethods) && !in_array($m,
+                        $this->excludeClasses[$fname])) {
                     $mRename = strtolower(preg_replace('/([a-z])([A-Z])/', '$1-$2', $m));
                     $methods[] = $mRename;
 
@@ -85,7 +92,7 @@ class DooApiDiscoveryController extends DooController {
             foreach ($classes as $className => $methods) {
                 if ($lastClass != $className) {
                     $html .= '<hr/>';
-                    $html .= '<h3>'. ucfirst($className) .'</h3>';
+                    $html .= '<h3>' . ucfirst($className) . '</h3>';
                     $lastClass = $className;
                 }
 
@@ -99,51 +106,52 @@ class DooApiDiscoveryController extends DooController {
 EOF;
                 }
 
-                $html .= '<ul>'. \implode("\n", $li) .'</ul>';
+                $html .= '<ul>' . \implode("\n", $li) . '</ul>';
             }
 
             $html .= '</body></html>';
             $this->setContentType('html');
             $this->endReq($html);
-        }
-        else if ($forJs){
-            $this->setContentType('json');
+        } else {
+            if ($forJs) {
+                $this->setContentType('json');
 
-            $methodsAll = ['GET' => [], 'POST' => []];
+                $methodsAll = ['GET' => [], 'POST' => []];
 
-            foreach ($classes as $className => $methods) {
-                $fullClassName = $this->namespace .'\\' . $oriClasses[$className]['class'];
-                $apiClass = $this->container->resolveConstructor($fullClassName);
+                foreach ($classes as $className => $methods) {
+                    $fullClassName = $this->namespace . '\\' . $oriClasses[$className]['class'];
+                    $apiClass = $this->container->resolveConstructor($fullClassName);
 
-                foreach ($methods as $method) {
-                    $func = $oriClasses[$className]['methods'][$method]['methodName'];
+                    foreach ($methods as $method) {
+                        $func = $oriClasses[$className]['methods'][$method]['methodName'];
 
-                    $apiClass->action = $func;
-                    $apiClass->actionField = 'field' . ucfirst($func);
-                    $fieldData = $apiClass->getFieldSchema();
-                    $httpMethod = strtoupper($fieldData['_method']);
-                    if (empty($httpMethod)) {
-                        $httpMethod = 'ALL';
+                        $apiClass->action = $func;
+                        $apiClass->actionField = 'field' . ucfirst($func);
+                        $fieldData = $apiClass->getFieldSchema();
+                        $httpMethod = strtoupper($fieldData['_method']);
+                        if (empty($httpMethod)) {
+                            $httpMethod = 'ALL';
+                        }
+                        $methodsAll[$httpMethod][] = [$className . '/' . $method];
                     }
-                    $methodsAll[$httpMethod][] = [$className . '/' . $method];
                 }
-            }
 
-            $this->endReq(\JSON::encode($methodsAll));
-        }
-        else {
-            $this->setContentType('json');
-            $this->endReq(\JSON::encode($classes));
+                $this->endReq(\JSON::encode($methodsAll));
+            } else {
+                $this->setContentType('json');
+                $this->endReq(\JSON::encode($classes));
+            }
         }
     }
 
-    protected function getDocComment($str, $annotate, $htmlShow = false){
-        $matches = array();
+    protected function getDocComment($str, $annotate, $htmlShow = false)
+    {
+        $matches = [];
 //        preg_match('/\*\s+\@'. $annotate .'\s+([^\n\r\*]+)/', $str, $matches);
-        preg_match('/\*\s+\@'. $annotate .'\s+([.\s\S\n\r]+)(?=\* \@)/gm', $str, $matches);
+        preg_match('/\*\s+\@' . $annotate . '\s+([.\s\S\n\r]+)(?=\* \@)/gm', $str, $matches);
 
         if (empty($matches)) {
-            preg_match('/\*\s+\@'. $annotate .'\s+([.\s\S\n\r]+)(?=\*\/)/gm', $str, $matches);
+            preg_match('/\*\s+\@' . $annotate . '\s+([.\s\S\n\r]+)(?=\*\/)/gm', $str, $matches);
         }
 
         if (isset($matches[1])) {
@@ -159,22 +167,23 @@ EOF;
         return '';
     }
 
-    public function schema(){
+    public function schema()
+    {
         $resource = $this->params[0];
 //        $sectionClass = __NAMESPACE__ .'\\' . ucfirst($section) . 'Controller';
-        $section = preg_replace( '/-(.?)/e',"strtoupper('$1')", strtolower($resource));
-        $sectionClass = $this->namespace .'\\' . ucfirst($section) . 'Controller';
+        $section = preg_replace('/-(.?)/e', "strtoupper('$1')", strtolower($resource));
+        $sectionClass = $this->namespace . '\\' . ucfirst($section) . 'Controller';
         $actionName = $this->params[1];
 
-        $func = preg_replace( '/-(.?)/e',"strtoupper('$1')", strtolower($actionName));
+        $func = preg_replace('/-(.?)/e', "strtoupper('$1')", strtolower($actionName));
 
-        if(class_exists($sectionClass)){
+        if (class_exists($sectionClass)) {
             $apiClass = $this->container->resolveConstructor($sectionClass);
 
-            if(!method_exists($apiClass, $func)){
+            if (!method_exists($apiClass, $func)) {
                 $this->setContentType('json');
                 $this->app->statusCode = 501;
-                $this->endReq( \JSON::encode(['error' => "Invalid API method $func. Method $func for section $section not found"]) );
+                $this->endReq(\JSON::encode(['error' => "Invalid API method $func. Method $func for section $section not found"]));
                 return 501;
             }
 
@@ -182,16 +191,16 @@ EOF;
             $apiClass->actionField = 'field' . ucfirst($func);
             $fieldData = $apiClass->getFieldSchema();
 
-            if(is_null($fieldData)){
+            if (is_null($fieldData)) {
                 $this->setContentType('json');
                 $this->app->statusCode = 422;
-                $this->endReq( \JSON::encode(['error' => "No fields definition for method $func."]) );
+                $this->endReq(\JSON::encode(['error' => "No fields definition for method $func."]));
                 return 422;
             }
 
             $actionType = 'ALL';
 
-            if(isset($fieldData['_method'])){
+            if (isset($fieldData['_method'])) {
                 $actionType = $fieldData['_method'];
                 unset($fieldData['_method']);
             }
@@ -210,15 +219,13 @@ EOF;
 
             if (empty($titleDoc)) {
                 $schema['title'] = ucfirst($section) . ' - ' . $func;
-            }
-            else {
+            } else {
                 $schema['title'] = $titleDoc;
             }
 
-            if($desc){
+            if ($desc) {
                 $schema['description'] = $desc;
-            }
-            else {
+            } else {
                 $schema['description'] = 'Perform action ' . $func;
             }
 
@@ -226,11 +233,10 @@ EOF;
             $schema['resource'] = ucfirst($section);
             $schema['action'] = $func;
 
-            if(isset($fieldData['_return_type'])){
+            if (isset($fieldData['_return_type'])) {
                 $schema['result_type'] = $fieldData['_return_type'];
                 unset($fieldData['_return_type']);
-            }
-            else {
+            } else {
                 $schema['result_type'] = 'array';
             }
 
@@ -248,18 +254,18 @@ EOF;
             }
 
             $this->setContentType('json');
-            $this->endReq( \JSON::encode($json) );
-        }
-        else{
+            $this->endReq(\JSON::encode($json));
+        } else {
             $this->setContentType('json');
             $this->app->statusCode = 501;
-            $this->endReq( \JSON::encode(['error' => "Invalid API section $section. Class $sectionClass not found"]) );
+            $this->endReq(\JSON::encode(['error' => "Invalid API section $section. Class $sectionClass not found"]));
             return 501;
         }
     }
 
-    protected function getApiResultFormat($section, $func) {
-        $jsonFile = $this->app->getProtectedRootPath() . 'config/'. $this->apiResultSampleFolder .'/' . $section . '/' . $func . '.json';
+    protected function getApiResultFormat($section, $func)
+    {
+        $jsonFile = $this->app->getProtectedRootPath() . 'config/' . $this->apiResultSampleFolder . '/' . $section . '/' . $func . '.json';
         $this->app->logDebug($jsonFile);
 
         if (!file_exists($jsonFile)) {

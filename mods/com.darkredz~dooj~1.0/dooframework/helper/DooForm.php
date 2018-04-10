@@ -23,37 +23,38 @@
  * @copyright &copy; 2010 athear
  * @license http://www.doophp.com/license-v2
  */
-class DooForm {
+class DooForm
+{
 
     /**
      * Form attributes
      * @var array
      */
-    protected $_attr = array();
+    protected $_attr = [];
 
     /**
      * Form decorators
      * @var array
      */
-    protected $_decorators = array();
+    protected $_decorators = [];
 
     /**
      * Display groups for grouping elements
      * @var array
      */
-    protected $_displayGroups = array();
+    protected $_displayGroups = [];
 
     /**
      * Element array
      * @var array
      */
-    protected $_elements = array();
+    protected $_elements = [];
 
     /**
      * Form elements
      * @var array
      */
-    protected $_formElements = array();
+    protected $_formElements = [];
 
     /**
      * Form action
@@ -77,19 +78,19 @@ class DooForm {
      * Form validators
      * @var array
      */
-    protected $_validators = array();
+    protected $_validators = [];
 
     /**
      * Form errors
      * @var array
      */
-    protected $_errors = array();
+    protected $_errors = [];
 
     /**
      * Element values
      * @var array
      */
-    protected $_elementValues = array();
+    protected $_elementValues = [];
 
     /**
      * Form enctype
@@ -101,7 +102,8 @@ class DooForm {
     /**
      * Class constructor
      */
-    public function __construct($form) {
+    public function __construct($form)
+    {
         if (is_array($form)) {
             $this->setForm($form);
         } else {
@@ -112,7 +114,8 @@ class DooForm {
     /**
      * Set form construct it
      */
-    public function setForm($form) {
+    public function setForm($form)
+    {
 
         // set method
         if (isset($form['method'])) {
@@ -140,7 +143,8 @@ class DooForm {
      *
      * @return string Form html
      */
-    public function render() {
+    public function render()
+    {
         $this->_addElements();
         $formElements = $this->_formElements;
         $errors = $this->_errors;
@@ -149,13 +153,13 @@ class DooForm {
         foreach ($this->_attr as $attribute => $c) {
             $attributes .= $attribute . '="' . htmlspecialchars($c) . '" ';
         }
-        $formOpenHtml = '<form ' . ($this->_action ? 'action="' . $this->_action . '" ' : '') . 'method="' . $this->_method . '" ' . $enctype . ' ' . $attributes . '>';		
+        $formOpenHtml = '<form ' . ($this->_action ? 'action="' . $this->_action . '" ' : '') . 'method="' . $this->_method . '" ' . $enctype . ' ' . $attributes . '>';
         $formCloseHtml = '</form>';
         if ($this->_renderFormat == 'array') {
-            $formOutput = array(
+            $formOutput = [
                 'startDooForm' => $formOpenHtml,
-                'endDooForm' => $formCloseHtml
-            );
+                'endDooForm' => $formCloseHtml,
+            ];
             foreach ($formElements as $element => $e) {
                 if ((count($this->_errors) > 0) && (isset($errors[$element]))) {
                     $elementError .= '<ul class="errors">';
@@ -190,21 +194,24 @@ class DooForm {
         return $formOutput;
     }
 
-    public function _setMethod($method) {
+    public function _setMethod($method)
+    {
         $this->_method = $method;
     }
 
     /**
      * Set form action
      */
-    public function _setAction($action) {
+    public function _setAction($action)
+    {
         $this->_action = (string)$action;
     }
 
     /**
      * Set render format
      */
-    public function _setFormat($format) {
+    public function _setFormat($format)
+    {
         $this->_renderFormat = (string)$format;
     }
 
@@ -221,13 +228,13 @@ class DooForm {
      *            'username' => array('text', array(
      *                'required' => true,
      *                'label' => 'Username:',
-     * 				'attributes' => array("style" => 'border:1px solid #000;', 'class' => 'some_class'),
-     * 				'field-wrapper' => 'div'
+     *                'attributes' => array("style" => 'border:1px solid #000;', 'class' => 'some_class'),
+     *                'field-wrapper' => 'div'
      *            )),
-     * 			'profile_type' => array('select', array(
+     *            'profile_type' => array('select', array(
      *                'required' => true,
-     * 				'multioptions' => array(1 => 'private', 2 => 'public'),
-     * 				'label' => 'Profile type:'
+     *                'multioptions' => array(1 => 'private', 2 => 'public'),
+     *                'label' => 'Profile type:'
      *            )),
      *            'password' => array('password', array(
      *                'required' => true,
@@ -235,7 +242,7 @@ class DooForm {
      *            )),
      *            'looking_for' => array('MultiCheckbox', array(
      *                'required' => false,
-     * 				'multioptions' => array(0 => 'love', 1 => 'hate', 3 => 'other'),
+     *                'multioptions' => array(0 => 'love', 1 => 'hate', 3 => 'other'),
      *                'label' => 'I am looking for:'
      *            )),
      *            'submit' => array('submit', array(
@@ -261,8 +268,9 @@ class DooForm {
      * element-wrapper - Wrap's element only
      * label-wrapper - Wrap's label only
      */
-    public function _addElements() {
-        $formElements = array();
+    public function _addElements()
+    {
+        $formElements = [];
         $elementValues = $this->_elementValues;
         foreach ($this->_elements as $element => $k) {
 
@@ -397,8 +405,10 @@ class DooForm {
                     // now get trough all multioptions and create checkboxes
                     if (isset($k[1]['multioptions']) && (count($k[1]['multioptions'] > 0))) {
                         foreach ($k[1]['multioptions'] as $optionValue => $optionName) {
-                            $checked = (isset($k[1]['value']) && (in_array($optionValue, $k[1]['value']))) ? 'checked="checked"' : '';
-                            $checked = (isset($elementValues[$element]) && (in_array($optionValue, $elementValues[$element]))) ? 'checked="checked"' : '';
+                            $checked = (isset($k[1]['value']) && (in_array($optionValue,
+                                    $k[1]['value']))) ? 'checked="checked"' : '';
+                            $checked = (isset($elementValues[$element]) && (in_array($optionValue,
+                                    $elementValues[$element]))) ? 'checked="checked"' : '';
                             // add name for every checkbox
                             $elementHtml .= '<label for="' . $element . '-' . $optionValue . '">' . $optionName;
                             $elementHtml .= '<input type="checkbox" value="' . $optionValue . '" name="' . $element . '[]" id="' . $element . '-' . $optionValue . '"' . $checked . '/>';
@@ -414,8 +424,10 @@ class DooForm {
                     // now get trough all multioptions and create checkboxes
                     if (isset($k[1]['multioptions']) && (count($k[1]['multioptions'] > 0))) {
                         foreach ($k[1]['multioptions'] as $optionValue => $optionName) {
-                            $checked = (isset($k[1]['value']) && (in_array($optionValue, $k[1]['value']))) ? 'checked="checked"' : '';
-                            $checked = (isset($elementValues[$element]) && (in_array($optionValue, $elementValues[$element]))) ? 'checked="checked"' : '';
+                            $checked = (isset($k[1]['value']) && (in_array($optionValue,
+                                    $k[1]['value']))) ? 'checked="checked"' : '';
+                            $checked = (isset($elementValues[$element]) && (in_array($optionValue,
+                                    $elementValues[$element]))) ? 'checked="checked"' : '';
                             // add name for every checkbox
                             $elementHtml .= '<label for="' . $element . '-' . $optionValue . '">' . $optionName;
                             $elementHtml .= '<input type="radio" value="' . $optionValue . '" name="' . $element . '" id="' . $element . '-' . $optionValue . '" ' . $checked . '/>';
@@ -432,12 +444,14 @@ class DooForm {
                             if (is_array($optionName)) { // if its array make option groups
                                 $elementHtml .= '<optgroup label="' . $optionValue . '">';
                                 foreach ($optionName as $v => $n) {
-                                    $selected = (isset($k[1]['value']) && (in_array($v, $k[1]['value']))) ? 'selected="selected"' : '';
+                                    $selected = (isset($k[1]['value']) && (in_array($v,
+                                            $k[1]['value']))) ? 'selected="selected"' : '';
                                     $elementHtml .= '<option value="' . $v . '" ' . $selected . '>' . $n . '</option>';
                                 }
                                 $elementHtml .= '</optgroup>';
                             } else {
-                                $selected = (isset($k[1]['value']) && (in_array($optionValue, $k[1]['value']))) ? 'selected="selected"' : '';
+                                $selected = (isset($k[1]['value']) && (in_array($optionValue,
+                                        $k[1]['value']))) ? 'selected="selected"' : '';
                                 $elementHtml .= '<option value="' . $optionValue . '" ' . $selected . '>' . $optionName . '</option>';
                             }
                         }
@@ -512,10 +526,12 @@ class DooForm {
                             }
 
                             // Resize character
-                            imagecopyresized($buffer2, $buffer, 0, 0, 0, 0, 25 + mt_rand(0, 12), 25 + mt_rand(0, 12), 20, 20);
+                            imagecopyresized($buffer2, $buffer, 0, 0, 0, 0, 25 + mt_rand(0, 12), 25 + mt_rand(0, 12),
+                                20, 20);
 
                             // Rotate characters a little
-                            $rotated = imagerotate($buffer2, mt_rand(-25, 25), imagecolorallocatealpha($buffer2, 0, 0, 0, 0));
+                            $rotated = imagerotate($buffer2, mt_rand(-25, 25),
+                                imagecolorallocatealpha($buffer2, 0, 0, 0, 0));
                             imagecolortransparent($rotated, imagecolorallocatealpha($rotated, 0, 0, 0, 0));
 
                             // Move characters around a little
@@ -534,14 +550,16 @@ class DooForm {
                         if (is_dir($k[1]['directory'])) {
                             imagejpeg($captcha, $k[1]['directory'] . '/' . md5($string) . '.jpg');
                             $elementHtml .= $elementWrappOpen . '<img class="doo-captcha-image" height="50" width="120" src="' . $k[1]['url'] . md5($string) . '.jpg"/><br/>' .
-                                    $labelWrappOpen . '<label for="' . $element . '-element">' . $k[1]['label'] . '</label>' . $labelWrappClose .
-                                    '<input size="' . strlen($string) . '" ' . $elementAttributes .
-                                    ' type="text" name="' . $element . '" id="' . $element . '-element" ' .
-                                    'class="doo-captcha-text" />' . $elementWrappClose;
-                        } else
+                                $labelWrappOpen . '<label for="' . $element . '-element">' . $k[1]['label'] . '</label>' . $labelWrappClose .
+                                '<input size="' . strlen($string) . '" ' . $elementAttributes .
+                                ' type="text" name="' . $element . '" id="' . $element . '-element" ' .
+                                'class="doo-captcha-text" />' . $elementWrappClose;
+                        } else {
                             throw new Exception("Cant create captcha there is no captcha directory: " . $k[1]['directory']);
-                    } else
+                        }
+                    } else {
                         throw new Exception("Cant create captcha of missing image: " . $k[1]['image']);
+                    }
                     break;
             }
             // add element
@@ -558,9 +576,10 @@ class DooForm {
      *
      * @return boolean True or false if form is not valid
      */
-    public function isValid($values) {
+    public function isValid($values)
+    {
         $valid = true;
-        $errors = array();
+        $errors = [];
         try {
             Doo::loadHelper('DooValidator');
             $v = new DooValidator();
@@ -568,7 +587,7 @@ class DooForm {
             echo 'Validator class coulndt be loaded ' . $e->getMessage() . '\n';
         }
         $formElements = $this->_formElements;
-        $elementValues = array();
+        $elementValues = [];
         foreach ($this->_elements as $element => $e) {
             // handle values
             if (isset($values[$element])) {
@@ -577,29 +596,31 @@ class DooForm {
             // handle validators
             if ((isset($e[1]['validators']))) {
                 if (!isset($e[1]['required']) || ($e[1]['required'] != false)) {
-                    $elementRules = array($element => $e[1]['validators']);
+                    $elementRules = [$element => $e[1]['validators']];
                     $errors[$element] = $v->validate($values, $elementRules);
                     if ($errors[$element]) {
                         unset($elementValues[$element]);
                     }
-                } else if (isset($elementValues[$element]) && $elementValues[$element] != "") {
-                    $elementRules = array($element => $e[1]['validators']);
-                    $errors[$element] = $v->validate($values, $elementRules);
+                } else {
+                    if (isset($elementValues[$element]) && $elementValues[$element] != "") {
+                        $elementRules = [$element => $e[1]['validators']];
+                        $errors[$element] = $v->validate($values, $elementRules);
+                    }
                 }
             }
             // handle captcha
             if (isset($e[0]) && ($e[0] == 'captcha')) {
                 $sessionData = (isset($_SESSION['doo_captcha_' . $element])) ? md5($_SESSION['doo_captcha_' . $element]) : '';
                 $msg = (isset($e[1]['message'])) ? $e[1]['message'] : null;
-                $elementRules = array($element => array('equal', $sessionData, $msg));
+                $elementRules = [$element => ['equal', $sessionData, $msg]];
                 $values[$element] = md5($values[$element]);
                 $errors[$element] = $v->validate($values, $elementRules);
                 if ($errors[$element]) {
                     unset($elementValues[$element]);
                 }
                 // delete captcha if captcha is good
-				if (isset($e[1]['url']) && file_exists($e[1]['directory'].'/'.$sessionData.".jpg")) {
-					unlink($e[1]['directory'].'/'.$sessionData.".jpg");
+                if (isset($e[1]['url']) && file_exists($e[1]['directory'] . '/' . $sessionData . ".jpg")) {
+                    unlink($e[1]['directory'] . '/' . $sessionData . ".jpg");
                 }
             }
             // handle file
@@ -608,22 +629,22 @@ class DooForm {
                 if (isset($_FILES[$element])) {
                     // check file extension
                     if (isset($e[1]['extension'])) {
-                        $extensions = array();
+                        $extensions = [];
                         $extension = substr($_FILES[$element]['name'], strrpos($_FILES[$element]['name'], '.') + 1);
                         $extensions = explode(',', $e[1]['extension']);
                         if (!in_array($extension, $extensions)) {
-                            $errors[$element] = array('File must have ' . $e[1]['extension'] . ' extension.');
+                            $errors[$element] = ['File must have ' . $e[1]['extension'] . ' extension.'];
                         }
                     }
                     // check file size
                     if (isset($e[1]['size'])) {
                         if ($e[1]['size'] < $_FILES[$element]['size']) {
-                            $errors[$element] = array('File is too big!');
+                            $errors[$element] = ['File is too big!'];
                         }
                     }
                 } else {
-					if (isset($e[1]['required']) && $e[1]['required'] == 1) {
-						$errors[$element][] = array('File for upload is required.');
+                    if (isset($e[1]['required']) && $e[1]['required'] == 1) {
+                        $errors[$element][] = ['File for upload is required.'];
                     }
                 }
             }
@@ -633,7 +654,9 @@ class DooForm {
         if (count($errors) > 0) {
             $this->_errors = $errors;
             foreach ($errors as $error => $e) {
-				if (!empty($e)) $valid = false;
+                if (!empty($e)) {
+                    $valid = false;
+                }
             }
         }
         return $valid;
@@ -644,7 +667,8 @@ class DooForm {
      * Please be aware that you must call isValid() function before calling getErrors() method
      * @return mixed
      */
-    public function getErrors() {
+    public function getErrors()
+    {
         if (count($this->_errors)) {
             return $this->_errors;
         } else {
@@ -657,7 +681,8 @@ class DooForm {
      * @param string $name Name of display group
      * @param array $fields Name of fields in group
      */
-    public function addDisplayGroup($name, $fields = array()) {
+    public function addDisplayGroup($name, $fields = [])
+    {
         if (count($fields) > 0) {
             foreach ($fields as $field) {
                 foreach ($this->_elements as $element => $e) {
@@ -674,7 +699,8 @@ class DooForm {
      * @param string $name Display group name
      * @return mixed HTML of display group or false
      */
-    public function renderDisplayGroup($name) {
+    public function renderDisplayGroup($name)
+    {
         if (isset($this->_displayGroups[$name])) {
             $formHtml = "";
             $this->_addElements();
@@ -690,7 +716,7 @@ class DooForm {
                                 if (is_array($error)) {
                                     $error = array_shift($error);
                                 }
-								$formHtml .= '<li>'.$error.'</li>';
+                                $formHtml .= '<li>' . $error . '</li>';
                             }
                             $formHtml .= '</ul>';
                         }
@@ -706,8 +732,9 @@ class DooForm {
      * Renders form validation in json
      * @return json encoded string
      */
-    public function renderJson() {
-		$validation = array ();
+    public function renderJson()
+    {
+        $validation = [];
         foreach ($this->_elements as $element => $e) {
             if (isset($e[0])) {
                 $validation[$element]['type'] = $e[0];
@@ -732,6 +759,7 @@ class DooForm {
     }
 }
 
-class DooFormException extends Exception {
+class DooFormException extends Exception
+{
 
 }

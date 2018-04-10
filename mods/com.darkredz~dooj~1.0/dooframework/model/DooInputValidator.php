@@ -90,7 +90,8 @@ class DooInputValidator
     }
 }
 
-class DooInputValidatorResult {
+class DooInputValidatorResult
+{
 
     const VALID = 1;
     const INVALID_NO_INPUT = 0;

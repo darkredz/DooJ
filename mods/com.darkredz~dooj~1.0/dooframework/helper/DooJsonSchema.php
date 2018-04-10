@@ -62,43 +62,49 @@
  * @package doo.helper
  * @since 2.0
  */
-class DooJsonSchema {
+class DooJsonSchema
+{
 
     /**
      * @param array $fieldData Field definition data
      * @return array|string converted JSON schema
      */
-    public static function convert($fieldData, $toJson=false){
+    public static function convert($fieldData, $toJson = false)
+    {
         $schemaProp = [];
 
-        foreach($fieldData as $fname => $p){
+        foreach ($fieldData as $fname => $p) {
             $schemaProp[$fname] = [
                 'title' => ucfirst($fname),
                 'type' => $p[0],
                 'required' => true,
             ];
 
-            if(isset($p[2])){
+            if (isset($p[2])) {
                 $schemaProp[$fname]['description'] = $p[2];
             }
 
-            if($p[1]){
-                foreach($p[1] as $rule){
-                    if($rule=='optional' || $rule[0]=='optional'){
+            if ($p[1]) {
+                foreach ($p[1] as $rule) {
+                    if ($rule == 'optional' || $rule[0] == 'optional') {
                         $schemaProp[$fname]['required'] = false;
-                    }
-                    else{
-                        switch($rule[0]){
+                    } else {
+                        switch ($rule[0]) {
                             case 'inList':
-                                $schemaProp[$fname]['enum'] = $rule[1]; break;
+                                $schemaProp[$fname]['enum'] = $rule[1];
+                                break;
                             case 'min':
-                                $schemaProp[$fname]['minimum'] = $rule[1]; break;
+                                $schemaProp[$fname]['minimum'] = $rule[1];
+                                break;
                             case 'max':
-                                $schemaProp[$fname]['maximum'] = $rule[1]; break;
+                                $schemaProp[$fname]['maximum'] = $rule[1];
+                                break;
                             case 'minLength':
-                                $schemaProp[$fname]['minLength'] = $rule[1]; break;
+                                $schemaProp[$fname]['minLength'] = $rule[1];
+                                break;
                             case 'maxLength':
-                                $schemaProp[$fname]['maxLength'] = $rule[1]; break;
+                                $schemaProp[$fname]['maxLength'] = $rule[1];
+                                break;
                         }
                     }
                 }
@@ -106,11 +112,10 @@ class DooJsonSchema {
         }
 
         $schema = [
-            'type' => 'object',
-            'properties' => $schemaProp
+            'properties' => $schemaProp,
         ];
 
-        if($toJson===true){
+        if ($toJson === true) {
             return \JSON::encode($schema);
         }
 
