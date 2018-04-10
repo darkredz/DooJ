@@ -16,16 +16,17 @@
  * @author Leng Sheng Hong <darkredz@gmail.com>
  * @since 0.13
  */
-class ArrBDDSpec{    
+class ArrBDDSpec
+{
     /**
      * Section name for scenario(s) in this class. To be used when saving unflatten results.
      * @var string
      */
     public $section;
-    
+
     /**
      * Specifications. Write specs in prepare()
-     * @var array 
+     * @var array
      */
     public $specs;
 
@@ -52,18 +53,31 @@ class ArrBDDSpec{
      * }
      * </code>
      */
-    public function prepare(){}
-
-    public function getMockFile($pathToBddMockFile){
-        return $this->app->conf->SITE_PATH . $this->app->conf->PROTECTED_FOLDER . 'bdd_mock/' . $pathToBddMockFile .'.php';
+    public function prepare()
+    {
     }
-    
+
+    public function getMockFile($pathToBddMockFile)
+    {
+        return $this->app->conf->SITE_PATH . $this->app->conf->PROTECTED_FOLDER . 'bdd_mock/' . $pathToBddMockFile . '.php';
+    }
+
     /**
      * Returns the section name
-     * @return string 
+     * @return string
      */
-    public function getSectionName(){
+    public function getSectionName()
+    {
         return $this->section;
     }
-    
+
+    public function statements($appendKey = true)
+    {
+        return ArrAssertStatement::make($appendKey);
+    }
+
+    public function assert($var)
+    {
+        return ArrAssert::check($var);
+    }
 }

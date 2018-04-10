@@ -58,6 +58,10 @@ class DooBDDController extends DooController{
      * @var bool
      */
     protected $includeSubject = false;
+
+
+    protected $passes = 0;
+    protected $fails = 0;
     
     public function __construct() {
         $this->bdd = new ArrBDD;
@@ -90,7 +94,7 @@ class DooBDDController extends DooController{
      * @param string $section Default is null. Class name will be used as section name if not found.
      * @return array result 
      */
-    protected function executeTest($section=null){
+    protected function executeTest($doneCallback, $section = null){
         if($section===null){
             $chosenSection = urldecode($this->getKeyParam('section'));            
         }else{
@@ -99,39 +103,70 @@ class DooBDDController extends DooController{
 //        echo 'Running test suite for all section';
         $list = DooFile::getFilePathIndexList( $this->getScenarioPath() );
 
-        $this->result = array();
+        $this->result = [];
+        $this->testSections = [];
 
         foreach($list as $path){
             $pathinfo = pathinfo($path);
             if($pathinfo['extension']!=='php') continue;
-            
+
             require_once $path;
             $cls = explode('.', $pathinfo['filename']);
             $cls = $cls[0];
 
+            /**
+             * @var ArrBDDSpec
+             */
             $obj = new $cls;
             $obj->app = &$this->app;
             $section = $obj->getSectionName();
-            
+
             if(empty($section)){
                 $section = $cls;
             }
 
             //if section is specified, test only that section
-            if(!empty($chosenSection) && $chosenSection!==$section)
+            if(!empty($chosenSection) && $chosenSection !== $section)
                 continue;
 
             if(empty($section))
                 $section = $cls;
 
-            //prepare the specs
-            $obj->prepare();
-
-            $this->result[$section] = $this->bdd->run( $obj->specs, $this->includeSubject );
-            
+            $this->testSections[] = [
+                'specObject' => $obj,
+                'section' => $section,
+            ];
         }
-        return $this->result;
-    }  
+
+        $totalTest = sizeof($this->testSections);
+        $this->app->logInfo("[BDD] Running $totalTest tests");
+
+        $this->runSpecTest($totalTest, $doneCallback);
+    }
+
+    protected function runSpecTest($totalTest, $doneCallback) {
+        $i = sizeof($this->result);
+        $obj = $this->testSections[$i]['specObject'];
+        $section = $this->testSections[$i]['section'];
+
+        $this->app->logInfo("[BDD] Testing against $section specs");
+
+        //prepare the specs
+        $obj->prepare();
+
+        $this->bdd->run($section, $obj->specs, $this->includeSubject, function($section, $testResult) use ($doneCallback, $totalTest) {
+            $this->app->logInfo("[BDD] Finish testing specs for section $section");
+            $this->result[$section] = $testResult;
+
+            $this->app->trace($testResult);
+
+            if (sizeof($this->result) === $totalTest) {
+                $doneCallback();
+            } else {
+                $this->runSpecTest($totalTest, $doneCallback);
+            }
+        });
+    }
     
     /**
      * Flatten the BDD result into a array with all the scenarios as keys.
@@ -144,18 +179,42 @@ class DooBDDController extends DooController{
         }
         return $rs;
     }
-    
+
+    protected function flattenArray(array $array) {
+        $return = array();
+        array_walk_recursive($array, function($a) use (&$return) { $return[] = $a; });
+        return $return;
+    }
+
     /**
      * Output the result in JSON format
      * @param bool $flatten To flatten the result.
      */
-    protected function showResult($flatten=true){
-        if($flatten)
-            $this->toJSON($this->flattenResult(), true);
-        else
-            $this->toJSON($this->result, true);
+    protected function showResult($flatten = true){
+        $testResults = $this->result;
+        if ($flatten) {
+            $testResults = $this->flattenResult();
+        }
+
+//        $it = new RecursiveIteratorIterator(new RecursiveArrayIterator($testResults));
+        $it = $this->flattenArray($testResults);
+        foreach($it as $res) {
+            if ($res === true) {
+                $this->passes++;
+            } else if ($res === false) {
+                $this->fails++;
+            }
+        }
+
+        $testResults['BDD Passes'] = $this->passes;
+        $testResults['BDD Fails'] = $this->fails;
+
+        $this->app->logInfo("[BDD] Passes = $this->passes");
+        $this->app->logInfo("[BDD] Fails = $this->fails");
+
+        $this->toJSON($testResults, true);
     }
-    
+
     /**
      * Save the result into file system in JSON format. By default, it creates and stores in a folder named 'bdd_result'
      * @param string $path Path to store the results.

@@ -411,10 +411,15 @@ class Doo{
         //app
 		$class['DooConfig']      = 'app/DooConfig';
 		$class['DooSiteMagic']   = 'app/DooSiteMagic';
+        $class['DooAppInterface']      = 'app/DooAppInterface';
         $class['DooWebApp']      = 'app/DooWebApp';
         $class['DooEventBusApp'] = 'app/DooEventBusApp';
         $class['DooEventBusRequest'] = 'app/DooEventBusRequest';
+        $class['DooEventRequestHeader'] = 'app/DooEventRequestHeader';
         $class['DooEventBusResponse'] = 'app/DooEventBusResponse';
+        $class['DooJava']      = 'app/DooJava';
+        $class['DooContainer']      = 'app/DooContainer';
+
 
 
         //auth
@@ -442,8 +447,20 @@ class Doo{
         //ext/ArrBdd
 		$class['ArrBDD'] = 'ext/ArrBDD/ArrBDD';
 		$class['ArrBDDSpec'] = 'ext/ArrBDD/ArrBDDSpec';
-		$class['ArrMock'] = 'ext/ArrBDD/ArrMock';
-        
+        $class['ArrMock'] = 'ext/ArrBDD/ArrMock';
+        $class['ArrAssert'] = 'ext/ArrBDD/ArrAssert';
+        $class['ArrAssertStatement'] = 'ext/ArrBDD/ArrAssertStatement';
+
+        //service
+        $class['DooServiceModel'] = 'model/DooServiceModel';
+        $class['DooServiceInterface'] = 'service/DooServiceInterface';
+        $class['DooInternalService'] = 'service/DooInternalService';
+        $class['DooEventBusService'] = 'service/DooEventBusService';
+
+        $class['DooDataMapper'] = 'model/DooDataMapper';
+        $class['DooMapperConfig'] = 'model/DooMapperConfig';
+        $class['DooInputValidator'] = 'model/DooInputValidator';
+
         //db
 		$class['DooDbExpression']    = 'db/DooDbExpression';
 		$class['DooMasterSlave']     = 'db/DooMasterSlave';
@@ -471,7 +488,6 @@ class Doo{
 		$class['DooFlashMessenger']  = 'helper/DooFlashMessenger';
 		$class['DooForm']            = 'helper/DooForm';
 		$class['DooGdImage']         = 'helper/DooGdImage';
-		$class['DooMailer']          = 'helper/DooMailer';
 		$class['DooPager']           = 'helper/DooPager';
 		$class['DooRestClient']      = 'helper/DooRestClient';
 		$class['DooTextHelper']      = 'helper/DooTextHelper';
@@ -482,6 +498,12 @@ class Doo{
         $class['DooApiCaller']       = 'helper/DooApiCaller';
         $class['DooHttpClientBuilder']  = 'helper/DooHttpClientBuilder';
         $class['DooCountryCode']  = 'helper/DooCountryCode';
+        $class['DooMailer']          = 'helper/DooMailer';
+
+        //mail
+        $class['DooMailInterface']   = 'helper/mail/DooMailInterface';
+        $class['DooMailSmtp']        = 'helper/mail/DooMailSmtp';
+        $class['DooMailMandrill']    = 'helper/mail/DooMailMandrill';
 
 
         //logging
@@ -504,6 +526,9 @@ class Doo{
         //view
 		$class['DooView'] = 'view/DooView';
 		$class['DooViewBasic'] = 'view/DooViewBasic';
+
+        //logging
+        $class['DooPromise'] = 'promise/DooPromise';
 
         if(isset($class[$classname]))
             self::loadCore($class[$classname], $conf);
