@@ -34,6 +34,8 @@ class DooApiController extends DooController
     public $allowCORSMethods = "GET,HEAD,OPTIONS,POST,PUT,DELETE";
     public $allowCORSHeaders = "Origin,X-Requested-With,Content-Type,Accept,Authorization";
 
+    public $input;
+
     /**
      * Get RFC2617 Authorization formatted data. format is credentials = auth-scheme
      * eg. Authorization: FIRE-TOKEN apikey=0PN5J17HBGZHT7JJ3X82, hash=frJIUN8DYpKDtOLCwo//yllqDzg
@@ -192,6 +194,12 @@ class DooApiController extends DooController
         return $this->{$this->actionField};
     }
 
+    protected function prepApiInput()
+    {
+        $this->input = $this->getApiInput();
+        return $this->input;
+    }
+
     protected function getApiInput()
     {
         $field = array_keys($this->{$this->actionField});
@@ -294,24 +302,20 @@ class DooApiController extends DooController
         if ($validateRes->resultType === \DooInputValidatorResult::VALID) {
             return $validateRes->inputValues;
         } else {
-            if ($validateRes->resultType === \DooInputValidatorResult::VALID) {
-                return $validateRes->inputValues;
+            if ($validateRes->resultType === \DooInputValidatorResult::INVALID_NO_INPUT) {
+                $this->deleteUploadTmpFiles();
+                $this->sendError('No data input');
+                return false;
             } else {
-                if ($validateRes->resultType === \DooInputValidatorResult::INVALID_NO_INPUT) {
+                if ($validateRes->resultType === \DooInputValidatorResult::INVALID_NO_RULES) {
                     $this->deleteUploadTmpFiles();
-                    $this->sendError('No data input');
+                    $this->sendError('Please set the field rules for this API action');
                     return false;
                 } else {
-                    if ($validateRes->resultType === \DooInputValidatorResult::INVALID_NO_RULES) {
+                    if ($validateRes->resultType === \DooInputValidatorResult::INVALID_RULE_ERRORS) {
                         $this->deleteUploadTmpFiles();
-                        $this->sendError('Please set the field rules for this API action');
+                        $this->sendError($validateRes->errors);
                         return false;
-                    } else {
-                        if ($validateRes->resultType === \DooInputValidatorResult::INVALID_RULE_ERRORS) {
-                            $this->deleteUploadTmpFiles();
-                            $this->sendError($validateRes->errors);
-                            return false;
-                        }
                     }
                 }
             }
@@ -334,15 +338,15 @@ class DooApiController extends DooController
     protected function setupServiceValidationHook($service)
     {
         $controller = &$this;
-        $validateHook = function ($serviceName, $serviceProvider, $params) use ($controller) {
-            $input = $params[0];
+        $validateHook = function ($serviceName, $serviceProvider, $params, $done) use ($controller) {
             $rules = $controller->{$controller->actionField};
 
-            $controllerCleanupCallback = function ($validateRes) use ($controller) {
-                return $controller->validationCleanup($validateRes);
+            $controllerCleanupCallback = function ($validateRes) use ($controller, $done) {
+                $resultCheck = $controller->validationCleanup($validateRes);
+                $done($resultCheck);
             };
 
-            return $serviceProvider->validateInput($input, $rules, $controllerCleanupCallback);
+            $serviceProvider->validateInput($controller->input, $rules, $controllerCleanupCallback);
         };
 
         $service->setPreCallHook($validateHook);

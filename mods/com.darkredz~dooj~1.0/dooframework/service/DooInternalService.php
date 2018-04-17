@@ -22,29 +22,33 @@ class DooInternalService implements \DooServiceInterface
         $this->serviceParams['precallHook'] = $callback;
     }
 
-    public function executePreCallHook($serviceName, $params)
+    public function executePreCallHook($serviceName, $params, $donePreCallExecute)
     {
         if (isset($this->serviceParams['precallHook']) && is_callable($this->serviceParams['precallHook'])) {
-            return $this->serviceParams['precallHook']($serviceName, $this->serviceProvider, $params);
+            $this->serviceParams['precallHook']($serviceName, $this->serviceProvider, $params, $donePreCallExecute);
+        } else {
+            $donePreCallExecute(true);
         }
     }
 
     public function callWithArgsArray($params)
     {
         $serviceName = \array_shift($params);
-        $shouldContinue = $this->executePreCallHook($serviceName, $params);
-        if ($shouldContinue !== false) {
-            call_user_func_array([$this->serviceProvider, $serviceName], $params);
-        }
+        $this->executePreCallHook($serviceName, $params, function ($shouldContinue) use ($serviceName, $params) {
+            if ($shouldContinue !== false) {
+                call_user_func_array([$this->serviceProvider, $serviceName], $params);
+            }
+        });
     }
 
     public function call($serviceName)
     {
         $params = \func_get_args();
         $serviceName = \array_shift($params);
-        $shouldContinue = $this->executePreCallHook($serviceName, $params);
-        if ($shouldContinue !== false) {
-            call_user_func_array([$this->serviceProvider, $serviceName], $params);
-        }
+        $this->executePreCallHook($serviceName, $params, function ($shouldContinue) use ($serviceName, $params) {
+            if ($shouldContinue !== false) {
+                call_user_func_array([$this->serviceProvider, $serviceName], $params);
+            }
+        });
     }
 }

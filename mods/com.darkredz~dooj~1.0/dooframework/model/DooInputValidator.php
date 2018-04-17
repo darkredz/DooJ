@@ -102,7 +102,7 @@ class DooInputValidatorResult
     public $errors;
     public $resultType;
 
-    function __construct($resultType, $errors, $inputValues = null)
+    function __construct($resultType, $errors = null, $inputValues = null)
     {
         $this->resultType = $resultType;
         $this->errors = $errors;

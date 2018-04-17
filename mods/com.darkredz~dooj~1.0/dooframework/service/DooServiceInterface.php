@@ -10,5 +10,5 @@ interface DooServiceInterface
 
     public function setPreCallHook($callback);
 
-    public function executePreCallHook($serviceName, $params);
+    public function executePreCallHook($serviceName, $params, $donePreCallExecute);
 }
