@@ -11,6 +11,7 @@ class DooEventRequestHeader
 {
 
     protected $headers;
+    protected $headConverted;
 
     function __construct($headers)
     {
@@ -27,9 +28,29 @@ class DooEventRequestHeader
         return $this->headers;
     }
 
+    public function getArrayConvertCase()
+    {
+        if (empty($this->headConverted)) {
+            foreach ($this->headers as $key => $value) {
+                $newKey = strtolower($key);
+                $newKeyParts = explode('_', $newKey);
+                foreach ($newKeyParts as &$parts) {
+                    $parts = ucfirst($parts);
+                }
+                $newKey = implode('-', $newKeyParts);
+                $this->headConverted[$newKey] = $value;
+            }
+        }
+
+        return $this->headConverted;
+    }
+
     public function get($key)
     {
-        return $this->headers[$key];
+        if (array_key_exists($key, $this->headers)) {
+            return $this->headers[$key];
+        }
+        return null;
     }
 
     public function set($key, $value)

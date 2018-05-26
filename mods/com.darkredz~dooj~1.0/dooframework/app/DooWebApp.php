@@ -42,6 +42,9 @@ class DooWebApp implements DooAppInterface
     protected $filesUploadProcessed = 0;
     public $bodySizeExceeded = false;
     public $cookiesToSet = [];
+    /**
+     * @var DooWebAppRequest
+     */
     public $request;
     public $logger;
     public $db;
@@ -180,7 +183,7 @@ class DooWebApp implements DooAppInterface
 
     public function logError($msg)
     {
-        $this->logError($this->logPrefixError . $msg);
+        $this->logger->error($this->logPrefixError . $msg);
     }
 
     public function logDebug($msg)
@@ -258,6 +261,11 @@ class DooWebApp implements DooAppInterface
         $headers = [];
 
         $headersJav = $this->request->headers();
+
+        if (!is_array($headersJav) && get_class($headersJav) === 'DooEventRequestHeader') {
+            $headersJav = $headersJav->getArrayConvertCase();
+        }
+
         foreach ($headersJav as $f => $h) {
             $headers[$f] = $h;
         }
@@ -316,43 +324,58 @@ class DooWebApp implements DooAppInterface
             }
         }
 
-        $this->_GET = [];
-        if (strpos($this->request->uri(), '?') !== false) {
-            $this->_GET = $this->parseQueryString(explode('?', $this->request->uri(),
-                2)[1]);  //$this->request->params()->map;
+
+        $contentType = arrval($headers, 'Content-Type');
+        $method = strtoupper($this->request->method());
+
+        //if it's not on vertx but php-fpm
+        if (class_exists('Java') === false) {
+            $this->_GET = $_GET;
+            $this->_SERVER = $_SERVER;
+        } else {
+            $this->_GET = [];
+            if (strpos($this->request->uri(), '?') !== false) {
+                $this->_GET = $this->parseQueryString(explode('?', $this->request->uri(),
+                    2)[1]);  //$this->request->params()->map;
+            }
+
+            $this->_SERVER['CONTENT_TYPE'] = $contentType;
+            $this->_SERVER['CONTENT_LENGTH'] = $headers["Content-Length"];
+            $this->_SERVER['DOCUMENT_ROOT'] = getcwd() . '/';
+            $this->_SERVER['REQUEST_METHOD'] = $method;
+            $this->_SERVER['REQUEST_URI'] = $this->request->uri();
+            $this->_SERVER['HTTP_HOST'] = $fullpath[2];
+            $this->_SERVER['REMOTE_ADDR'] = $this->request->remoteAddress()->host();
+            $this->_SERVER['SERVER_PROTOCOL'] = $this->request->version();
+            $this->_SERVER['HTTP_ACCEPT'] = arrval($headers, 'Accept');
+            $this->_SERVER['HTTP_ACCEPT_LANGUAGE'] = arrval($headers, 'Accept-Language');
+            $this->_SERVER['HTTP_ACCEPT_ENCODING'] = arrval($headers, 'Accept-Encoding');
+            $this->_SERVER['HTTP_CACHE_CONTROL'] = arrval($headers, 'Cache-Control');
+            $this->_SERVER['HTTP_USER_AGENT'] = arrval($headers, 'User-Agent');
+            $this->_SERVER['HTTP_X_REQUESTED_WITH'] = arrval($headers, 'X-Requested-With');
+            $this->_SERVER['HTTPS'] = strpos($this->request->absoluteURI(), 'https://') === 0;
         }
-
-        $contentType = $headers["Content-Type"];
-        $this->_SERVER['CONTENT_TYPE'] = $contentType;
-        $this->_SERVER['CONTENT_LENGTH'] = $headers["Content-Length"];
-
-        $this->_SERVER['DOCUMENT_ROOT'] = getcwd() . '/';
-        $this->_SERVER['REQUEST_METHOD'] = $method = strtoupper($this->request->method());
-        $this->_SERVER['REQUEST_URI'] = $this->request->uri();
-        $this->_SERVER['HTTP_HOST'] = $fullpath[2];
-        $this->_SERVER['REMOTE_ADDR'] = $this->request->remoteAddress()->host();
-        $this->_SERVER['SERVER_PROTOCOL'] = $this->request->version();
-        $this->_SERVER['HTTP_ACCEPT'] = $headers['Accept'];
-        $this->_SERVER['HTTP_ACCEPT_LANGUAGE'] = $headers['Accept-Language'];
-        $this->_SERVER['HTTP_ACCEPT_ENCODING'] = $headers['Accept-Encoding'];
-        $this->_SERVER['HTTP_CACHE_CONTROL'] = $headers['Cache-Control'];
-        $this->_SERVER['HTTP_USER_AGENT'] = $headers['User-Agent'];
-        $this->_SERVER['HTTP_X_REQUESTED_WITH'] = $headers['X-Requested-With'];
-        $this->_SERVER['HTTPS'] = strpos($this->request->absoluteURI(), 'https://') === 0;
 
         if ($method == 'GET' || $method == 'OPTIONS' || $method == 'HEAD') {
             $this->processRequest();
         } else {
             //try processing input for POST, PUT, DELETE and etc HTTP methods
-//             $logger->info('transfer-encoding = ' . $headers['Transfer-Encoding']);
-//             $logger->info('content-length = ' . $headers['Content-Length']);
+//             $logger->info('transfer-encoding = ' . arrval($headers, 'Transfer-Encoding'));
+//             $logger->info('content-length = ' . arrval($headers, 'Content-Length'));
+
+
+            //if it's not on vertx but php-fpm
+            if (class_exists('Java') === false) {
+                $this->_POST = $_POST;
+                $app = &$this;
+                $app->processRequest();
+                return;
+            }
 
             if (!isset($headers['Transfer-Encoding']) && !isset($headers['Content-Length'])) {
                 $this->processRequest();
                 return;
             }
-
-//             $logger->info('$contentType = ' . $contentType);
 
             $isJSON = $contentType != null && strpos($contentType, "application/json") !== false;
             $isMultipart = $contentType != null && strpos($contentType, "multipart/form-data") !== false;
@@ -888,6 +911,9 @@ class DooWebApp implements DooAppInterface
 
     public function setCookiesInHeader()
     {
+        if (!class_exists('Java')) {
+            return;
+        }
         $cookies = new \Java('java.util.HashSet');
         foreach ($this->cookiesToSet as $str) {
             $cookies->add($str);
@@ -1596,7 +1622,7 @@ class DooWebApp implements DooAppInterface
                     //if status code is in error range, plus no output, try to check if ERROR_CODE_PAGES is defined.
                     //if is defined as a php file, error_503.php include and render the file.
                     //if is a route /error/code/503, reroute and render the final output
-                    if (isset($this->conf->ERROR_CODE_PAGES) && $this->conf->ERROR_CODE_PAGES[$code]) {
+                    if (isset($this->conf->ERROR_CODE_PAGES) && array_key_exists($code, $this->conf->ERROR_CODE_PAGES)) {
                         $errPage = $this->conf->ERROR_CODE_PAGES[$code];
                         $output = null;
 
