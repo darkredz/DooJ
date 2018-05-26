@@ -14,6 +14,7 @@ class DooContainer {
     const SHARED_MAIL = 'mail';
     const SHARED_RBAC = 'rbac';
     const SHARED_ACL = 'acl';
+    const SHARED_CONF = 'conf';
 
     public $defaultBindNames = [
         self::SHARED_APP,
@@ -21,7 +22,8 @@ class DooContainer {
         self::SHARED_MAIL,
         self::SHARED_RBAC,
         self::SHARED_ACL,
-        self::SHARED_VERTX
+        self::SHARED_VERTX,
+        self::SHARED_CONF
     ];
 
     public $customParamBinding = [];
@@ -144,13 +146,13 @@ class DooContainer {
             foreach ($matches[1] as $param) {
                 //inject app to controller constructor if its the default 3
                 if ($param == 'DooWebApp' || $param == 'DooEventBusApp' || $param == 'DooAppInterface') {
-                    $paramToInject[] = &$this->getShared('app');
+                    $paramToInject[] = $this->getShared('app');
                 } else {
                     if ($param == 'DooContainer') {
                         $paramToInject[] = &$this;
                     } else {
                         if ($param == 'DooConfig') {
-                            $paramToInject[] = &$this->getShared('app')->conf;
+                            $paramToInject[] = $this->getShared('app')->conf;
                         } //resolve class if container has it
                         else {
                             if ($this->has($param)) {
@@ -207,7 +209,21 @@ class DooContainer {
                                 if ($p->isOptional()) {
                                     $paramsAuto[] = $p->getDefaultValue();
                                 } else {
-                                    $error[$argName] = "Parameter not found for arg name $argName when creating $classname";
+                                    if ($this->hasShared($argName)) {
+                                        $paramsAuto[] = $this->getShared($argName);
+                                    }
+                                    else if ($this->has($argName)) {
+                                        $paramsAuto[] = $this->get($argName);
+                                    }
+                                    else {
+                                        $found = class_exists($declaredClassName, false) || Doo::autoload($declaredClassName, $this->getShared(self::SHARED_APP)->conf);
+                                        if ($found) {
+                                            $paramsAuto[] = $this->make($declaredClassName);
+                                        }
+                                        else {
+                                            $error[$argName] = "Parameter not found for arg named $argName typeof $declaredClassName when creating $classname. Class does not exists";
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -224,7 +240,7 @@ class DooContainer {
                         if ($p->isOptional()) {
                             $paramsAuto[] = $p->getDefaultValue();
                         } else {
-                            $error[$argName] = "Parameter not found for untyped arg name $argName when creating $classname";
+                            $error[$argName] = "Parameter not found(default bind) for untyped arg named $argName when creating $classname";
                         }
                     }
                 } else {
@@ -243,14 +259,14 @@ class DooContainer {
                                     if ($p->isOptional()) {
                                         $paramsAuto[] = $p->getDefaultValue();
                                     } else {
-                                        $error[$argName] = "Parameter not found for untyped(closure return $finalName) arg name $argName when creating $classname";
+                                        $error[$argName] = "Parameter not found for untyped(closure return $finalName) arg named $argName when creating $classname";
                                     }
                                 }
                             } else {
                                 if ($p->isOptional()) {
                                     $paramsAuto[] = $p->getDefaultValue();
                                 } else {
-                                    $error[$argName] = "Parameter not found for untyped arg name $argName when creating $classname";
+                                    $error[$argName] = "Parameter not found(custom bind) for untyped arg named $argName when creating $classname";
                                 }
                             }
                         }
@@ -258,7 +274,7 @@ class DooContainer {
                         if ($p->isOptional()) {
                             $paramsAuto[] = $p->getDefaultValue();
                         } else {
-                            $error[$argName] = "Parameter not found for untyped arg name $argName when creating $classname";
+                            $error[$argName] = "Parameter not found for untyped arg named $argName when creating $classname";
                         }
                     }
                 }
