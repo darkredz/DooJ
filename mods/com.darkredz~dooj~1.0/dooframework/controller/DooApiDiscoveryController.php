@@ -254,7 +254,13 @@ EOF;
             }
 
             $this->setContentType('json');
-            $this->endReq(\JSON::encode($json));
+
+            if (!empty($this->_GET['swagger'])) {
+                $swagger = $this->convertToSwaggerSchema($resource, $actionName, $actionType, $json, $schema);
+                $this->endReq(\JSON::encode($swagger));
+            } else {
+                $this->endReq(\JSON::encode($json));
+            }
         } else {
             $this->setContentType('json');
             $this->app->statusCode = 501;
@@ -263,15 +269,92 @@ EOF;
         }
     }
 
+    protected function convertToSwaggerSchema($resource, $actionName, $actionType, $json, $schema)
+    {
+        $tag = explode('/', $resource)[0];
+        $parameters = $json['schema']['properties'];
+        $swaggerParams = [];
+
+        foreach ($parameters as $key => $prm) {
+            $newPrm = [
+                'name' => $key,
+                'in' => 'formData',
+                'required' => (!empty($prm['required'])) ? true : false,
+                'type' => $prm['type'],
+                'description' => $prm['title'],
+            ];
+            $swaggerParams[] = $newPrm;
+        }
+
+        $actionSchema = [
+            'tags' => [$tag],
+            'summary' => $schema['title'],
+            'description' => $schema['description'],
+            'operationId' => $schema['resource'] .'-'. $schema['action'],
+            'consumes' => ['application/json', 'application/x-www-form-urlencoded'],
+            'produces' => ['application/json'],
+            'parameters' => $swaggerParams,
+        ];
+
+        if (!empty($json['result_format'])) {
+            $responses = [];
+            $httpCodes = \array_keys($json['result_format']);
+            foreach ($httpCodes as $code) {
+                $code = $code . '';
+                if (ctype_digit($code)) {
+                    $responseResult = null;
+                    if (is_array($json['result_format'][$code])) {
+                        $responseResult = \JSON::encode($json['result_format'][$code]);
+                    } else {
+                        $responseResult = $json['result_format'][$code];
+                    }
+
+                    $description = ($code >= 200 && $code < 300) ? 'success' : 'error';
+
+                    $responses[$code] = [
+                        'description' => $description,
+                        'schema' => [
+                            'type' => 'object'
+                        ],
+                        'examples' => [
+                            'application/json' => $responseResult
+                        ]
+                    ];
+                }
+            }
+            $actionSchema['responses'] = $responses;
+        }
+
+        return [
+            'swagger' => '2.0',
+            'info' => [
+                'description' => 'Auto generated partially',
+                'title' => 'API'
+            ],
+            'host' => str_replace(['http://', 'https://'], '', $this->app->conf->APP_URL),
+            'basePath' => 'api',
+            'tags' => [
+                ['name' => $tag],
+            ],
+            'paths' => [
+                "/$resource/$actionName" => [
+                    strtolower($actionType) => $actionSchema
+                ]
+            ]
+        ];
+    }
+
     protected function getApiResultFormat($section, $func)
     {
-        $jsonFile = $this->app->getProtectedRootPath() . 'config/' . $this->apiResultSampleFolder . '/' . $section . '/' . $func . '.json';
-        $this->app->logDebug($jsonFile);
+        $resFile = $this->app->getProtectedRootPath() . 'config/' . $this->apiResultSampleFolder . '/' . $section . '/' . $func;
 
-        if (!file_exists($jsonFile)) {
-            return;
+        if (file_exists($resFile . '.json')) {
+            $result = file_get_contents($resFile . '.json');
+            return ['200' => \JSON::decode($result)];
         }
-        $result = file_get_contents($jsonFile);
-        return \JSON::decode($result);
+        else if (file_exists($resFile . '.php')) {
+            $result = include($resFile . '.php');
+            return $result;
+        }
     }
 }
