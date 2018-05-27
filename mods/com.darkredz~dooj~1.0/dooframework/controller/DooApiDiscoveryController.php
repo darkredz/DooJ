@@ -26,6 +26,7 @@ class DooApiDiscoveryController extends DooController
     public $apiResultSampleFolder = 'api_result';
 
     public $async = true;
+    public $consumeTypes = ['application/x-www-form-urlencoded'];
 
     public function listApi()
     {
@@ -291,7 +292,7 @@ EOF;
             'summary' => $schema['title'],
             'description' => $schema['description'],
             'operationId' => $schema['resource'] .'-'. $schema['action'],
-            'consumes' => ['application/json', 'application/x-www-form-urlencoded'],
+            'consumes' => $this->consumeTypes,
             'produces' => ['application/json'],
             'parameters' => $swaggerParams,
         ];
