@@ -75,7 +75,7 @@ class DooJsonSchema
 
         foreach ($fieldData as $fname => $p) {
             $schemaProp[$fname] = [
-                'title' => ucfirst($fname),
+                'title' => str_replace('_', ' ', ucfirst($fname)),
                 'type' => $p[0],
                 'required' => true,
             ];
