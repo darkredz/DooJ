@@ -4,8 +4,8 @@
  *
  * @author Leng Sheng Hong <darkredz@gmail.com>
  * @link http://www.doophp.com/
- * @copyright Copyright &copy; 2009-2013 Leng Sheng Hong
- * @license http://www.doophp.com/license-v2
+ * @copyright Copyright &copy; 2009 Leng Sheng Hong
+ * @license http://www.doophp.com/license
  */
 
 
@@ -26,32 +26,32 @@
  * @package doo.cache
  * @since 1.1
  */
-
-class DooMemCache{
+class DooMemCache
+{
     /**
      * Memcached connection
      * @var Memcache
      */
-    protected $_memcache;
+    protected $memcache;
 
     /**
      * Configurations of the connections
      * @var array
      */
-    protected $_config;
+    protected $config;
 
-    public function  __construct($conf=Null) {
-        $this->_memcache = new Memcache();
-        $this->_config = $conf;
+    public function __construct($conf = null)
+    {
+        $this->memcache = new Memcache();
+        $this->config = isset($conf->MEMCACHE) ? $conf->MEMCACHE : $conf;
 
         // host, port, persistent, weight
-        if($conf!==Null){
-            foreach ($conf as $c){
-                $result = $this->_memcache->addServer($c[0], $c[1], $c[2], $c[3]);
+        if ($conf !== null) {
+            foreach ($conf as $c) {
+                $result = $this->memcache->addServer($c[0], $c[1], $c[2], $c[3]);
             }
-        }
-        else{
-            $this->_memcache->addServer('localhost', 11211);
+        } else {
+            $this->memcache->addServer('localhost', 11211);
         }
     }
 
@@ -64,11 +64,13 @@ class DooMemCache{
      * @param int $compressed To store the data in Zlib compressed format
      * @return bool True if success
      */
-    public function set($id, $data, $expire=0, $compressed=false){
-        if($compressed)
-            return $this->_memcache->set($id, $data, MEMCACHE_COMPRESSED, $expire);
-        else
-            return $this->_memcache->set($id, $data, 0, $expire);
+    public function set($id, $data, $expire = 0, $compressed = false)
+    {
+        if ($compressed) {
+            return $this->memcache->set($id, $data, MEMCACHE_COMPRESSED, $expire);
+        } else {
+            return $this->memcache->set($id, $data, 0, $expire);
+        }
     }
 
     /**
@@ -77,26 +79,29 @@ class DooMemCache{
      * @param string $id A unique key identifying the cache
      * @return mixed The value stored in cache. Return false if no cache found or already expired.
      */
-    public function get($id){
-        return $this->_memcache->get($id);
+    public function get($id)
+    {
+        return $this->memcache->get($id);
     }
-    
+
     /**
      * Deletes an APC data cache with an identifying Id
      *
      * @param string $id Id of the cache
      * @return bool True if success
      */
-    public function flush($id){
-        return $this->_memcache->delete($id);
+    public function flush($id)
+    {
+        return $this->memcache->delete($id);
     }
 
     /**
      * Deletes all data cache
      * @return bool True if success
      */
-    public function flushAll(){
-        return $this->_memcache->flush();
+    public function flushAll()
+    {
+        return $this->memcache->flush();
     }
 
 }
