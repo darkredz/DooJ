@@ -24,11 +24,12 @@ class DooApiDiscoveryController extends DooController
     public $excludeClasses = [];
     public $modulePath;
     public $apiResultSampleFolder = 'api_result';
+    public $apiBasePath = '/api';
 
     public $async = true;
     public $consumeTypes = ['application/x-www-form-urlencoded'];
 
-    public function listApi()
+    public function listApi($returnApi = false)
     {
         $fm = new DooFile();
 //        $rs = $fm->getFilePathList($this->app->conf->SITE_PATH . $this->app->conf->PROTECTED_FOLDER);
@@ -41,11 +42,12 @@ class DooApiDiscoveryController extends DooController
         $superMethods[] = '__get';
         $superMethods[] = '__set';
 
-        $htmlShow = $this->_GET['with_links'];
-        $forJs = $this->_GET['for_js'];
+        $htmlShow = arrval($this->_GET, 'with_links');
+        $forJs = arrval($this->_GET, 'for_js');
 
         $classes = [];
         $oriClasses = [];
+
         foreach ($rs as $fname => $fpath) {
 
 //            if(in_array($fname, ['ApiFormController.php', 'ApiRootController.php'])) continue;
@@ -69,8 +71,9 @@ class DooApiDiscoveryController extends DooController
             foreach ($methodsPub as $mth) {
                 $m = $mth->name;
 
-                if ($mth->isPublic() && !in_array($mth->name, $superMethods) && !in_array($m,
-                        $this->excludeClasses[$fname])) {
+                if ($mth->isPublic() && !in_array($mth->name, $superMethods) &&
+                    @!in_array($m, $this->excludeClasses[$fname])
+                ) {
                     $mRename = strtolower(preg_replace('/([a-z])([A-Z])/', '$1-$2', $m));
                     $methods[] = $mRename;
 
@@ -115,8 +118,6 @@ EOF;
             $this->endReq($html);
         } else {
             if ($forJs) {
-                $this->setContentType('json');
-
                 $methodsAll = ['GET' => [], 'POST' => []];
 
                 foreach ($classes as $className => $methods) {
@@ -137,8 +138,17 @@ EOF;
                     }
                 }
 
+                if ($returnApi) {
+                    return $methodsAll;
+                }
+
+                $this->setContentType('json');
                 $this->endReq(\JSON::encode($methodsAll));
             } else {
+                if ($returnApi) {
+                    return $classes;
+                }
+
                 $this->setContentType('json');
                 $this->endReq(\JSON::encode($classes));
             }
@@ -149,10 +159,10 @@ EOF;
     {
         $matches = [];
 //        preg_match('/\*\s+\@'. $annotate .'\s+([^\n\r\*]+)/', $str, $matches);
-        preg_match('/\*\s+\@' . $annotate . '\s+([.\s\S\n\r]+)(?=\* \@)/gm', $str, $matches);
+        preg_match('/\*\s+\@' . $annotate . '\s+([.\s\S\n\r]+)(?=\* \@)/m', $str, $matches);
 
         if (empty($matches)) {
-            preg_match('/\*\s+\@' . $annotate . '\s+([.\s\S\n\r]+)(?=\*\/)/gm', $str, $matches);
+            preg_match('/\*\s+\@' . $annotate . '\s+([.\s\S\n\r]+)(?=\*\/)/m', $str, $matches);
         }
 
         if (isset($matches[1])) {
@@ -168,15 +178,26 @@ EOF;
         return '';
     }
 
-    public function schema()
+    protected function convertToDash($matches)
+    {
+        return strtoupper($matches[1]);
+    }
+
+    public function schema($returnSchema = false, $swagger = false)
     {
         $resource = $this->params[0];
-//        $sectionClass = __NAMESPACE__ .'\\' . ucfirst($section) . 'Controller';
-        $section = preg_replace('/-(.?)/e', "strtoupper('$1')", strtolower($resource));
-        $sectionClass = $this->namespace . '\\' . ucfirst($section) . 'Controller';
         $actionName = $this->params[1];
 
-        $func = preg_replace('/-(.?)/e', "strtoupper('$1')", strtolower($actionName));
+//        $sectionClass = __NAMESPACE__ .'\\' . ucfirst($section) . 'Controller';
+        if (class_exists('Java')) {
+            $section = preg_replace('/-(.?)/e', "strtoupper('$1')", strtolower($resource));
+            $func = preg_replace('/-(.?)/e', "strtoupper('$1')", strtolower($actionName));
+            $sectionClass = $this->namespace . '\\' . ucfirst($section) . 'Controller';
+        } else {
+            $section = preg_replace_callback('/-(.?)/', [&$this, 'convertToDash'], strtolower($resource));
+            $func = preg_replace_callback('/-(.?)/', [&$this, 'convertToDash'], strtolower($actionName));
+            $sectionClass = $this->namespace . '\\' . ucfirst($section) . 'Controller';
+        }
 
         if (class_exists($sectionClass)) {
             $apiClass = $this->container->resolveConstructor($sectionClass);
@@ -227,7 +248,11 @@ EOF;
             if ($desc) {
                 $schema['description'] = $desc;
             } else {
-                $schema['description'] = 'Perform action ' . $func;
+                if (!empty($doc) && strpos($doc, '@') === false) {
+                    $schema['description'] = trim(str_replace(['/**', ' * ', '*/'], '', $doc));
+                } else {
+                    $schema['description'] = 'Perform action ' . $func;
+                }
             }
 
             $schema['method'] = $actionType;
@@ -256,10 +281,16 @@ EOF;
 
             $this->setContentType('json');
 
-            if (!empty($this->_GET['swagger'])) {
+            if (!empty($this->_GET['swagger']) || $swagger) {
                 $swagger = $this->convertToSwaggerSchema($resource, $actionName, $actionType, $json, $schema);
+                if ($returnSchema) {
+                    return $swagger;
+                }
                 $this->endReq(\JSON::encode($swagger));
             } else {
+                if ($returnSchema) {
+                    return $json;
+                }
                 $this->endReq(\JSON::encode($json));
             }
         } else {
@@ -326,14 +357,19 @@ EOF;
             $actionSchema['responses'] = $responses;
         }
 
+        $host = str_replace(['http://', 'https://'], '', $this->app->conf->APP_URL);
+        if ($host{-1} == '/') {
+            $host = substr($host, 0, -1);
+        }
+
         return [
             'swagger' => '2.0',
             'info' => [
                 'description' => 'Auto generated partially',
                 'title' => 'API'
             ],
-            'host' => str_replace(['http://', 'https://'], '', $this->app->conf->APP_URL),
-            'basePath' => 'api',
+            'host' => $host,
+            'basePath' => $this->apiBasePath,
             'tags' => [
                 ['name' => $tag],
             ],
@@ -358,4 +394,56 @@ EOF;
             return $result;
         }
     }
+
+    public function combineSchema()
+    {
+        $allApis = $this->listApi(true);
+        $resources = array_keys($allApis);
+        $schemas = [];
+        $filterResource = arrval($this->_GET, 'resource') ;
+        $swagger = arrval($this->_GET, 'swagger');
+
+        foreach ($resources as $resource) {
+            if (!empty($filterResource) && $filterResource != $resource) {
+                continue;
+            }
+            $actions = $allApis[$resource];
+            $this->params[0] = $resource;
+            $tags = [];
+
+            if ($swagger) {
+                foreach ($actions as $action) {
+                    $this->params[1] = $action;
+                    $schema = $this->schema(true, $swagger);
+
+                    if (empty($schemas)) {
+                        $schemas = $schema;
+                        $tags[] = $schemas['tags'][0]['name'];
+                    } else {
+                        $schemaPath = array_keys($schema['paths'])[0];
+                        $schemas['paths'][$schemaPath] = $schema['paths'][$schemaPath];
+                        if (!in_array($schema['tags'][0]['name'], $tags)) {
+                            $schemas['tags'][] = ['name' => $schema['tags'][0]['name']];
+                            $tags[] = $schemas['tags'][0]['name'];
+                        }
+                    }
+                }
+            } else {
+
+                if (empty($schemas[$resource])) {
+                    $schemas[$resource] = [];
+                }
+
+                foreach ($actions as $action) {
+                    $this->params[1] = $action;
+                    $schema = $this->schema(true, $swagger);
+                    $schemas[$resource][$action] = $schema['schema'];
+                }
+            }
+        }
+
+        $this->setContentType('json');
+        $this->endReq(\JSON::encode($schemas));
+    }
+
 }

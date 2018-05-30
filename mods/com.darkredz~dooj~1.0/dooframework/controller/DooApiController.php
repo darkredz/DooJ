@@ -186,7 +186,7 @@ class DooApiController extends DooController
         return true;
     }
 
-    protected function getFieldSchema()
+    public function getFieldSchema()
     {
         if ($this->actionField == null) {
             return;
@@ -249,16 +249,20 @@ class DooApiController extends DooController
 
     protected function deleteUploadTmpFiles()
     {
-        //on error, if file has error remove it.
-        foreach ($this->_FILES as $f) {
-            $tmpName = $f['tmp_name'];
-            $this->app->vertx->setTimer(100, g(function ($tid) use ($tmpName) {
-                $this->app->vertx->fileSystem()->exists($tmpName, a(function ($result, $error) use ($tmpName) {
-                    if ($result) {
-                        $this->app->vertx->fileSystem()->delete($tmpName, null);
-                    }
+
+        //if it's vertx but not php-fpm
+        if (class_exists('Java')) {
+            //on error, if file has error remove it.
+            foreach ($this->_FILES as $f) {
+                $tmpName = $f['tmp_name'];
+                $this->app->vertx->setTimer(100, g(function ($tid) use ($tmpName) {
+                    $this->app->vertx->fileSystem()->exists($tmpName, a(function ($result, $error) use ($tmpName) {
+                        if ($result) {
+                            $this->app->vertx->fileSystem()->delete($tmpName, null);
+                        }
+                    }));
                 }));
-            }));
+            }
         }
     }
 
