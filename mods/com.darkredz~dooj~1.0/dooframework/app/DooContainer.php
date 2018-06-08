@@ -144,6 +144,10 @@ class DooContainer {
         if (sizeof($matches) == 2) {
             $paramToInject = [];
             foreach ($matches[1] as $param) {
+                if ($param{0} == '\\') {
+                    $param = substr($param, 1);
+                }
+
                 //inject app to controller constructor if its the default 3
                 if ($param == 'DooWebApp' || $param == 'DooEventBusApp' || $param == 'DooAppInterface') {
                     $paramToInject[] = $this->getShared('app');
@@ -318,6 +322,7 @@ class DooContainer {
             $paramsInConstruct = $constructor->getNumberOfParameters();
             if ($paramsInConstruct > 0) {
                 $paramToInject = $this->injectMethodArgsWithDocBlock($constructor);
+
                 if (!empty($paramToInject)) {
                     $controller = $reflect->newInstanceArgs($paramToInject);
                 } else {
