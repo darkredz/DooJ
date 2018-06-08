@@ -234,6 +234,16 @@ class DooApiController extends DooController
             }
         }
 
+        // if get is empty, set fields to null to avoid notice undefined index when used in controller,
+        // reduce tedious checking work for controllers
+        if (empty($input)) {
+            foreach ($field as $f) {
+                if ($f != '_method') {
+                    $input[$f] = null;
+                }
+            }
+        };
+
         unset($input['_method']);
         unset($input['_return_type']);
 
@@ -251,7 +261,7 @@ class DooApiController extends DooController
     {
 
         //if it's vertx but not php-fpm
-        if (class_exists('Java')) {
+        if ($this->app->isJVM) {
             //on error, if file has error remove it.
             foreach ($this->_FILES as $f) {
                 $tmpName = $f['tmp_name'];

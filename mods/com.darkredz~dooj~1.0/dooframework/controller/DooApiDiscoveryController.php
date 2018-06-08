@@ -189,7 +189,7 @@ EOF;
         $actionName = $this->params[1];
 
 //        $sectionClass = __NAMESPACE__ .'\\' . ucfirst($section) . 'Controller';
-        if (class_exists('Java')) {
+        if ($this->app->isJVM) {
             $section = preg_replace('/-(.?)/e', "strtoupper('$1')", strtolower($resource));
             $func = preg_replace('/-(.?)/e', "strtoupper('$1')", strtolower($actionName));
             $sectionClass = $this->namespace . '\\' . ucfirst($section) . 'Controller';

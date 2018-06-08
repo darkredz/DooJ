@@ -24,6 +24,7 @@ class DooWebApp implements DooAppInterface
     public $conf;
 
     public $vertx;
+    public $isJVM = true;
 
     /**
      * @var DooContainer
@@ -138,6 +139,10 @@ class DooWebApp implements DooAppInterface
      */
     public $route;
 
+    function __construct()
+    {
+        $this->isJVM = class_exists('Java');
+    }
 
     public function getServerErrorHandler(
         $msg = '{"error":"Service Unavailable"}',
@@ -184,6 +189,23 @@ class DooWebApp implements DooAppInterface
     public function logError($msg)
     {
         $this->logger->error($this->logPrefixError . $msg);
+    }
+
+    public function logException($tag, $msg, $exception, $errCode = null)
+    {
+        // if the $exception is really an exception class
+        if (is_a($exception, 'Exception') || is_subclass_of($exception, 'Exception')) {
+            if ($errCode == null) {
+                $errCode = $exception->getCode();
+            }
+            $this->logError($tag . ' errorCode: ' . $errCode . " message: $msg. " . $exception->getMessage() . "\n" . $exception->getTraceAsString());
+        } else {
+            if (!is_array($exception) && !is_object($exception)) {
+                $this->logError($tag . ' errorCode: ' . $errCode . " message: $msg. " . $exception);
+            } else {
+                $this->logError($tag . ' errorCode: ' . $errCode . " message: $msg. " . print_r($exception, true));
+            }
+        }
     }
 
     public function logDebug($msg)
@@ -329,7 +351,7 @@ class DooWebApp implements DooAppInterface
         $method = strtoupper($this->request->method());
 
         //if it's not on vertx but php-fpm
-        if (class_exists('Java') === false) {
+        if ($this->isJVM === false) {
             $this->_GET = $_GET;
             $this->_SERVER = $_SERVER;
         } else {
@@ -365,7 +387,7 @@ class DooWebApp implements DooAppInterface
 
 
             //if it's not on vertx but php-fpm
-            if (class_exists('Java') === false) {
+            if ($this->isJVM === false) {
                 $this->_POST = $_POST;
                 $app = &$this;
                 $app->processRequest();
@@ -911,7 +933,7 @@ class DooWebApp implements DooAppInterface
 
     public function setCookiesInHeader()
     {
-        if (!class_exists('Java')) {
+        if (!$this->isJVM) {
             return;
         }
         $cookies = new \Java('java.util.HashSet');

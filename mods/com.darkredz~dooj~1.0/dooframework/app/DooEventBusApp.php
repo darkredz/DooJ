@@ -25,6 +25,7 @@ class DooEventBusApp implements DooAppInterface
     public $conf;
 
     public $vertx;
+    public $isJVM = true;
 
     public $logPrefixDebug = '[DEBUG]: ';
     public $logPrefixInfo = '[INFO]: ';
@@ -127,6 +128,10 @@ class DooEventBusApp implements DooAppInterface
      */
     public $route;
 
+    function __construct()
+    {
+        $this->isJVM = class_exists('Java');
+    }
 
     public function init($message, $config, $rawMessage = null)
     {
@@ -253,6 +258,14 @@ class DooEventBusApp implements DooAppInterface
     public function logError($msg)
     {
         $this->logError($this->logPrefixError . $msg);
+    }
+
+    public function logException($tag, $msg, $exception, $errCode = null)
+    {
+        if ($errCode == null) {
+            $errCode = $exception->getCode();
+        }
+        $this->logError($tag . ' errorCode: ' . $errCode . " message: $msg. " . $exception->getMessage() . "\n" . $exception->getTraceAsString());
     }
 
     public function logDebug($msg)
