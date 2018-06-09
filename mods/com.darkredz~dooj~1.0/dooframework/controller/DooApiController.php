@@ -259,7 +259,6 @@ class DooApiController extends DooController
 
     protected function deleteUploadTmpFiles()
     {
-
         //if it's vertx but not php-fpm
         if ($this->app->isJVM) {
             //on error, if file has error remove it.

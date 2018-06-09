@@ -273,7 +273,7 @@ EOF;
 
             $apiResultJson = $this->getApiResultFormat($resource, $actionName);
             if ($apiResultJson) {
-                $json['result_format'] = $apiResultJson;
+                $json['schema']['result_format'] = $apiResultJson;
                 if (is_object($apiResultJson)) {
                     $json['schema']['result_type'] = 'object';
                 }
@@ -315,6 +315,20 @@ EOF;
                 'type' => $prm['type'],
                 'description' => $prm['title'],
             ];
+
+            $ignoreProps = ['title', 'type', 'required'];
+//            $convertProps = ['inList' => 'enum'];
+
+            foreach ($prm as $p => $pVal) {
+                if (in_array($p, $ignoreProps)) continue;
+
+                if (!empty($convertProps[$p])) {
+                    $newPrm[$convertProps[$p]] = $pVal;
+                } else {
+                    $newPrm[$p] = $pVal;
+                }
+            }
+
             $swaggerParams[] = $newPrm;
         }
 
@@ -328,17 +342,17 @@ EOF;
             'parameters' => $swaggerParams,
         ];
 
-        if (!empty($json['result_format'])) {
+        if (!empty($json['schema']['result_format'])) {
             $responses = [];
-            $httpCodes = \array_keys($json['result_format']);
+            $httpCodes = \array_keys($json['schema']['result_format']);
             foreach ($httpCodes as $code) {
                 $code = $code . '';
                 if (ctype_digit($code)) {
                     $responseResult = null;
-                    if (is_array($json['result_format'][$code])) {
-                        $responseResult = \JSON::encode($json['result_format'][$code]);
+                    if (is_array($json['schema']['result_format'][$code])) {
+                        $responseResult = \JSON::encode($json['schema']['result_format'][$code]);
                     } else {
-                        $responseResult = $json['result_format'][$code];
+                        $responseResult = $json['schema']['result_format'][$code];
                     }
 
                     $description = ($code >= 200 && $code < 300) ? 'success' : 'error';
@@ -383,7 +397,7 @@ EOF;
 
     protected function getApiResultFormat($section, $func)
     {
-        $resFile = $this->app->getProtectedRootPath() . 'config/' . $this->apiResultSampleFolder . '/' . $section . '/' . $func;
+        $resFile = $this->app->conf->SITE_PATH . $this->app->conf->PROTECTED_FOLDER . 'endpoint/' . $this->apiResultSampleFolder . '/' . $section . '/' . $func;
 
         if (file_exists($resFile . '.json')) {
             $result = file_get_contents($resFile . '.json');
@@ -403,13 +417,14 @@ EOF;
         $filterResource = arrval($this->_GET, 'resource') ;
         $swagger = arrval($this->_GET, 'swagger');
 
+        $tags = [];
+
         foreach ($resources as $resource) {
             if (!empty($filterResource) && $filterResource != $resource) {
                 continue;
             }
             $actions = $allApis[$resource];
             $this->params[0] = $resource;
-            $tags = [];
 
             if ($swagger) {
                 foreach ($actions as $action) {
@@ -422,9 +437,10 @@ EOF;
                     } else {
                         $schemaPath = array_keys($schema['paths'])[0];
                         $schemas['paths'][$schemaPath] = $schema['paths'][$schemaPath];
-                        if (!in_array($schema['tags'][0]['name'], $tags)) {
-                            $schemas['tags'][] = ['name' => $schema['tags'][0]['name']];
-                            $tags[] = $schemas['tags'][0]['name'];
+                        $tagName = $schema['tags'][0]['name'];
+                        if (!in_array($tagName, $tags)) {
+                            $schemas['tags'][] = ['name' => $tagName];
+                            $tags[] = $tagName;
                         }
                     }
                 }
