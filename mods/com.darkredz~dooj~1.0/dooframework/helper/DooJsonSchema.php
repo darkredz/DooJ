@@ -75,7 +75,7 @@ class DooJsonSchema
 
         foreach ($fieldData as $fname => $p) {
             $schemaProp[$fname] = [
-                'title' => str_replace('_', ' ', ucfirst($fname)),
+                'title' => ucfirst($fname),
                 'type' => $p[0],
                 'required' => true,
             ];
@@ -104,6 +104,12 @@ class DooJsonSchema
                                 break;
                             case 'maxLength':
                                 $schemaProp[$fname]['maxLength'] = $rule[1];
+                                break;
+                            case 'minLength':
+                                $schemaProp[$fname]['minLength'] = $rule[1];
+                                break;
+                            case 'default':
+                                $schemaProp[$fname]['default'] = $rule[1];
                                 break;
                         }
                     }
