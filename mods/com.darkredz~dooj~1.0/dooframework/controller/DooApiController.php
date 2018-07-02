@@ -178,7 +178,7 @@ class DooApiController extends DooController
 
     protected function isMethodAllow()
     {
-        $allowMethod = $this->{$this->actionField}['_method'];
+        $allowMethod = @$this->{$this->actionField}['_method'];
 
         if ($allowMethod && strtoupper($allowMethod) != $this->app->_SERVER['REQUEST_METHOD']) {
             return false;
@@ -198,6 +198,11 @@ class DooApiController extends DooController
     {
         $this->input = $this->getApiInput();
         return $this->input;
+    }
+
+    protected function listApiInput()
+    {
+        return array_values($this->prepApiInput());
     }
 
     protected function getApiInput()
@@ -259,8 +264,9 @@ class DooApiController extends DooController
 
     protected function deleteUploadTmpFiles()
     {
+
         //if it's vertx but not php-fpm
-        if ($this->app->isJVM) {
+        if (class_exists('Java')) {
             //on error, if file has error remove it.
             foreach ($this->_FILES as $f) {
                 $tmpName = $f['tmp_name'];
