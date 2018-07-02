@@ -28,4 +28,7 @@ interface DooAppInterface
     public function logError($msg);
 
     public function logDebug($msg);
+
+    public function logException($tag, $msg, $exception, $errCode = null);
+
 }
