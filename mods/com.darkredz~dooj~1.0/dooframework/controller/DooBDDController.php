@@ -63,13 +63,15 @@ class DooBDDController extends DooController
 
     protected $passes = 0;
     protected $fails = 0;
+    protected $startTime = 0;
+    protected $totalTime = 0;
 
     public function __construct()
     {
         $this->bdd = new ArrBDD;
     }
 
-    public function beforeRun($resource, $action)
+    public function beforeRun($resource, $action, $beforeRunHandler = NULL)
     {
         $subject = $this->getKeyParam('subject');
         $this->includeSubject = (bool)$subject;
@@ -101,6 +103,57 @@ class DooBDDController extends DooController
      */
     protected function executeTest($doneCallback, $section = null)
     {
+        $this->prepareTestList($section);
+
+        $this->logInfo("[BDD] Running $this->totalTest tests");
+
+        $this->eachDoneCallback = function ($section, $testResult) use (&$doneCallback) {
+            $this->logInfo("[BDD] Finish testing specs for section $section");
+            $this->result[$section] = $testResult;
+
+            $this->trace($testResult);
+
+            if (sizeof($this->result) === $this->totalTest) {
+                $this->totalTime = \time() - $this->startTime;
+                $doneCallback($this->totalTime);
+            } else {
+                $this->runSpecTest();
+            }
+        };
+
+        $this->runSpecTest();
+    }
+
+    protected function executeTestInCLI($doneCallback, $section = null)
+    {
+        $this->prepareTestList($section);
+        $this->logInfo("[BDD] Running $this->totalTest tests");
+
+        $result = [];
+
+        foreach ($this->testSections as $item) {
+            $sect = $item['section'];
+            $this->logInfo("[BDD] Testing section $sect...");
+            $text = exec("php index.php 'REQUEST_URI=/test/bdd/run/section/$sect?silent=true'");
+            $rs = \JSON::decode($text, true);
+            $key = array_keys($rs)[0];
+            $result[$key] = $rs[$key];
+            $passes = $rs['BDD Passes'];
+            $failed = $rs['BDD Fails'];
+            $total = $passes + $failed;
+
+            $this->logInfo("[BDD] Section $sect test result = $passes/$total");
+        }
+
+        $this->result = $result;
+        $this->totalTime = \time() - $this->startTime;
+
+        $doneCallback($this->totalTime);
+    }
+
+    protected function prepareTestList($section)
+    {
+        $this->startTime = \time();
         if ($section === null) {
             $chosenSection = urldecode($this->getKeyParam('section'));
         } else {
@@ -148,36 +201,22 @@ class DooBDDController extends DooController
             ];
         }
 
-        $totalTest = sizeof($this->testSections);
-        $this->app->logInfo("[BDD] Running $totalTest tests");
-
-        $this->runSpecTest($totalTest, $doneCallback);
+        $this->totalTest = sizeof($this->testSections);
     }
 
-    protected function runSpecTest($totalTest, $doneCallback)
+    protected function runSpecTest()
     {
         $i = sizeof($this->result);
         $obj = $this->testSections[$i]['specObject'];
         $section = $this->testSections[$i]['section'];
 
-        $this->app->logInfo("[BDD] Testing against $section specs");
+        $this->logInfo("[BDD] Testing against $section specs");
 
         //prepare the specs
+        /** @var ArrBDDSpec $obj */
         $obj->prepare();
 
-        $this->bdd->run($section, $obj->specs, $this->includeSubject,
-            function ($section, $testResult) use ($doneCallback, $totalTest) {
-                $this->app->logInfo("[BDD] Finish testing specs for section $section");
-                $this->result[$section] = $testResult;
-
-                $this->app->trace($testResult);
-
-                if (sizeof($this->result) === $totalTest) {
-                    $doneCallback();
-                } else {
-                    $this->runSpecTest($totalTest, $doneCallback);
-                }
-            });
+        $this->bdd->run($section, $obj->specs, $this->includeSubject, $this->eachDoneCallback);
     }
 
     /**
@@ -228,10 +267,24 @@ class DooBDDController extends DooController
         $testResults['BDD Passes'] = $this->passes;
         $testResults['BDD Fails'] = $this->fails;
 
-        $this->app->logInfo("[BDD] Passes = $this->passes");
-        $this->app->logInfo("[BDD] Fails = $this->fails");
-
+        $this->logInfo("[BDD] Passes = $this->passes");
+        $this->logInfo("[BDD] Fails = $this->fails");
+        $this->logInfo("Total time used = $this->totalTime");
         $this->toJSON($testResults, true);
+    }
+
+    protected function logInfo($msg)
+    {
+        if (empty($this->_GET['silent'])) {
+            $this->app->logInfo($msg);
+        }
+    }
+
+    protected function trace($obj)
+    {
+        if (empty($this->_GET['silent'])) {
+            $this->app->trace($obj);
+        }
     }
 
     /**
