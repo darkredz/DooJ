@@ -211,34 +211,31 @@ class Doo
 
     /**
      * @param string $cacheType Cache type: file, php, front, apc, memcache, xcache, eaccelerator. Default is file based cache.
-     * @return DooFileCache|DooPhpCache|DooFrontCache|DooApcCache|DooMemCache|DooXCache|DooEAcceleratorCache file/php/apc/memcache/xcache/eaccelerator & frontend caching tool, singleton, auto create if the singleton has not been created yet.
+     * @return DooFileCache|DooPhpCache|DooFrontCache|DooApcCache|DooMemCache|DooApcuCache file/php/apc/memcache/apcu & frontend caching tool, singleton, auto create if the singleton has not been created yet.
      */
-    public static function cache($cacheType = 'file')
+    public static function cache($cacheType = 'php')
     {
-        if ($cacheType == 'file') {
-            if (isset(self::$_cache['file'])) {
-                return self::$_cache['file'];
+        if ($cacheType == 'php') {
+            if (isset(self::$_cache['php'])) {
+                return self::$_cache['php'];
             }
 
-            self::loadCore('cache/DooFileCache');
-            self::$_cache['file'] = new DooFileCache;
-            return self::$_cache['file'];
+            self::$_cache['php'] = new DooPhpCache;
+            return self::$_cache['php'];
         } else {
-            if ($cacheType == 'php') {
-                if (isset(self::$_cache['php'])) {
-                    return self::$_cache['php'];
+            if ($cacheType == 'file') {
+                if (isset(self::$_cache['file'])) {
+                    return self::$_cache['file'];
                 }
 
-                self::loadCore('cache/DooPhpCache');
-                self::$_cache['php'] = new DooPhpCache;
-                return self::$_cache['php'];
+                self::$_cache['file'] = new DooFileCache;
+                return self::$_cache['file'];
             } else {
                 if ($cacheType == 'front') {
                     if (isset(self::$_cache['front'])) {
                         return self::$_cache['front'];
                     }
 
-                    self::loadCore('cache/DooFrontCache');
                     self::$_cache['front'] = new DooFrontCache;
                     return self::$_cache['front'];
                 } else {
@@ -247,37 +244,24 @@ class Doo
                             return self::$_cache['apc'];
                         }
 
-                        self::loadCore('cache/DooApcCache');
                         self::$_cache['apc'] = new DooApcCache;
                         return self::$_cache['apc'];
                     } else {
-                        if ($cacheType == 'xcache') {
-                            if (isset(self::$_cache['xcache'])) {
-                                return self::$_cache['xcache'];
+                        if ($cacheType == 'apcu') {
+                            if (isset(self::$_cache['apcu'])) {
+                                return self::$_cache['apcu'];
                             }
 
-                            self::loadCore('cache/DooXCache');
-                            self::$_cache['xcache'] = new DooXCache;
-                            return self::$_cache['xcache'];
+                            self::$_cache['apcu'] = new DooApcuCache;
+                            return self::$_cache['apcu'];
                         } else {
-                            if ($cacheType == 'eaccelerator') {
-                                if (isset(self::$_cache['eaccelerator'])) {
-                                    return self::$_cache['eaccelerator'];
-                                }
-
-                                self::loadCore('cache/DooEAcceleratorCache');
-                                self::$_cache['eaccelerator'] = new DooEAcceleratorCache;
-                                return self::$_cache['eaccelerator'];
-                            } else {
-                                if ($cacheType == 'memcache') {
-                                    if (isset(self::$_cache['memcache'])) {
-                                        return self::$_cache['memcache'];
-                                    }
-
-                                    self::loadCore('cache/DooMemCache');
-                                    self::$_cache['memcache'] = new DooMemCache(Doo::conf()->MEMCACHE);
+                            if ($cacheType == 'memcache') {
+                                if (isset(self::$_cache['memcache'])) {
                                     return self::$_cache['memcache'];
                                 }
+
+                                self::$_cache['memcache'] = new DooMemCache(Doo::conf());
+                                return self::$_cache['memcache'];
                             }
                         }
                     }
@@ -372,7 +356,7 @@ class Doo
      * @example If the file is in a package, called <code>loadCore('auth/DooLog')</code>
      * @param string $class_name Name of the class to be imported
      */
-    public static function loadCore($class_name, $conf)
+    public static function loadCore($class_name, $conf = null)
     {
         require_once $conf->BASE_PATH . "$class_name.php";
     }
@@ -467,7 +451,8 @@ class Doo
         $class['DooEventBusResponse'] = 'app/DooEventBusResponse';
         $class['DooJava'] = 'app/DooJava';
         $class['DooContainer'] = 'app/DooContainer';
-
+        $class['DooWebAppRequest'] = 'app/DooWebAppRequest';
+        $class['DooWebAppResponse'] = 'app/DooWebAppResponse';
 
         //auth
         $class['DooAcl'] = 'auth/DooAcl';
@@ -477,12 +462,11 @@ class Doo
 
         //cache
         $class['DooApcCache'] = 'cache/DooApcCache';
-        $class['DooEAcceleratorCache'] = 'cache/DooEAcceleratorCache';
+        $class['DooApcuCache'] = 'cache/DooApcuCache';
         $class['DooFileCache'] = 'cache/DooFileCache';
         $class['DooFrontCache'] = 'cache/DooFrontCache';
         $class['DooMemCache'] = 'cache/DooMemCache';
         $class['DooPhpCache'] = 'cache/DooPhpCache';
-        $class['DooXCache'] = 'cache/DooXCache';
 
         //controller
         $class['DooController'] = 'controller/DooController';
@@ -509,11 +493,13 @@ class Doo
         $class['DooInputValidator'] = 'model/DooInputValidator';
 
         //db
+        $class['DooDbLogTrait'] = 'db/DooDbLogTrait';
         $class['DooDbExpression'] = 'db/DooDbExpression';
         $class['DooMasterSlave'] = 'db/DooMasterSlave';
-        $class['DooModel'] = 'db/DooModel';
         $class['DooModelGen'] = 'db/DooModelGen';
         $class['DooSmartModel'] = 'db/DooSmartModel';
+        $class['DooFindOpt'] = 'db/DooFindOpt';
+        $class['DooUpdateOpt'] = 'db/DooUpdateOpt';
         $class['DooSqlMagic'] = 'db/DooSqlMagic';
 
         $class['DooMongo'] = 'db/DooMongo';
@@ -594,7 +580,7 @@ class Doo
                     $classname = str_replace('\\', '/', substr($classname, strlen($conf->APP_NAMESPACE_ID) + 1));
                     if (file_exists($path . $classname . '.php')) {
                         require_once $path . $classname . '.php';
-                        return;
+                        return true;
                     }
                 }
             }
@@ -640,7 +626,7 @@ class Doo
 
                 if (isset($rs[$classname . '.php']) === true) {
                     require_once $rs[$classname . '.php'];
-                    return;
+                    return true;
                 }
             }
         }
