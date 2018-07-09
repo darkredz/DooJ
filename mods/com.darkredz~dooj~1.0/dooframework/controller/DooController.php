@@ -499,6 +499,17 @@ class DooController
         }
     }
 
+    public function setContentDownload($filename)
+    {
+        $this->setHeader('Pragma', 'public');
+        $this->setHeader('Expires', '0');
+        $this->setHeader('Cache-Control', 'must-revalidate, post-check=0, pre-check=0');
+        $this->setHeader('Cache-Control', 'private');
+        $this->setHeader('Content-Type', 'application/octet-stream');
+        $this->setHeader('Content-Disposition', 'attachment; filename="'. $filename .'"');
+        $this->setHeader('Content-Transfer-Encoding', 'binary');
+    }
+
     /**
      * Check token to prevent CSRF attack. Token had to be stored in session and verify against header/post field. Use com.doophp.util.UUID::randomUUID() to generate a unique CSRF token
      * @param $token Unique CSRF token stored
@@ -515,7 +526,8 @@ class DooController
             if (!$this->app->request->headers()->get($csrfParamName) && !$this->_POST[$csrfParamName]) {
                 $failed = true;
             } else {
-                if (isset($this->app->request->headers()->get($csrfParamName)) && $this->app->request->headers()->get($csrfParamName) != $token) {
+                $chkToken = $this->app->request->headers()->get($csrfParamName);
+                if (isset($chkToken) && $chkToken != $token) {
                     $failed = true;
                 } else {
                     if (isset($this->_POST[$csrfParamName]) && $this->_POST[$csrfParamName] != $token) {
@@ -906,7 +918,7 @@ class DooController
     {
         $input = [];
         foreach ($fields as $k) {
-            $input[$k] = $rawInput[$k];
+            $input[$k] = arrval($rawInput, $k);
         }
         return $input;
     }
@@ -941,6 +953,11 @@ class DooController
             $this->app->request->response()->setChunked(true);
         }
         $this->app->end($out);
+    }
+
+    public function traceOnWeb($out)
+    {
+        $this->endReq('<pre>'.print_r($out, true));
     }
 
     /**
