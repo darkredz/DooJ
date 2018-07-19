@@ -310,6 +310,18 @@ public class SQLClient implements SQLClientInterface {
         }
     }
 
+    public void insert(Env env, String sql, JsonArray params, final Callable handler, final Callable errorHandler) {
+        update(env, sql, params, handler, errorHandler);
+    }
+
+    public void insert(Env env, String sql, Value paramsArr, final Callable handler, final Callable errorHandler) {
+        if (paramsArr == null) {
+            update(env, sql, null, handler, errorHandler);
+        } else {
+            update(env, sql, PhpTypes.arrayToJsonArray(env, paramsArr), handler, errorHandler);
+        }
+    }
+
     public void delete(Env env, String sql, JsonArray params) {
         update(env, sql, params, null, null);
     }
@@ -336,6 +348,18 @@ public class SQLClient implements SQLClientInterface {
         } else {
             update(env, sql, PhpTypes.arrayToJsonArray(env, paramsArr), handler, null);
         }
+    }
+
+    public void delete(Env env, String sql, Value paramsArr, final Callable handler, final Callable errorHandler) {
+        if (paramsArr == null) {
+            update(env, sql, null, handler, errorHandler);
+        } else {
+            update(env, sql, PhpTypes.arrayToJsonArray(env, paramsArr), handler, errorHandler);
+        }
+    }
+
+    public void delete(Env env, String sql, JsonArray params, final Callable handler, final Callable errorHandler) {
+        update(env, sql, params, handler, errorHandler);
     }
 
     public void update(Env env, String sql, JsonArray params) {
@@ -604,6 +628,19 @@ public class SQLClient implements SQLClientInterface {
         });
     }
 
+    public void startTx(Env env, SQLConnection conn, final Callable done, final Callable errorHandler) {
+        conn.setAutoCommit(false, res -> {
+            if (res.failed()) {
+                errorHandler.call(env, env.wrapJava(res.cause()));
+                return;
+            }
+
+            if (done != null) {
+                done.call(env);
+            }
+        });
+    }
+
     public void rollbackTx(SQLConnection conn, Handler<ResultSet> done) {
         conn.rollback(res -> {
             conn.close();
@@ -618,15 +655,46 @@ public class SQLClient implements SQLClientInterface {
         });
     }
 
+    public void rollbackTx(Env env, SQLConnection conn, final Callable done, final Callable errorHandler) {
+        conn.rollback(res -> {
+            conn.close();
+
+            if (res.failed()) {
+                errorHandler.call(env, env.wrapJava(res.cause()));
+            }
+
+            if (done != null) {
+                done.call(env);
+            }
+        });
+    }
+
     public void commit(SQLConnection conn, Handler<AsyncResult<Void>> done) {
         conn.commit(res -> {
             conn.close();
+
+            if (res.failed()) {
+                throw new RuntimeException(res.cause());
+            }
 
             if (done != null) {
                 done.handle(null);
             }
         });
+    }
 
+    public void commit(Env env, SQLConnection conn, final Callable done, final Callable errorHandler) {
+        conn.commit(res -> {
+            conn.close();
+
+            if (res.failed()) {
+                errorHandler.call(env, env.wrapJava(res.cause()));
+            }
+
+            if (done != null) {
+                done.call(env);
+            }
+        });
     }
 
     public Value toPhpArray(Env env, JsonArray rows) {
