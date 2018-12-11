@@ -26,6 +26,7 @@ import org.jooq.impl.DSL;
 
 import java.util.List;
 import java.util.ListIterator;
+import io.vertx.ext.bridge.BridgeEventType;
 
 /**
  * Created by leng on 12/27/16.
@@ -537,6 +538,45 @@ public class SQLClient implements SQLClientInterface {
         }
     }
 
+    public void queryRaw(Env env, SQLConnection conn, String sql, JsonArray params, final Callable done, final Callable errorHandler) {
+        Handler<AsyncResult<ResultSet>> resultHandler = new Handler<AsyncResult<ResultSet>>() {
+            @Override
+            public void handle(final AsyncResult<ResultSet> res2) {
+                if (res2.succeeded()) {
+                    ResultSet queryRes = res2.result();
+                    JsonArray rows = null;
+                    if (queryRes != null && queryRes.getNumRows() >= 0) {
+                        rows = new JsonArray(queryRes.getRows());
+                    }
+                    if (done != null) {
+                        if (rows == null) {
+                            done.call(env);
+                        } else {
+                            done.call(env, PhpTypes.arrayFromJson(env, rows), env.wrapJava(conn));
+                        }
+                    }
+                } else {
+                    if (res2.failed()) {
+                        logError("SQL Query Failed! " + sql, res2.cause());
+                    }
+                    if (errorHandler != null) {
+                        errorHandler.call(env, env.wrapJava(res2.cause()), env.wrapJava(conn));
+                    }
+                }
+            }
+        };
+
+        logDebug("Executing SQL Query: " + sql);
+
+        if (params == null) {
+            conn.query(sql, resultHandler);
+        } else {
+            logDebug("Query Params = " + params.encode());
+            conn.queryWithParams(sql, params, resultHandler);
+        }
+    }
+
+
     public void updateRaw(String sql, JsonArray params, Handler<JsonObject> handler, Handler<Throwable> errorHandler) {
         sqlClient.getConnection(res -> {
             if (res.succeeded()) {
@@ -569,6 +609,34 @@ public class SQLClient implements SQLClientInterface {
                     }
                     if (errorHandler != null) {
                         errorHandler.handle(res2.cause());
+                    }
+                }
+            }
+        };
+
+        logDebug("Executing SQL Update Query : " + sql);
+
+        if (params == null) {
+            conn.update(sql, resultHandler);
+        } else {
+            logDebug("Query Params = " + params.encode());
+            conn.updateWithParams(sql, params, resultHandler);
+        }
+    }
+
+    public void updateRaw(Env env, SQLConnection conn, String sql, JsonArray params, final Callable done, final Callable errorHandler) {
+        Handler<AsyncResult<UpdateResult>> resultHandler = new Handler<AsyncResult<UpdateResult>>() {
+            @Override
+            public void handle(final AsyncResult<UpdateResult> res2) {
+                if (res2.succeeded()) {
+                    UpdateResult queryRes = res2.result();
+                    done.call(env, PhpTypes.arrayFromJson(env, queryRes.toJson()), env.wrapJava(conn));
+                } else {
+                    if (res2.failed()) {
+                        logError("SQL Update Query Failed! " + sql, res2.cause());
+                    }
+                    if (errorHandler != null) {
+                        errorHandler.call(env, env.wrapJava(res2.cause()), env.wrapJava(conn));
                     }
                 }
             }
@@ -628,7 +696,16 @@ public class SQLClient implements SQLClientInterface {
         });
     }
 
-    public void startTx(Env env, SQLConnection conn, final Callable done, final Callable errorHandler) {
+
+    public void connect(Env env, final Callable done) {
+        connect(connRes -> {
+            final SQLConnection conn = connRes.result();
+            done.call(env, env.wrapJava(conn));
+        });
+    }
+
+
+    public void startTx(Env env, final SQLConnection conn, final Callable done, final Callable errorHandler) {
         conn.setAutoCommit(false, res -> {
             if (res.failed()) {
                 errorHandler.call(env, env.wrapJava(res.cause()));
@@ -636,7 +713,7 @@ public class SQLClient implements SQLClientInterface {
             }
 
             if (done != null) {
-                done.call(env);
+                done.call(env, env.wrapJava(conn));
             }
         });
     }
@@ -655,7 +732,7 @@ public class SQLClient implements SQLClientInterface {
         });
     }
 
-    public void rollbackTx(Env env, SQLConnection conn, final Callable done, final Callable errorHandler) {
+    public void rollbackTx(Env env, final SQLConnection conn, final Callable done, final Callable errorHandler) {
         conn.rollback(res -> {
             conn.close();
 
