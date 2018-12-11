@@ -445,8 +445,6 @@ class DooTimezone
                 }
             } else {
                 if ($dateDstFrom->format('I') == 1) {
-                    $dtfrom = new DateTime($dateDstFrom->format('Y-m-d H:i:s'), new DateTimeZone('UTC'));
-                    $dtto = new DateTime($time, new DateTimeZone('UTC'));
                     $offsetDiff = ($dateDst->getTimestamp() - $dateDstFrom->getTimestamp()) / 3600;
                     $noDstDiff = self::getOffsetFromTimezone($fromTimezone,
                             'hour') - self::getOffsetFromTimezone($toTimezone, 'hour');
