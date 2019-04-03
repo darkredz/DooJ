@@ -42,6 +42,11 @@ class DooWebAppRequest
         $this->response = new DooWebAppResponse();
     }
 
+    public function mutateUri($callback)
+    {
+        $this->uri = $callback($this->uri);
+    }
+
     public function prepareCLI(DooAppInterface $app, $argv)
     {
         if (isset($argv[1])) {
@@ -91,7 +96,7 @@ class DooWebAppRequest
 
     public function params()
     {
-        $q = explode('?', $this->uri, 2);
+        $q = explode('?', $this->uri(), 2);
         if (sizeof($q) < 2) {
             return [];
         }
@@ -113,9 +118,8 @@ class DooWebAppRequest
 
     public function absoluteURI()
     {
-        return (isset($_SERVER['HTTPS']) ? "https" : "http") . "://{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
+        return (isset($_SERVER['HTTPS']) ? "https" : "http") . "://{$_SERVER['HTTP_HOST']}{$this->uri()}";
     }
-
 
     public function host()
     {
@@ -124,12 +128,12 @@ class DooWebAppRequest
 
     public function path()
     {
-        return $_SERVER['REQUEST_URI'];
+        return $this->uri;
     }
 
     public function uri()
     {
-        return $_SERVER['REQUEST_URI'];
+        return $this->uri;
     }
 
     public function method()

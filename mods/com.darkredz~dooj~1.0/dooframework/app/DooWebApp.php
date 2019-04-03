@@ -827,7 +827,7 @@ class DooWebApp implements DooAppInterface
         //if status code is in error range, plus no output, try to check if ERROR_CODE_PAGES is defined.
         //if is defined as a php file, error_503.php include and render the file.
         //if is a route /error/code/503, reroute and render the final output
-        if ($output === null && isset($this->conf->ERROR_CODE_PAGES) && $this->conf->ERROR_CODE_PAGES[$statusCode]) {
+        if ($output === null && isset($this->conf->ERROR_CODE_PAGES) && @$this->conf->ERROR_CODE_PAGES[$statusCode]) {
             $errPage = $this->conf->ERROR_CODE_PAGES[$statusCode];
 
             if ($errPage{0} == '/') {
