@@ -376,6 +376,16 @@ EOF;
             $host = substr($host, 0, -1);
         }
 
+        if (isset($this->_SERVER['SERVER_PORT'])) {
+            $host .= ':' . $this->_SERVER['SERVER_PORT'];
+        }
+        else if ($this->app->request->headers()->get('host')) {
+            $httpHostUri = parse_url($this->app->request->headers()->get('host'));
+            if (!empty($httpHostUri['port'])) {
+                $host .= ':' . $httpHostUri['port'];
+            }
+        }
+
         return [
             'swagger' => '2.0',
             'info' => [
