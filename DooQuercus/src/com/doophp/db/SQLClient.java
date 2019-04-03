@@ -26,7 +26,6 @@ import org.jooq.impl.DSL;
 
 import java.util.List;
 import java.util.ListIterator;
-import io.vertx.ext.bridge.BridgeEventType;
 
 /**
  * Created by leng on 12/27/16.
