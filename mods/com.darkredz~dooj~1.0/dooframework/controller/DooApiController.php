@@ -127,8 +127,12 @@ class DooApiController extends DooController
         }
 
         $needApiKeyCheck = true;
+
+        if (empty($this->apiKey)) {
+            $needApiKeyCheck = false;
+        }
         //Resource => action No need to check API Key if inside exclude list, thus making it public
-        if (!empty($this->excludeApiKey) && \in_array($resource, \array_keys($this->excludeApiKey))) {
+        else if (!empty($this->excludeApiKey) && \in_array($resource, \array_keys($this->excludeApiKey))) {
             if (!empty($this->excludeApiKey[$resource])) {
                 $needApiKeyCheck = !\in_array($action, $this->excludeApiKey[$resource]);
             } else {
@@ -166,7 +170,7 @@ class DooApiController extends DooController
             $this->setContentType("json");
             $this->app->statusCode = 404;
             $this->endReq('{"error":"Method Not Found"}');
-            return;
+            return 404;
         }
     }
 
@@ -349,6 +353,9 @@ class DooApiController extends DooController
         $rules = $this->{$this->actionField};
 
         $inputValidator = new \DooInputValidator($rules);
+        if (sizeof($rules) == 1 && isset($rules['_method'])) {
+            return true;
+        }
         $validateRes = $inputValidator->validateInput($input);
 
         return $this->validationCleanup($validateRes);
