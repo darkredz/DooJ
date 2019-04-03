@@ -51,4 +51,11 @@ class DooInternalService implements \DooServiceInterface
             }
         });
     }
+
+    public function callBlock($serviceName)
+    {
+        $params = \func_get_args();
+        $serviceName = \array_shift($params);
+        return call_user_func_array([$this->serviceProvider, $serviceName], $params);
+    }
 }
