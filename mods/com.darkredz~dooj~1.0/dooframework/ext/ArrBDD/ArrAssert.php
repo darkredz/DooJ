@@ -111,6 +111,57 @@ class ArrAssert
         return $this;
     }
 
+    public function isDelimitedWithMinSize($delimiter, $size = 1)
+    {
+        if (!is_string($this->var)) {
+            $this->assertionResults[] = false;
+            return $this;
+        }
+
+        $arr = explode($delimiter, $this->var);
+        $this->assertionResults[] = sizeof($arr) >= $size;
+
+        return $this;
+    }
+
+    public function isDelimitedWithSize($delimiter, $size)
+    {
+        if (!is_string($this->var)) {
+            $this->assertionResults[] = false;
+            return $this;
+        }
+
+        $arr = explode($delimiter, $this->var);
+        $this->assertionResults[] = sizeof($arr) == $size;
+
+        return $this;
+    }
+
+    public function isArrayDelimitedWithSize($delimiter, $size)
+    {
+        if (!is_array($this->var)) {
+            $this->assertionResults[] = false;
+            return $this;
+        }
+
+        foreach ($this->var as $val) {
+            if (!is_string($val)) {
+                $this->assertionResults[] = false;
+                return $this;
+            }
+
+            $arr = explode($delimiter, $val);
+            if (sizeof($arr) != $size) {
+                $this->assertionResults[] = false;
+                return $this;
+            }
+        }
+
+        $this->assertionResults[] = true;
+
+        return $this;
+    }
+
     public function isArray()
     {
         $this->assertionResults[] = is_array($this->var);
@@ -192,4 +243,65 @@ class ArrAssert
         }
         return true;
     }
+
+    public function isInt()
+    {
+        $this->assertionResults[] = is_int($this->var);
+        return $this;
+    }
+
+    public function isFloat()
+    {
+        $this->assertionResults[] = is_float($this->var);
+        return $this;
+    }
+
+    public function isDouble()
+    {
+        $this->assertionResults[] = is_double($this->var);
+        return $this;
+    }
+
+    public function isString()
+    {
+        $this->assertionResults[] = is_string($this->var);
+        return $this;
+    }
+
+    public function isObject()
+    {
+        $this->assertionResults[] = is_object($this->var);
+        return $this;
+    }
+
+    public function isNull()
+    {
+        $this->assertionResults[] = is_null($this->var);
+        return $this;
+    }
+
+    public function isEmpty()
+    {
+        $this->assertionResults[] = empty($this->var);
+        return $this;
+    }
+
+    public function isDefined()
+    {
+        $this->assertionResults[] = isset($this->var);
+        return $this;
+    }
+
+    public function isInstanceOf($className)
+    {
+        $this->assertionResults[] = $this->var != null && is_a($this->var, $className);
+        return $this;
+    }
+
+    public function isUUID()
+    {
+        $this->assertionResults[] = preg_match('/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/', $this->var) === 1;
+        return $this;
+    }
+
 }

@@ -229,7 +229,6 @@ class ArrBDD
                     $stepName,
                     $steps,
                     $subject,
-                    $specName,
                     $specs,
                     $includeSubject
                 ) {
@@ -314,7 +313,6 @@ class ArrBDD
                 $steps,
                 $_subject,
                 $subject,
-                $specName,
                 $specs,
                 $includeSubject
             ) {

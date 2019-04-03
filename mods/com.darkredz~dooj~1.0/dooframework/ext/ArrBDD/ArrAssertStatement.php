@@ -57,11 +57,36 @@ class ArrAssertStatement
         return $this;
     }
 
-    public function with($assertResult)
+    public function with($assertResult, $index = null)
+    {
+        if ($index === null) {
+            $keys = array_keys($this->statements);
+            $shouldStatement = $keys[sizeof($keys) - 1];
+        } else {
+            $keys = array_keys($this->statements);
+            $shouldStatement = $keys[$index];
+        }
+        $this->statements[$shouldStatement] = $assertResult;
+        return $this;
+    }
+
+    public function fail($index)
     {
         $keys = array_keys($this->statements);
-        $shouldStatement = $keys[sizeof($keys) - 1];
-        $this->statements[$shouldStatement] = $assertResult;
+        $shouldStatement = $keys[$index];
+        $this->statements[$shouldStatement] = false;
+        return $this;
+    }
+
+    public function failAll()
+    {
+        if (empty($this->statements)) {
+            $this->statements['SHOULD not have failed to errorCallback'] = false;
+            return $this;
+        }
+        foreach ($this->statements as $k => &$v) {
+            $v = false;
+        }
         return $this;
     }
 }

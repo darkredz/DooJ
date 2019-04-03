@@ -28,14 +28,14 @@ class ArrMock
     /**
      * Prevent direct object creation of ArrMock
      */
-    final private function __construct()
+    function __construct()
     {
     }
 
     /**
      * Prevent object cloning of ArrMock
      */
-    final private function __clone()
+    function __clone()
     {
     }
 
@@ -46,13 +46,15 @@ class ArrMock
      * @return ArrMock
      * @throws Exception
      */
-    public static function create($className = 'AnonClass', $staticAttr = null)
+    public static function create($className = 'AnonClass', $implements = null, $namespace = null, $mock = true, $extra = '', $staticAttr = null)
     {
         if (empty($className) || !is_string($className)) {
             throw new Exception('Class name of the mock object is required');
         }
 
-        $className .= 'Mock';
+        if ($mock) {
+            $className .= 'Mock';
+        }
 
         $staticAttrStr = '';
         if (is_array($staticAttr)) {
@@ -68,11 +70,77 @@ class ArrMock
 //            $namespace = 'namespace ' . implode('\\', $parts) .';';
 //        }
 
+        if ($implements) {
+            if (is_string($implements)) {
+                $implements = [
+                    'class' => $implements,
+                    'methods' => true
+                ];
+            }
+
+            if (is_array($implements)) {
+                $implStr = 'implements ' . $implements['class'];
+                $implMethods = ($implements['methods'] != null) ? $implements['methods'] : '';
+            }
+
+            //if methods is true, then auto implement those methods
+            if ($implMethods === true) {
+                $ref = new \ReflectionClass($implements['class']);
+                $implMethods = $ref->getMethods();
+                $iMethodStr = [];
+
+                foreach ($implMethods as $iMethod) {
+                    $mName = $iMethod . '';
+                    preg_match('/abstract ([a-z\_A-Z0-9\ ]+)/', $mName . '', $matches);
+                    $mName = trim($matches[1]);
+
+                    $implParams = $iMethod->getParameters();
+                    if (!empty($implParams)) {
+                        $iParamStr = [];
+                        foreach ($implParams as $iParam) {
+                            if ($iParam->isDefaultValueAvailable()) {
+                                $iParamStr[] = '$'. $iParam->getName() .' = '. var_export($iParam->getDefaultValue(), true);
+                            } else {
+                                $iParamStr[] = '$'. $iParam->getName();
+                            }
+                        }
+
+                        if (!empty($iParamStr)) {
+                            $iMethodStr[] = $mName . '('. implode(', ', $iParamStr) .') {}';
+                        } else {
+                            $iMethodStr[] = $mName . '() {}';
+                        }
+                    } else {
+                        $iMethodStr[] = $mName . '() {}';
+                    }
+                }
+
+                $implMethods = "\n" . implode("\n", $iMethodStr) . "\n";
+                $implMethods = str_replace(' method', ' function', $implMethods);
+//                var_dump($implMethods);exit;
+            }
+        } else {
+            $implStr = '';
+            $implMethods = '';
+        }
+
+        if ($namespace) {
+            $namespaceStr = 'namespace ' . $namespace . ';';
+        } else {
+            $namespaceStr = '';
+        }
+
         eval(<<<EOF
-class $className extends ArrMock{
+$namespaceStr
+
+class $className extends \ArrMock $implStr{
     public static \$staticMethods = array();
     protected \$selfClassName = '$className';
     $staticAttrStr
+    
+    $implMethods
+    
+$extra
     
     public function staticAttr(\$attr, \$val){
         self::\$\$attr = \$val;
@@ -154,6 +222,11 @@ class $className extends ArrMock{
 }
 EOF
         );
+        if ($namespace) {
+            $fullname = "$namespace" . '\\' . $className;
+            return new $fullname;
+        }
+
         return new $className;
     }
 

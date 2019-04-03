@@ -18,6 +18,12 @@
  */
 class ArrBDDSpec
 {
+
+    /**
+     * @var ArrAssertStatement
+     */
+    public $assert;
+
     /**
      * Section name for scenario(s) in this class. To be used when saving unflatten results.
      * @var string
@@ -34,6 +40,16 @@ class ArrBDDSpec
      * @var DooEventBusApp|DooWebApp
      */
     public $app;
+
+    /**
+     * @var DooContainer
+     */
+    public $containerMock;
+
+    /**
+     * @var DooAppInterface
+     */
+    public $appMock;
 
     /**
      * Prepare the specs
