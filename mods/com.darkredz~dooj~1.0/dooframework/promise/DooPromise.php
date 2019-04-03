@@ -58,7 +58,7 @@
  *        ]);
  *
  *        # ------- 2nd type of Promise usage, using a for loop -----
- *        $promise = new Promise();
+ *        $promise = new DooPromise();
  *        $subPromise = null;
  *
  *        $this->errorHandler = function ($error, $promise) {
@@ -113,7 +113,7 @@
  *        })
  *        ->then(function($result) use ($ids) {
  *
- *            $nextPromise = new Promise();
+ *            $nextPromise = new DooPromise();
  *            $this->resultArr[] = $result;
  *            $this->app->logDebug('CALL 2');
  *
