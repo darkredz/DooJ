@@ -18,7 +18,7 @@
  * //Example usage in a Doo Controller
  * //import the class and create the REST client object
  * $client = $this->load()->helper('DooRestClient', true);
- * $client->connect_to("http://twitter.com/direct_messages.xml")
+ * $client->connectTo("http://twitter.com/direct_messages.xml")
  *        ->auth('twituser', 'password', true)
  *        ->get()
  *
@@ -36,16 +36,23 @@
  */
 class DooRestClient
 {
-    protected $server_url;
-    protected $curl_opt;
-    protected $auth_user;
-    protected $auth_pwd;
+    protected $serverUrl;
+    protected $curlOpt;
+    protected $authUser;
+    protected $authPwd;
     protected $args;
     protected $result;
-    protected $header_code_received;
-    protected $content_type_received;
-    protected $header_size_received;
-    protected $content_size_received;
+    protected $headerCodeReceived;
+    protected $contentTypeReceived;
+    protected $headerSizeReceived;
+    protected $contentSizeReceived;
+    protected $doneCallback;
+    protected $errorCallback;
+    protected $callbackResultFormat;
+    protected $callbackErrorFormat;
+    protected $callbackResultFormatOpt = true;
+    protected $callbackErrorFormatOpt = true;
+
 
     //for sending Accept header, this is to be used with requests to REST server which is built with Doo Framework
     const HTML = 'text/html';
@@ -63,37 +70,54 @@ class DooRestClient
     const GIF = 'image/gif';
     const CSV = 'text/csv';
 
-    function __construct($server_url = null)
+    function __construct($serverUrl = null)
     {
-        if ($server_url != null) {
-            $this->server_url = $server_url;
+        if ($serverUrl != null) {
+            $this->serverUrl = $serverUrl;
         }
-        $this->curl_opt = [];
-        $this->curl_opt['RETURNTRANSFER'] = true;
-        $this->curl_opt['HEADER'] = false;
-        $this->curl_opt['FRESH_CONNECT'] = true;
+        $this->curlOpt = [];
+    }
+
+    protected function setCurlOptBeforeOperation($ch)
+    {
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HEADER, false);
+        curl_setopt($ch, CURLOPT_FRESH_CONNECT, true);
+    }
+
+    public function reset()
+    {
+        $this->serverUrl = null;
+        $this->curlOpt = [];
+        $this->authUser = null;
+        $this->authPwd = null;
+        $this->args = null;
+        $this->result = null;
+        $this->headerCodeReceived = null;
+        $this->contentTypeReceived = null;
+        $this->headerSizeReceived = null;
+        $this->contentSizeReceived = null;
+        $this->doneCallback = null;
+        $this->errorCallback = null;
+        $this->callbackResultFormat = null;
+        $this->callbackErrorFormat = null;
+        $this->callbackResultFormatOpt = true;
+        $this->callbackErrorFormatOpt = true;
     }
 
     /**
      * Get/set the REST server URL
      * @param string $server_url
-     * @return mixed
+     * @return DooRestClient
      */
     public function connectTo($server_url = null)
     {
+        $this->reset();
         if ($server_url == null) {
-            return $this->server_url;
+            return $this->serverUrl;
         }
-        $this->server_url = $server_url;
+        $this->serverUrl = $server_url;
         return $this;
-    }
-
-    /**
-     * @deprecated
-     */
-    public function connect_to($server_url = null)
-    {
-        return $this->connectTo($server_url);
     }
 
     /**
@@ -134,14 +158,14 @@ class DooRestClient
     /**
      * Get/set the connection timeout duration (seconds)
      * @param int $sec Timeout duration in seconds
-     * @return mixed
+     * @return DooRestClient
      */
     public function timeout($sec = null)
     {
         if ($sec === null) {
-            return $this->curl_opt['CONNECTTIMEOUT'];
+            return $this->curlOpt['CONNECTTIMEOUT'];
         } else {
-            $this->curl_opt['CONNECTTIMEOUT'] = $sec;
+            $this->curlOpt['CONNECTTIMEOUT'] = $sec;
         }
         return $this;
     }
@@ -155,7 +179,7 @@ class DooRestClient
      * <p>The data is returned when no data value is passed into the method.</p>
      *
      * @param string|array $data
-     * @return mixed
+     * @return DooRestClient
      */
     public function data($data = null)
     {
@@ -198,14 +222,14 @@ class DooRestClient
      * //or $client->get();
      * </code>
      * @param array $optArr
-     * @return mixed
+     * @return DooRestClient
      */
     public function options($optArr = null)
     {
         if ($optArr == null) {
-            return $this->curl_opt;
+            return $this->curlOpt;
         }
-        $this->curl_opt = array_merge($this->curl_opt, $optArr);
+        $this->curlOpt = array_merge($this->curlOpt, $optArr);
         return $this;
     }
 
@@ -225,17 +249,17 @@ class DooRestClient
      * //or $client->get();
      * </code>
      * @param array $headerArr
-     * @return mixed
+     * @return DooRestClient
      */
 
     public function header($headerArr = null)
     {
         if ($headerArr == null) {
-            return $this->curl_opt['HTTPHEADER'];
+            return $this->curlOpt['HTTPHEADER'];
         }
 
         foreach ($headerArr as $k => $v) {
-            $this->curl_opt['HTTPHEADER'][] = $k . ': ' . $v;
+            $this->curlOpt['HTTPHEADER'][] = $k . ': ' . $v;
         }
 
         return $this;
@@ -254,18 +278,18 @@ class DooRestClient
      * @param string $username Username
      * @param string $password Password
      * @param bool $basic to switch between HTTP Basic or Digest authentication
-     * @return mixed
+     * @return DooRestClient
      */
     public function auth($username = null, $password = null, $basic = false)
     {
         if ($username === null && $password === null) {
-            return [$this->auth_user, $this->auth_pwd];
+            return [$this->authUser, $this->authPwd];
         }
 
-        $this->auth_user = $username;
-        $this->auth_pwd = $password;
+        $this->authUser = $username;
+        $this->authPwd = $password;
 
-        $this->curl_opt['HTTPAUTH'] = ($basic) ? CURLAUTH_BASIC : CURLAUTH_DIGEST;
+        $this->curlOpt['HTTPAUTH'] = ($basic) ? CURLAUTH_BASIC : CURLAUTH_DIGEST;
 
         return $this;
     }
@@ -278,25 +302,25 @@ class DooRestClient
      * Example to retrieve result in JSON:
      * <code>
      * $client = new DooRestClient;
-     * $client->connect_to("http://twitter.com/direct_messages")
+     * $client->connectTo("http://twitter.com/direct_messages")
      *        ->auth('username', 'password', true)
      *        ->accept(DooRestClient::JSON)
      *        ->get();
      * </code>
      * @param string $type
-     * @return mixed
+     * @return DooRestClient
      */
     public function accept($type = null)
     {
         if ($type == null) {
-            if (isset($this->curl_opt['HTTPHEADER']) && $this->curl_opt['HTTPHEADER'][0]) {
-                return str_replace('Accept: ', '', $this->curl_opt['HTTPHEADER'][0]);
+            if (isset($this->curlOpt['HTTPHEADER']) && $this->curlOpt['HTTPHEADER'][0]) {
+                return str_replace('Accept: ', '', $this->curlOpt['HTTPHEADER'][0]);
             } else {
                 return;
             }
         }
 
-        $this->curl_opt['HTTPHEADER'][] = "Accept: $type";
+        $this->curlOpt['HTTPHEADER'][] = "Accept: $type";
         return $this;
     }
 
@@ -308,25 +332,25 @@ class DooRestClient
      * Example to retrieve result in JSON:
      * <code>
      * $client = new DooRestClient;
-     * $client->connect_to("http://twitter.com/post_status")
+     * $client->connectTo("http://twitter.com/post_status")
      *        ->auth('username', 'password', true)
      *        ->setContentType(DooRestClient::JSON)
      *        ->post();
      * </code>
      * @param string $type
-     * @return mixed
+     * @return DooRestClient
      */
     public function setContentType($type = null)
     {
         if ($type == null) {
-            if (isset($this->curl_opt['HTTPHEADER']) && $this->curl_opt['HTTPHEADER'][0]) {
-                return str_replace('Content-Type: ', '', $this->curl_opt['HTTPHEADER'][0]);
+            if (isset($this->curlOpt['HTTPHEADER']) && $this->curlOpt['HTTPHEADER'][0]) {
+                return str_replace('Content-Type: ', '', $this->curlOpt['HTTPHEADER'][0]);
             } else {
                 return;
             }
         }
 
-        $this->curl_opt['HTTPHEADER'][] = "Content-Type: $type";
+        $this->curlOpt['HTTPHEADER'][] = "Content-Type: $type";
         return $this;
     }
 
@@ -342,9 +366,38 @@ class DooRestClient
         } elseif ($method == 'post') {
             $this->post();
         } elseif ($method == 'put') {
-            $this->post();
+            $this->put();
         } elseif ($method == 'delete') {
-            $this->post();
+            $this->delete();
+        }
+    }
+
+    public function processCallback()
+    {
+        if ($this->doneCallback != null && $this->isSuccess()) {
+            if ($this->callbackResultFormat == 'json') {
+                call_user_func_array($this->doneCallback,
+                    [$this->resultCode(), $this->jsonResult($this->callbackResultFormatOpt)]);
+            } else {
+                if ($this->callbackResultFormat == 'xml') {
+                    call_user_func_array($this->doneCallback,
+                        [$this->resultCode(), $this->xmlResult($this->callbackResultFormatOpt)]);
+                } else {
+                    call_user_func_array($this->doneCallback, [$this->resultCode(), $this->result()]);
+                }
+            }
+        } else if ($this->errorCallback != null ) {
+            if ($this->callbackErrorFormat == 'json') {
+                call_user_func_array($this->errorCallback,
+                    [$this->resultCode(), $this->jsonResult($this->callbackErrorFormatOpt)]);
+            } else {
+                if ($this->callbackErrorFormat == 'xml') {
+                    call_user_func_array($this->errorCallback,
+                        [$this->resultCode(), $this->xmlResult($this->callbackErrorFormatOpt)]);
+                } else {
+                    call_user_func_array($this->errorCallback, [$this->resultCode(), $this->result()]);
+                }
+            }
         }
     }
 
@@ -355,35 +408,37 @@ class DooRestClient
     public function get()
     {
         if ($this->args != null) {
-            $serverurl = $this->server_url . '?' . $this->args;
+            $serverurl = $this->serverUrl . '?' . $this->args;
         } else {
-            $serverurl = $this->server_url;
+            $serverurl = $this->serverUrl;
         }
 
         $ch = curl_init($serverurl);
 
         $arr = [];
-        foreach ($this->curl_opt as $k => $v) {
+        foreach ($this->curlOpt as $k => $v) {
             $arr[constant('CURLOPT_' . strtoupper($k))] = $v;
         }
 
         //set HTTP auth username and password is found
-        if (isset($this->auth_user) || isset($this->auth_pwd)) {
-            $arr[CURLOPT_USERPWD] = $this->auth_user . ':' . $this->auth_pwd;
+        if (isset($this->authUser) || isset($this->authPwd)) {
+            $arr[CURLOPT_USERPWD] = $this->authUser . ':' . $this->authPwd;
         }
 
         //set GET method
         $arr[CURLOPT_HTTPGET] = true;
 
         curl_setopt_array($ch, $arr);
+        $this->setCurlOptBeforeOperation($ch);
 
         $this->result = curl_exec($ch);
-        $this->header_code_received = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $this->content_type_received = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-        $this->header_size_received = intval(curl_getinfo($ch, CURLINFO_HEADER_SIZE));
-        $this->content_size_received = intval(curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD));
+        $this->headerCodeReceived = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $this->contentTypeReceived = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        $this->headerSizeReceived = intval(curl_getinfo($ch, CURLINFO_HEADER_SIZE));
+        $this->contentSizeReceived = intval(curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD));
 
         curl_close($ch);
+        $this->processCallback();
         return $this;
     }
 
@@ -393,16 +448,16 @@ class DooRestClient
      */
     public function post()
     {
-        $ch = curl_init($this->server_url);
+        $ch = curl_init($this->serverUrl);
 
         $arr = [];
-        foreach ($this->curl_opt as $k => $v) {
+        foreach ($this->curlOpt as $k => $v) {
             $arr[constant('CURLOPT_' . strtoupper($k))] = $v;
         }
 
         //set HTTP auth username and password is found
-        if (isset($this->auth_user) || isset($this->auth_pwd)) {
-            $arr[CURLOPT_USERPWD] = $this->auth_user . ':' . $this->auth_pwd;
+        if (isset($this->authUser) || isset($this->authPwd)) {
+            $arr[CURLOPT_USERPWD] = $this->authUser . ':' . $this->authPwd;
         }
 
         //set POST method and fields
@@ -410,14 +465,16 @@ class DooRestClient
         $arr[CURLOPT_POSTFIELDS] = $this->args;
 
         curl_setopt_array($ch, $arr);
+        $this->setCurlOptBeforeOperation($ch);
 
         $this->result = curl_exec($ch);
-        $this->header_code_received = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $this->content_type_received = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-        $this->header_size_received = intval(curl_getinfo($ch, CURLINFO_HEADER_SIZE));
-        $this->content_size_received = intval(curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD));
+        $this->headerCodeReceived = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $this->contentTypeReceived = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        $this->headerSizeReceived = intval(curl_getinfo($ch, CURLINFO_HEADER_SIZE));
+        $this->contentSizeReceived = intval(curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD));
 
         curl_close($ch);
+        $this->processCallback();
         return $this;
     }
 
@@ -427,16 +484,16 @@ class DooRestClient
      */
     public function put()
     {
-        $ch = curl_init($this->server_url);
+        $ch = curl_init($this->serverUrl);
 
         $arr = [];
-        foreach ($this->curl_opt as $k => $v) {
+        foreach ($this->curlOpt as $k => $v) {
             $arr[constant('CURLOPT_' . strtoupper($k))] = $v;
         }
 
         //set HTTP auth username and password is found
-        if (isset($this->auth_user) || isset($this->auth_pwd)) {
-            $arr[CURLOPT_USERPWD] = $this->auth_user . ':' . $this->auth_pwd;
+        if (isset($this->authUser) || isset($this->authPwd)) {
+            $arr[CURLOPT_USERPWD] = $this->authUser . ':' . $this->authPwd;
         }
 
         //set PUT method and fields
@@ -444,14 +501,16 @@ class DooRestClient
         $arr[CURLOPT_POSTFIELDS] = $this->args;
 
         curl_setopt_array($ch, $arr);
+        $this->setCurlOptBeforeOperation($ch);
 
         $this->result = curl_exec($ch);
-        $this->header_code_received = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $this->content_type_received = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-        $this->header_size_received = intval(curl_getinfo($ch, CURLINFO_HEADER_SIZE));
-        $this->content_size_received = intval(curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD));
+        $this->headerCodeReceived = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $this->contentTypeReceived = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        $this->headerSizeReceived = intval(curl_getinfo($ch, CURLINFO_HEADER_SIZE));
+        $this->contentSizeReceived = intval(curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD));
 
         curl_close($ch);
+        $this->processCallback();
         return $this;
     }
 
@@ -461,30 +520,32 @@ class DooRestClient
      */
     public function delete()
     {
-        $ch = curl_init($this->server_url);
+        $ch = curl_init($this->serverUrl);
 
         $arr = [];
-        foreach ($this->curl_opt as $k => $v) {
+        foreach ($this->curlOpt as $k => $v) {
             $arr[constant('CURLOPT_' . strtoupper($k))] = $v;
         }
 
         //set HTTP auth username and password is found
-        if (isset($this->auth_user) || isset($this->auth_pwd)) {
-            $arr[CURLOPT_USERPWD] = $this->auth_user . ':' . $this->auth_pwd;
+        if (isset($this->authUser) || isset($this->authPwd)) {
+            $arr[CURLOPT_USERPWD] = $this->authUser . ':' . $this->authPwd;
         }
 
         //set DELETE method, delete methods don't have fields,ids should be set in server url
         $arr[CURLOPT_CUSTOMREQUEST] = 'DELETE';
 
         curl_setopt_array($ch, $arr);
+        $this->setCurlOptBeforeOperation($ch);
 
         $this->result = curl_exec($ch);
-        $this->header_code_received = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $this->content_type_received = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-        $this->header_size_received = intval(curl_getinfo($ch, CURLINFO_HEADER_SIZE));
-        $this->content_size_received = intval(curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD));
+        $this->headerCodeReceived = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $this->contentTypeReceived = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        $this->headerSizeReceived = intval(curl_getinfo($ch, CURLINFO_HEADER_SIZE));
+        $this->contentSizeReceived = intval(curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD));
 
         curl_close($ch);
+        $this->processCallback();
         return $this;
     }
 
@@ -505,7 +566,23 @@ class DooRestClient
      */
     public function isSuccess()
     {
-        return ($this->header_code_received >= 200 && $this->header_code_received < 300);
+        return ($this->headerCodeReceived >= 200 && $this->headerCodeReceived < 300);
+    }
+
+    public function onDone($callback, $format = null, $formatOpt = true)
+    {
+        $this->doneCallback = $callback;
+        $this->callbackResultFormat = $format;
+        $this->callbackResultFormatOpt = $formatOpt;
+        return $this;
+    }
+
+    public function onError($errorCallback, $format = null, $formatOpt = true)
+    {
+        $this->errorCallback = $errorCallback;
+        $this->callbackErrorFormat = $format;
+        $this->callbackErrorFormat = $formatOpt;
+        return $this;
     }
 
     /**
@@ -514,7 +591,7 @@ class DooRestClient
      */
     public function resultCode()
     {
-        return $this->header_code_received;
+        return $this->headerCodeReceived;
     }
 
 
@@ -524,7 +601,7 @@ class DooRestClient
      */
     public function resultContentType()
     {
-        return $this->content_type_received;
+        return $this->contentTypeReceived;
     }
 
     /**
@@ -533,7 +610,7 @@ class DooRestClient
      */
     public function resultHeaderSize()
     {
-        return $this->header_size_received;
+        return $this->headerSizeReceived;
     }
 
     /**
@@ -542,7 +619,7 @@ class DooRestClient
      */
     public function resultContentSize()
     {
-        return $this->content_size_received;
+        return $this->contentSizeReceived;
     }
 
     /**
@@ -567,14 +644,6 @@ class DooRestClient
     }
 
     /**
-     * @deprecated
-     */
-    public function xml_result($domObject = false)
-    {
-        return $this->xmlResult($domObject);
-    }
-
-    /**
      * Convert the REST result to JSON object
      * @param bool $toArray convert result into assoc array if True.
      * @return object
@@ -582,14 +651,6 @@ class DooRestClient
     public function jsonResult($toArray = false)
     {
         return \JSON::decode($this->result, $toArray);
-    }
-
-    /**
-     * @deprecated
-     */
-    public function json_result($toArray = false)
-    {
-        return $this->jsonResult($toArray);
     }
 
 }
