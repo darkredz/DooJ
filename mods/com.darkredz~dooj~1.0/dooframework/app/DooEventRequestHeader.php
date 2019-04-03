@@ -47,8 +47,26 @@ class DooEventRequestHeader
 
     public function get($key)
     {
+        $convertKeys = [
+            'authorization' => 'HTTP_AUTHORIZATION',
+            'accept-language' => 'HTTP_ACCEPT_LANGUAGE',
+            'accept-encoding' => 'HTTP_ACCEPT_ENCODING',
+            'accept' => 'HTTP_ACCEPT',
+            'cache-control' => 'HTTP_CACHE_CONTROL',
+            'user-agent' => 'HTTP_USER_AGENT',
+            'connection' => 'HTTP_CONNECTION',
+            'host' => 'HTTP_HOST',
+        ];
+
         if (array_key_exists($key, $this->headers)) {
             return $this->headers[$key];
+        }
+
+        if (in_array(strtolower($key), array_keys($convertKeys))) {
+            $phpHeaderKey = $convertKeys[strtolower($key)];
+            if (array_key_exists($phpHeaderKey, $this->headers)) {
+                return $this->headers[$phpHeaderKey];
+            }
         }
         return null;
     }
