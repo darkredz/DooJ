@@ -1,16 +1,17 @@
 <?php
 /**
-* DooRbAcl class file.
-*
-* @author aligo <aligo_x@163.com>
-* @link http://www.doophp.com/
-* @copyright Copyright &copy; 2009-2013 Leng Sheng Hong
-* @license http://www.doophp.com/license-v2
-*
-*/
+ * DooRbAcl class file.
+ *
+ * @author aligo <aligo_x@163.com>
+ * @link http://www.doophp.com/
+ * @copyright Copyright &copy; 2009-2013 Leng Sheng Hong
+ * @license http://www.doophp.com/license-v2
+ *
+ */
 Doo::loadCore('auth/DooAcl');
 
-class DooRbAcl extends DooAcl{
+class DooRbAcl extends DooAcl
+{
 
     /**
      * Check if the user Roles is allowed to access the resource or action list or both.
@@ -28,19 +29,20 @@ class DooRbAcl extends DooAcl{
      * @param string $action Action name (use Method name)
      * @return bool
      */
-    public function isAllowed($roles, $resource, $action='') {
-       $allowed=false;
-        foreach($roles as $role){
-           if ($this->hasDenied($role, $resource, $action)) {
-              return false;
-           }
+    public function isAllowed($roles, $resource, $action = '')
+    {
+        $allowed = false;
+        foreach ($roles as $role) {
+            if ($this->hasDenied($role, $resource, $action)) {
+                return false;
+            }
 
-           if ($this->hasAllowed($role, $resource, $action)) {
-              $allowed=true;
-           }
+            if ($this->hasAllowed($role, $resource, $action)) {
+                $allowed = true;
+            }
         }
 
-      return $allowed;
+        return $allowed;
     }
 
     /**
@@ -59,16 +61,17 @@ class DooRbAcl extends DooAcl{
      * @param string $action Action name (use Method name)
      * @return bool
      */
-    public function isDenied($roles, $resource, $action='') {
-       $denied=true;
-        foreach($roles as $role){
-           if ($this->hasDenied($role, $resource, $action)) {
-              return true;
-           }
+    public function isDenied($roles, $resource, $action = '')
+    {
+        $denied = true;
+        foreach ($roles as $role) {
+            if ($this->hasDenied($role, $resource, $action)) {
+                return true;
+            }
 
-           if ($this->hasAllowed($role, $resource, $action)) {
-              $denied=false;
-           }
+            if ($this->hasAllowed($role, $resource, $action)) {
+                $denied = false;
+            }
         }
 
         return $denied;
@@ -82,58 +85,74 @@ class DooRbAcl extends DooAcl{
      * @param string $action Action name (use Method name)
      * @return array|string Returns the fail route if user cannot access the resource.
      */
-    public function process($roles, $resource, $action=''){
+    public function process($roles, $resource, $action = '')
+    {
 
-      if (!is_array($roles)){
-         $roles = explode(',', $roles);
-      }
+        if (!is_array($roles)) {
+            $roles = explode(',', $roles);
+        }
 
-      $denied = false;
-      $allowed = false;
-      foreach($roles as $role) {
-         $denied = $denied || $this->hasDenied($role, $resource, $action);
-         $allowed = $allowed || $this->hasAllowed($role, $resource, $action);
-      }
+        $denied = false;
+        $allowed = false;
+        foreach ($roles as $role) {
+            $denied = $denied || $this->hasDenied($role, $resource, $action);
+            $allowed = $allowed || $this->hasAllowed($role, $resource, $action);
+        }
 
-      if( $denied ){
+        if ($denied) {
             //echo 'In deny list';
             if (isset($this->rules[$role]['failRoute'])) {
                 $route = $this->rules[$role]['failRoute'];
 
-                if (is_string($route)){
-                    return array($route, 'internal');
+                if (is_string($route)) {
+                    return [$route, 'internal'];
                 } else {
                     if (isset($route[$resource])) {
-                        return (is_string($route[$resource])) ? array($route[$resource], 'internal') : $route[$resource] ;
-                    } else if (isset( $route[$resource.'/'.$action] )) {
-                        $rs = $route[$resource.'/'.$action];
-                        return (is_string($rs))? array($rs, 'internal') : $rs;
-                    } else if (isset( $route['_default'] )) {
-                        return (is_string($route['_default'])) ? array($route['_default'], 'internal') : $route['_default'];
+                        return (is_string($route[$resource])) ? [$route[$resource], 'internal'] : $route[$resource];
+                    } else {
+                        if (isset($route[$resource . '/' . $action])) {
+                            $rs = $route[$resource . '/' . $action];
+                            return (is_string($rs)) ? [$rs, 'internal'] : $rs;
+                        } else {
+                            if (isset($route['_default'])) {
+                                return (is_string($route['_default'])) ? [
+                                    $route['_default'],
+                                    'internal',
+                                ] : $route['_default'];
+                            }
+                        }
                     }
                 }
             }
-			return $this->defaultFailedRoute;
-        }
-		else if ($allowed==false) {
-            //echo 'Not in allow list<br>';
-            if(isset($this->rules[$role]['failRoute'])){
-                $route = $this->rules[$role]['failRoute'];
+            return $this->defaultFailedRoute;
+        } else {
+            if ($allowed == false) {
+                //echo 'Not in allow list<br>';
+                if (isset($this->rules[$role]['failRoute'])) {
+                    $route = $this->rules[$role]['failRoute'];
 
-                if(is_string($route)){
-                        return array($route, 'internal');
-                } else{
-                    if( isset($route[$resource])) {
-                        return (is_string($route[$resource])) ? array($route[$resource], 'internal') : $route[$resource] ;
-                    } else if (isset( $route[$resource.'/'.$action] )) {
-                        $rs = $route[$resource.'/'.$action];
-                        return (is_string($rs))? array($rs, 'internal') : $rs;
-                    } else if (isset( $route['_default'] )) {
-                        return (is_string($route['_default'])) ? array($route['_default'], 'internal') : $route['_default'];
+                    if (is_string($route)) {
+                        return [$route, 'internal'];
+                    } else {
+                        if (isset($route[$resource])) {
+                            return (is_string($route[$resource])) ? [$route[$resource], 'internal'] : $route[$resource];
+                        } else {
+                            if (isset($route[$resource . '/' . $action])) {
+                                $rs = $route[$resource . '/' . $action];
+                                return (is_string($rs)) ? [$rs, 'internal'] : $rs;
+                            } else {
+                                if (isset($route['_default'])) {
+                                    return (is_string($route['_default'])) ? [
+                                        $route['_default'],
+                                        'internal',
+                                    ] : $route['_default'];
+                                }
+                            }
+                        }
                     }
                 }
+                return $this->defaultFailedRoute;
             }
-			return $this->defaultFailedRoute;
         }
     }
 }

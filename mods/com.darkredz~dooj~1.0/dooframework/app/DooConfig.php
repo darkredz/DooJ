@@ -23,19 +23,20 @@
  * @package doo.app
  * @since 1.0
  */
-class DooConfig{
-    
+class DooConfig
+{
+
     /**
      * Directories consist of the classes needed in your application.
      * <code>
      * $config['AUTOLOAD'] = array(
      *                      //internal directories, live in the app
-     *                      'class', 'model', 'module/example/controller', 
+     *                      'class', 'model', 'module/example/controller',
      *                      //external directories, live outside the app
      *                      '/var/php/library/classes'
      *                  );
      * </code>
-     * @var array 
+     * @var array
      */
     public $AUTOLOAD;
 
@@ -127,11 +128,11 @@ class DooConfig{
      * @var string
      */
     public $PROTECTED_FOLDER = 'protected/';
-	
-	
+
+
     /**
      * Path to the location of Doo framework directory. eg. /var/lib/dooframework/
-     * @var string 
+     * @var string
      */
     public $BASE_PATH;
 
@@ -144,41 +145,41 @@ class DooConfig{
 
     /**
      * URL of your app. eg. http://localhost/doophp/
-     * @var string 
+     * @var string
      */
     public $APP_URL;
 
     /**
      * Please define SUBFOLDER if your app is not in the root directory of the domain. eg. http://localhost/doophp , you should set '/doophp/'
-     * @var string 
+     * @var string
      */
     public $SUBFOLDER;
 
     /**
      * Application mode(<b>dev</b>, <b>prod</b>). In dev mode, view templates are always checked and compiled
-     * @var string 
+     * @var string
      */
     public $APP_MODE;
 
     /**
      * Enable/disable Auto routing.
-     * 
+     *
      * <p>Every controller can deny being accessed by auto routes
      * just by setting <code>public $autoroute = false;</code> in the Controller class.</p>
-     * @var bool 
+     * @var bool
      */
     public $AUTOROUTE;
 
     /**
      * Enable/disable debug mode. If debug mode is on, debug trace will be logged.
      * Debug tool can be viewed if <code>Doo::logger()->showDebugger()</code> is called
-     * @var bool 
+     * @var bool
      */
     public $DEBUG_ENABLED;
 
     /**
      * If defined, the document specified will be included when a 404 header is sent (route not found).
-     * @var string 
+     * @var string
      */
     public $ERROR_404_DOCUMENT;
 
@@ -225,12 +226,12 @@ class DooConfig{
      */
     public $MEMCACHE;
 
-	/**
-	 * The template engine to use by default
-	 * Options are: DooView and DooBasicView
+    /**
+     * The template engine to use by default
+     * Options are: DooView and DooBasicView
      * @var string
-	 */
-	public $TEMPLATE_ENGINE;
+     */
+    public $TEMPLATE_ENGINE;
 
     /**
      * Output/processed comments block in the template files.
@@ -267,7 +268,7 @@ class DooConfig{
      * @var array
      */
     public $MODULES;
-    
+
     /**
      * Unique string ID of the application to be used with PHP 5.3 namespace and auto loading of namespaced classes
      * If you wish to use namespace with the framework, your classes must have a namespace starting with this ID.
@@ -279,55 +280,65 @@ class DooConfig{
      *     .....
      * } ?>
      *
-	 * //You would need to enable autoload to use Namespace classes in index.php 
+     * //You would need to enable autoload to use Namespace classes in index.php
      * spl_autoload_register('Doo::autoload');
-	 * 
-	 * //in common.conf.php
+     *
+     * //in common.conf.php
      * $config['APP_NAMESPACE_ID'] = 'myapp';
      * </code>
-	 *
+     *
      * @var string
      */
     public $APP_NAMESPACE_ID;
-    
+
     /**
      * Default chmod to be used with classes such as DooFile. Default value is 0777
      * @var int
      */
     public $CHMOD_DEFAULT = 0777;
-    
+
     /**
      * Indicating if the current execution if initiated from a CLI call.
      * @var bool
      */
     public $FROM_CLI = false;
-	
+
+    public $UPLOAD_FOLDER;
+    public $UPLOAD_MAX_SIZE = -1;
+    public $BODY_MAX_SIZE = -1;
+
     /**
      * Set the configurations. SITE_PATH, BASE_PATH and APP_URL is required
      * @param array $confArr associative array of the configs.
      */
-    public function set($confArr){
-        foreach($confArr as $k=>$v){
+    public function set($confArr)
+    {
+        foreach ($confArr as $k => $v) {
             $this->{$k} = $v;
         }
-        
-        if($this->SUBFOLDER===null)
-           $this->SUBFOLDER='/';
 
-        if($this->AUTOROUTE===null)
-           $this->AUTOROUTE=false;
+        if ($this->SUBFOLDER === null) {
+            $this->SUBFOLDER = '/';
+        }
 
-        if($this->DEBUG_ENABLED===null)
-           $this->DEBUG_ENABLED=false;
+        if ($this->AUTOROUTE === null) {
+            $this->AUTOROUTE = false;
+        }
 
-		if ($this->TEMPLATE_ENGINE===null)
-			$this->TEMPLATE_ENGINE='DooView';
-        
+        if ($this->DEBUG_ENABLED === null) {
+            $this->DEBUG_ENABLED = false;
+        }
+
+        if ($this->TEMPLATE_ENGINE === null) {
+            $this->TEMPLATE_ENGINE = 'DooView';
+        }
+
     }
 
-    public function get($key, $defaultValue=null) {
-		return (isset($this->{$key}) === true ) ? $this->{$key} : $defaultValue;
-	}
+    public function get($key, $defaultValue = null)
+    {
+        return (isset($this->{$key}) === true) ? $this->{$key} : $defaultValue;
+    }
 
     /**
      * Add data to be retrieved later on. Served as a dummy storage.
@@ -344,7 +355,8 @@ class DooConfig{
      * @param mixed $key Key o
      * @param  $value
      */
-    public function add($key, $value){
+    public function add($key, $value)
+    {
         $this->{$key} = $value;
     }
 }

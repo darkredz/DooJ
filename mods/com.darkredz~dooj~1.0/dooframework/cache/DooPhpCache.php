@@ -4,8 +4,8 @@
  *
  * @author Leng Sheng Hong <darkredz@gmail.com>
  * @link http://www.doophp.com/
- * @copyright Copyright &copy; 2009-2013 Leng Sheng Hong
- * @license http://www.doophp.com/license-v2
+ * @copyright Copyright &copy; 2009 Leng Sheng Hong
+ * @license http://www.doophp.com/license
  */
 
 
@@ -17,10 +17,10 @@
  * @package doo.cache
  * @since 1.2
  */
+class DooPhpCache
+{
 
-class DooPhpCache {
-
-    private $_directory;
+    protected $directory;
 
     /**
      * Option to hash the Cache ID into md5 hash string
@@ -28,14 +28,23 @@ class DooPhpCache {
      */
     public $hashing = true;
 
-    public function __construct($path='') {
-        if ( $path=='' ) {
-            if(isset(Doo::conf()->CACHE_PATH))
-                $this->_directory = Doo::conf()->CACHE_PATH;
-            else
-                $this->_directory = Doo::conf()->SITE_PATH .  Doo::conf()->PROTECTED_FOLDER . 'cache/';
-        }else{
-            $this->_directory = $path;
+    /**
+     * @var DooConfig
+     */
+    public $conf;
+
+    public function __construct($conf, $path = '')
+    {
+        $this->conf = $conf;
+
+        if ($path == '') {
+            if (isset($this->conf->CACHE_PATH)) {
+                $this->directory = $this->conf->CACHE_PATH;
+            } else {
+                $this->directory = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . 'cache/';
+            }
+        } else {
+            $this->directory = $path;
         }
     }
 
@@ -45,17 +54,19 @@ class DooPhpCache {
      * @param string $id A unique key identifying the cache
      * @return mixed The value stored in cache. Return null if no cache found or already expired.
      */
-    public function get($id) {
-        if($this->hashing===true)
-            $cfile = $this->_directory . md5($id) . '.php';
-        else
-            $cfile = $this->_directory . $id . '.php';
+    public function get($id)
+    {
+        if ($this->hashing === true) {
+            $cfile = $this->directory . md5($id) . '.php';
+        } else {
+            $cfile = $this->directory . $id . '.php';
+        }
 
-        if (file_exists($cfile)){
-            include $cfile ;
-            if(time() < $data[0]){
+        if (file_exists($cfile)) {
+            include $cfile;
+            if (time() < $data[0]) {
                 return $data[1];
-            }else{
+            } else {
                 unlink($cfile);
             }
         }
@@ -69,40 +80,47 @@ class DooPhpCache {
      * @param string $id A unique key identifying the cache
      * @return mixed The value stored in cache. Return null if no cache found or already expired.
      */
-    public function getIn($folder, $id) {
-        if($this->hashing===true)
-            $cfile = $this->_directory . $folder .'/'. md5($id) .'.php';
-        else
-            $cfile = $this->_directory . $folder .'/'. $id .'.php';
+    public function getIn($folder, $id)
+    {
+        if ($this->hashing === true) {
+            $cfile = $this->directory . $folder . '/' . md5($id) . '.php';
+        } else {
+            $cfile = $this->directory . $folder . '/' . $id . '.php';
+        }
 
-        if (file_exists($cfile)){
-            include $cfile ;
-            if(time() < $data[0]){
+        if (file_exists($cfile)) {
+            include $cfile;
+            if (time() < $data[0]) {
                 return $data[1];
-            }else{
+            } else {
                 unlink($cfile);
             }
         }
     }
 
-     /**
-      * Adds a cache with an unique Id.
-      *
-      * @param string $id Unique Id of the cache
-      * @param mixed $value Cache data value to be stored.
-      * @param int $expire Duration to determine if the cache is expired.
-      * @return bool
-      */
-    public function set($id, $value, $expire=0) {
-        if($expire===0)
-            $expire = time()+31536000;
-        else
-            $expire = time()+$expire;
+    /**
+     * Adds a cache with an unique Id.
+     *
+     * @param string $id Unique Id of the cache
+     * @param mixed $value Cache data value to be stored.
+     * @param int $expire Duration to determine if the cache is expired.
+     * @return bool
+     */
+    public function set($id, $value, $expire = 0)
+    {
+        if ($expire === 0) {
+            $expire = time() + 31536000;
+        } else {
+            $expire = time() + $expire;
+        }
 
-        if($this->hashing===true)
-            return file_put_contents($this->_directory . md5($id) . '.php', '<?php $data = array('.$expire.', '. var_export($value, true) . '); ?>', LOCK_EX);
+        if ($this->hashing === true) {
+            return file_put_contents($this->directory . md5($id) . '.php',
+                '<?php $data = array(' . $expire . ', ' . var_export($value, true) . '); ?>', LOCK_EX);
+        }
 
-        return file_put_contents($this->_directory . $id . '.php', '<?php $data = array('.$expire.', '. var_export($value, true) . '); ?>', LOCK_EX);
+        return file_put_contents($this->directory . $id . '.php',
+            '<?php $data = array(' . $expire . ', ' . var_export($value, true) . '); ?>', LOCK_EX);
     }
 
     /**
@@ -114,23 +132,28 @@ class DooPhpCache {
      * @param int $expire Duration to determine if the cache is expired.
      * @return bool
      */
-    public function setIn($folder, $id, $value, $expire=0) {
-        $cfile = $this->_directory.$folder.'/';
+    public function setIn($folder, $id, $value, $expire = 0)
+    {
+        $cfile = $this->directory . $folder . '/';
 
-        if(!file_exists($cfile))
+        if (!file_exists($cfile)) {
             mkdir($cfile);
+        }
 
-        if($this->hashing===true)
+        if ($this->hashing === true) {
             $cfile .= md5($id) . '.php';
-        else
+        } else {
             $cfile .= $id . '.php';
+        }
 
-        if($expire===0)
-            $expire = time()+31536000;
-        else
-            $expire = time()+$expire;
+        if ($expire === 0) {
+            $expire = time() + 31536000;
+        } else {
+            $expire = time() + $expire;
+        }
 
-        return file_put_contents($cfile, '<?php $data = array('.$expire.', '. var_export($value, true) . '); ?>', LOCK_EX);
+        return file_put_contents($cfile, '<?php $data = array(' . $expire . ', ' . var_export($value, true) . '); ?>',
+            LOCK_EX);
     }
 
     /**
@@ -138,11 +161,13 @@ class DooPhpCache {
      * @param $id Id of the cache
      * @return mixed
      */
-    public function flush($id) {
-        if($this->hashing===true)
-            $cfile = $this->_directory.md5($id).'.php';
-        else
-            $cfile = $this->_directory.$id.'.php';
+    public function flush($id)
+    {
+        if ($this->hashing === true) {
+            $cfile = $this->directory . md5($id) . '.php';
+        } else {
+            $cfile = $this->directory . $id . '.php';
+        }
 
         if (file_exists($cfile)) {
             unlink($cfile);
@@ -151,16 +176,18 @@ class DooPhpCache {
         return false;
     }
 
-        /**
-         * Deletes all data cache files
-         * @return bool
-         */
-    public function flushAll() {
-        $handle = opendir($this->_directory);
+    /**
+     * Deletes all data cache files
+     * @return bool
+     */
+    public function flushAll()
+    {
+        $handle = opendir($this->directory);
 
-        while(($file = readdir($handle)) !== false) {
-            if (is_file($file))
+        while (($file = readdir($handle)) !== false) {
+            if (is_file($file)) {
                 unlink($file);
+            }
         }
         return true;
     }
@@ -169,14 +196,15 @@ class DooPhpCache {
      * Deletes all data cache in a folder
      * @param string $folder
      */
-	public function flushAllIn($folder){
-        $cfile = $this->_directory.$folder.'/';
-        if(file_exists($cfile)){
+    public function flushAllIn($folder)
+    {
+        $cfile = $this->directory . $folder . '/';
+        if (file_exists($cfile)) {
             $handle = opendir($cfile);
-            while(($file = readdir($handle)) !== false) {
-                $file = $cfile.$file;
-                if (is_file($file)){
-                    unlink( $file );
+            while (($file = readdir($handle)) !== false) {
+                $file = $cfile . $file;
+                if (is_file($file)) {
+                    unlink($file);
                 }
             }
         }
@@ -187,13 +215,15 @@ class DooPhpCache {
      * @param string $folder
      * @param string $id
      */
-	public function flushIn($folder, $id){
-       if($this->hashing===true)
-            $cfile = $this->_directory.$folder.'/'.md5($id).'.php';
-        else
-            $cfile = $this->_directory.$folder.'/'.$id.'.php';
-        if(file_exists($cfile)){
-            unlink( $cfile );
+    public function flushIn($folder, $id)
+    {
+        if ($this->hashing === true) {
+            $cfile = $this->directory . $folder . '/' . md5($id) . '.php';
+        } else {
+            $cfile = $this->directory . $folder . '/' . $id . '.php';
+        }
+        if (file_exists($cfile)) {
+            unlink($cfile);
         }
     }
 

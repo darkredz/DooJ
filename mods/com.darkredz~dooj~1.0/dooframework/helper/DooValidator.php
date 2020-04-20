@@ -35,8 +35,7 @@
  *               'email'=>array('email'),
  *               'age'=>array('between',13,200),
  *               'today'=>array('date','mm/dd/yy'),
- 
-* *               //Custom rules, static method required
+ * *               //Custom rules, static method required
  *               'a'=>array('custom', 'MainController::isA'),
  *
  *               //Custom Required field message.
@@ -110,7 +109,8 @@
  * @package doo.helper
  * @since 1.2
  */
-class DooValidator {
+class DooValidator
+{
     /**
      * Checks All and returns All errors
      */
@@ -183,31 +183,77 @@ class DooValidator {
     /**
      * Trim the data fields. The data will be modified.
      * @param array $data assoc array to be trimmed
-	 * @param int $maxDepth Maximum number of recursive calls. Defaults to a max nesting depth of 5.
+     * @param int $maxDepth Maximum number of recursive calls. Defaults to a max nesting depth of 5.
      */
-    public function trimValues(&$data, $maxDepth = 5) {
-		foreach($data as $k=>&$v) {
-			if (is_array($v)) {
-				if ($maxDepth > 0) {
-					$this->trimValues($v, $maxDepth - 1);
-				}
-			} else {
-				$v = trim($v);
-			}
-		}
-	}
+    public function trimValues(&$data, $maxDepth = 5)
+    {
+        foreach ($data as $k => &$v) {
+            if (is_array($v)) {
+                if ($maxDepth > 0) {
+                    $this->trimValues($v, $maxDepth - 1);
+                }
+            } else {
+                $v = trim($v);
+            }
+        }
+    }
 
     /**
      * Get a list of available rules
      * @return array
      */
-    public static function getAvailableRules(){
-        return array('alpha', 'alphaNumeric', 'between', 'betweenInclusive', 'ccAmericanExpress', 'ccDinersClub', 'ccDiscover', 'ccMasterCard',
-                    'ccVisa', 'colorHex', 'creditCard', 'custom', 'date', 'dateBetween', 'datetime', 'digit', 'email', 'equal', 'equalAs', 'float',
-                    'greaterThan', 'greaterThanOrEqual', 'hostname', 'ip', 'integer', 'lessThan', 'lessThanOrEqual', 'lowercase', 'max',
-                    'maxlength', 'min', 'minlength', 'notEmpty', 'notEqual', 'notNull', 'password', 'passwordComplex', 'price', 'regex',
-                    'uppercase', 'url', 'username','dbExist','dbNotExist','alphaSpace','notInList','inList', 'serverName'
-                );
+    public static function getAvailableRules()
+    {
+        return [
+            'alpha',
+            'alphaNumeric',
+            'between',
+            'betweenInclusive',
+            'ccAmericanExpress',
+            'ccDinersClub',
+            'ccDiscover',
+            'ccMasterCard',
+            'ccVisa',
+            'colorHex',
+            'creditCard',
+            'custom',
+            'date',
+            'dateBetween',
+            'datetime',
+            'digit',
+            'email',
+            'equal',
+            'equalAs',
+            'float',
+            'greaterThan',
+            'greaterThanOrEqual',
+            'hostname',
+            'ip',
+            'integer',
+            'lessThan',
+            'lessThanOrEqual',
+            'lowercase',
+            'max',
+            'maxlength',
+            'min',
+            'minlength',
+            'notEmpty',
+            'notEqual',
+            'notNull',
+            'password',
+            'passwordComplex',
+            'price',
+            'regex',
+            'uppercase',
+            'url',
+            'username',
+            'dbExist',
+            'dbNotExist',
+            'alphaSpace',
+            'notInList',
+            'inList',
+            'serverName',
+        ];
     }
 
     /**
@@ -215,28 +261,30 @@ class DooValidator {
      * @param string $dataType
      * @return string Rule name for the data type
      */
-    public static function dbDataTypeToRules($type){
-        $dataType = array(
-                        //integers
-                        'tinyint'=>'integer',
-                        'smallint'=>'integer',
-                        'mediumint'=>'integer',
-                        'int'=>'integer',
-                        'bigint'=>'integer',
+    public static function dbDataTypeToRules($type)
+    {
+        $dataType = [
+            //integers
+            'tinyint' => 'integer',
+            'smallint' => 'integer',
+            'mediumint' => 'integer',
+            'int' => 'integer',
+            'bigint' => 'integer',
 
-                        //float
-                        'float'=>'float',
-                        'double'=>'float',
-                        'decimal'=>'float',
+            //float
+            'float' => 'float',
+            'double' => 'float',
+            'decimal' => 'float',
 
-                        //datetime
-                        'date'=>'date',
-                        'datetime'=>'datetime',
-                        'timestamp'=>'datetime',
-                        'time'=>'datetime'
-                    );
-        if(isset($dataType[$type]))
+            //datetime
+            'date' => 'date',
+            'datetime' => 'datetime',
+            'timestamp' => 'datetime',
+            'time' => 'datetime',
+        ];
+        if (isset($dataType[$type])) {
             return $dataType[$type];
+        }
     }
 
     /**
@@ -246,126 +294,150 @@ class DooValidator {
      * @param string|array $rules Validation rule. Pass in a string to load the predefined rules in SITE_PATH/protected/config/forms
      * @return array Returns an array of errors if errors exist.
      */
-    public function validate($data=null, $rules=null){
+    public function validate($data = null, $rules = null)
+    {
         //$data = array('username'=>'leng s', 'pwd'=>'234231dfasd', 'email'=>'asdb12@#asd.com.my');
         //$rules = array('username'=>array('username'), 'pwd'=>array('password',6,32), 'email'=>array('email'));
-        if(is_string($rules)){
-            $rules = include(Doo::conf()->SITE_PATH .  Doo::conf()->PROTECTED_FOLDER . 'config/forms/'.$rules.'.php');
+        if (is_string($rules)) {
+            $rules = include(Doo::conf()->SITE_PATH . Doo::conf()->PROTECTED_FOLDER . 'config/forms/' . $rules . '.php');
         }
 
-        $optErrorRemove = array();
+        $optErrorRemove = [];
 
-        foreach($data as $dk=>$dv){
-            if($this->requireMode == DooValidator::REQ_MODE_NULL_EMPTY && ($dv === null || $dv === '') ||
-			   $this->requireMode == DooValidator::REQ_MODE_NULL_ONLY  && $dv === null){
+        foreach ($data as $dk => $dv) {
+            if ($this->requireMode == DooValidator::REQ_MODE_NULL_EMPTY && ($dv === null || $dv === '') ||
+                $this->requireMode == DooValidator::REQ_MODE_NULL_ONLY && $dv === null) {
                 unset($data[$dk]);
-			}
+            }
         }
 
-        if($missingKey = array_diff_key($rules, $data) ){
-                $fieldnames = array_keys($missingKey);
-                $customRequireMsg = null;
+        if ($missingKey = array_diff_key($rules, $data)) {
+            $fieldnames = array_keys($missingKey);
+            $customRequireMsg = null;
 
-                foreach($fieldnames as $fieldname){
-                    if(isset($missingKey[$fieldname])){
-                        if( in_array('required', $missingKey[$fieldname]) ){
-                            $customRequireMsg = $missingKey[$fieldname][1];
-                        }
-                        else if(is_array($missingKey[$fieldname][0])){
-                            foreach($missingKey[$fieldname] as $f)
-                                if($f[0]=='required'){
-                                    if(isset($f[1]))
+            foreach ($fieldnames as $fieldname) {
+                if (isset($missingKey[$fieldname])) {
+                    if (in_array('required', $missingKey[$fieldname])) {
+                        $customRequireMsg = $missingKey[$fieldname][1];
+                    } else {
+                        if (is_array($missingKey[$fieldname][0])) {
+                            foreach ($missingKey[$fieldname] as $f) {
+                                if ($f[0] == 'required') {
+                                    if (isset($f[1])) {
                                         $customRequireMsg = $f[1];
+                                    }
                                     break;
                                 }
+                            }
                         }
                     }
+                }
 
-                    //remove optional fields from error
-                    if(is_array($missingKey[$fieldname][0])){
-                       foreach($missingKey[$fieldname] as $innerArrayRules){
-                           if($innerArrayRules[0]=='optional'){
-                               //echo $fieldname.' - 1 this is not set and optional, should be removed from error';
-                               $optErrorRemove[] = $fieldname;
-                               break;
-                           }
-                       }
+                //remove optional fields from error
+                if (is_array($missingKey[$fieldname][0])) {
+                    foreach ($missingKey[$fieldname] as $innerArrayRules) {
+                        if ($innerArrayRules[0] == 'optional') {
+                            //echo $fieldname.' - 1 this is not set and optional, should be removed from error';
+                            $optErrorRemove[] = $fieldname;
+                            break;
+                        }
                     }
+                }
 
-                    if($this->checkMode==DooValidator::CHECK_ALL){
-                        if($customRequireMsg!==null)
-                            $errors[$fieldname] = $customRequireMsg;
-                        else
-                            $errors[$fieldname] = $this->getRequiredFieldDefaultMsg($fieldname);
-                    }else if($this->checkMode==DooValidator::CHECK_SKIP){
-                        if(in_array($fieldname, $optErrorRemove))
+                if ($this->checkMode == DooValidator::CHECK_ALL) {
+                    if ($customRequireMsg !== null) {
+                        $errors[$fieldname] = $customRequireMsg;
+                    } else {
+                        $errors[$fieldname] = $this->getRequiredFieldDefaultMsg($fieldname);
+                    }
+                } else {
+                    if ($this->checkMode == DooValidator::CHECK_SKIP) {
+                        if (in_array($fieldname, $optErrorRemove)) {
                             continue;
-                        if($customRequireMsg!==null)
+                        }
+                        if ($customRequireMsg !== null) {
                             return $customRequireMsg;
+                        }
                         return $this->getRequiredFieldDefaultMsg($fieldname);
-                    }else if($this->checkMode==DooValidator::CHECK_ALL_ONE){
-                        if($customRequireMsg!==null)
-                            $errors[$fieldname] = $customRequireMsg;
-                        else
-                            $errors[$fieldname] = $this->getRequiredFieldDefaultMsg($fieldname);
-                    }
-                }
-        }
-
-        foreach($data as $k=>$v){
-            if(!isset($rules[$k])) continue;
-            $cRule = $rules[$k];
-            foreach($cRule as $v2){
-                if(is_array($v2)){
-                    //print_r(array_slice($v2, 1));
-                    $vv = array_merge(array($v),array_slice($v2, 1));
-
-					$vIsEmpty = ($this->requireMode == DooValidator::REQ_MODE_NULL_EMPTY && ($v === null || $v === '') ||
-								 $this->requireMode == DooValidator::REQ_MODE_NULL_ONLY  && $v === null) ? true : false;
-
-                    //call func
-                    if($vIsEmpty && $v2[0]=='optional'){
-                        //echo $k.' - this is not set and optional, should be removed from error';
-                        $optErrorRemove[] = $k;
-                    }
-                    if($err = call_user_func_array(array(&$this, 'test'.$v2[0]), $vv) ){
-                        if($this->checkMode==DooValidator::CHECK_ALL)
-                            $errors[$k][$v2[0]] = $err;
-                        else if($this->checkMode==DooValidator::CHECK_SKIP && !$vIsEmpty && $v2[0]!='optional'){
-                            return $err;
-                        }else if($this->checkMode==DooValidator::CHECK_ALL_ONE)
-                            $errors[$k] = $err;
-                    }
-                }
-                else if(is_string($cRule[0])){
-                    if(sizeof($cRule)>1){
-                        //print_r(array_slice($cRule, 1));
-                        $vv = array_merge(array($v),array_slice($cRule, 1));
-
-                        if($err = call_user_func_array(array(&$this, 'test'.$cRule[0]), $vv) ){
-                            if($this->checkMode==DooValidator::CHECK_ALL || $this->checkMode==DooValidator::CHECK_ALL_ONE)
-                                $errors[$k] = $err;
-                            else if($this->checkMode==DooValidator::CHECK_SKIP){
-                                return $err;
-                            }
-                        }
-                    }else{
-                        if($err = $this->{'test'.$cRule[0]}($v) ){
-                            if($this->checkMode==DooValidator::CHECK_ALL || $this->checkMode==DooValidator::CHECK_ALL_ONE)
-                                $errors[$k] = $err;
-                            else if($this->checkMode==DooValidator::CHECK_SKIP){
-                                return $err;
+                    } else {
+                        if ($this->checkMode == DooValidator::CHECK_ALL_ONE) {
+                            if ($customRequireMsg !== null) {
+                                $errors[$fieldname] = $customRequireMsg;
+                            } else {
+                                $errors[$fieldname] = $this->getRequiredFieldDefaultMsg($fieldname);
                             }
                         }
                     }
-                    continue 2;
                 }
             }
         }
-        if(isset($errors)){
-            if(sizeof($optErrorRemove)>0){
-                foreach($errors as $ek=>$ev){
-                    if(in_array($ek, $optErrorRemove)){
+
+        foreach ($data as $k => $v) {
+            if (!isset($rules[$k])) {
+                continue;
+            }
+            $cRule = $rules[$k];
+            foreach ($cRule as $v2) {
+                if (is_array($v2)) {
+                    //print_r(array_slice($v2, 1));
+                    $vv = array_merge([$v], array_slice($v2, 1));
+
+                    $vIsEmpty = ($this->requireMode == DooValidator::REQ_MODE_NULL_EMPTY && ($v === null || $v === '') ||
+                        $this->requireMode == DooValidator::REQ_MODE_NULL_ONLY && $v === null) ? true : false;
+
+                    //call func
+                    if ($vIsEmpty && $v2[0] == 'optional') {
+                        //echo $k.' - this is not set and optional, should be removed from error';
+                        $optErrorRemove[] = $k;
+                    }
+                    if ($err = call_user_func_array([&$this, 'test' . $v2[0]], $vv)) {
+                        if ($this->checkMode == DooValidator::CHECK_ALL) {
+                            $errors[$k][$v2[0]] = $err;
+                        } else {
+                            if ($this->checkMode == DooValidator::CHECK_SKIP && !$vIsEmpty && $v2[0] != 'optional') {
+                                return $err;
+                            } else {
+                                if ($this->checkMode == DooValidator::CHECK_ALL_ONE) {
+                                    $errors[$k] = $err;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if (is_string($cRule[0])) {
+                        if (sizeof($cRule) > 1) {
+                            //print_r(array_slice($cRule, 1));
+                            $vv = array_merge([$v], array_slice($cRule, 1));
+
+                            if ($err = call_user_func_array([&$this, 'test' . $cRule[0]], $vv)) {
+                                if ($this->checkMode == DooValidator::CHECK_ALL || $this->checkMode == DooValidator::CHECK_ALL_ONE) {
+                                    $errors[$k] = $err;
+                                } else {
+                                    if ($this->checkMode == DooValidator::CHECK_SKIP) {
+                                        return $err;
+                                    }
+                                }
+                            }
+                        } else {
+                            if ($err = $this->{'test' . $cRule[0]}($v)) {
+                                if ($this->checkMode == DooValidator::CHECK_ALL || $this->checkMode == DooValidator::CHECK_ALL_ONE) {
+                                    $errors[$k] = $err;
+                                } else {
+                                    if ($this->checkMode == DooValidator::CHECK_SKIP) {
+                                        return $err;
+                                    }
+                                }
+                            }
+                        }
+                        continue 2;
+                    }
+                }
+            }
+        }
+        if (isset($errors)) {
+            if (sizeof($optErrorRemove) > 0) {
+                foreach ($errors as $ek => $ev) {
+                    if (in_array($ek, $optErrorRemove)) {
                         //echo '<h3>Removing error '.$ek.'</h3>';
                         unset($errors[$ek]);
                     }
@@ -380,7 +452,11 @@ class DooValidator {
      * @param type $displayMethod Default error message display method. use: DooValidator::REQ_MSG_UNDERSCORE_TO_SPACE, DooValidator::REQ_MSG_CAMELCASE_TO_SPACE, DooValidator::REQ_MSG_THIS, DooValidator::REQ_MSG_FIELDNAME
      * @param type $suffix suffix for the error message. Default is ' field is required'
      */
-    public function setRequiredFieldDefaults( $displayMethod = DooValidator::REQ_MSG_UNDERSCORE_TO_SPACE, $suffix = ' field is required'){
+    public function setRequiredFieldDefaults(
+        $displayMethod = DooValidator::REQ_MSG_UNDERSCORE_TO_SPACE,
+        $suffix = ' field is required'
+    )
+    {
         $this->requiredMsgDefaultMethod = $displayMethod;
         $this->requiredMsgDefaultSuffix = $suffix;
     }
@@ -390,26 +466,37 @@ class DooValidator {
      * @param string $fieldname Name of the field
      * @return string Error message
      */
-    public function getRequiredFieldDefaultMsg($fieldname){
-        if($this->requiredMsgDefaultMethod==DooValidator::REQ_MSG_UNDERSCORE_TO_SPACE)
+    public function getRequiredFieldDefaultMsg($fieldname)
+    {
+        if ($this->requiredMsgDefaultMethod == DooValidator::REQ_MSG_UNDERSCORE_TO_SPACE) {
             return ucfirst(str_replace('_', ' ', $fieldname)) . $this->requiredMsgDefaultSuffix;
+        }
 
-        if($this->requiredMsgDefaultMethod==DooValidator::REQ_MSG_THIS)
+        if ($this->requiredMsgDefaultMethod == DooValidator::REQ_MSG_THIS) {
             return 'This ' . $this->requiredMsgDefaultSuffix;
+        }
 
-        if($this->requiredMsgDefaultMethod==DooValidator::REQ_MSG_CAMELCASE_TO_SPACE)
+        if ($this->requiredMsgDefaultMethod == DooValidator::REQ_MSG_CAMELCASE_TO_SPACE) {
             return ucfirst(strtolower(preg_replace('/([A-Z])/', ' $1', $fieldname))) . $this->requiredMsgDefaultSuffix;
+        }
 
-        if($this->requiredMsgDefaultMethod==DooValidator::REQ_MSG_FIELDNAME)
+        if ($this->requiredMsgDefaultMethod == DooValidator::REQ_MSG_FIELDNAME) {
             return $fieldname . $this->requiredMsgDefaultSuffix;
+        }
     }
 
-    public function testOptional($value){}
-    public function testRequired($value, $msg){
-		if ($this->requireMode == DooValidator::REQ_MODE_NULL_EMPTY && ($value === null || $value === '') ||
-			$this->requireMode == DooValidator::REQ_MODE_NULL_ONLY  && $value === null) {
+    public function testOptional($value)
+    {
+    }
 
-            if($msg!==null) return $msg;
+    public function testRequired($value, $msg)
+    {
+        if ($this->requireMode == DooValidator::REQ_MODE_NULL_EMPTY && ($value === null || $value === '') ||
+            $this->requireMode == DooValidator::REQ_MODE_NULL_ONLY && $value === null) {
+
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'This field is required!';
         }
     }
@@ -442,19 +529,24 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testCustom($value, $function, $options=null ,$msg=null){
-        if($options==null){
-            if($err = call_user_func($function, $value)){
-                if($err!==true){
-                    if($msg!==null) return $msg;
+    public function testCustom($value, $function, $options = null, $msg = null)
+    {
+        if ($options == null) {
+            if ($err = call_user_func($function, $value)) {
+                if ($err !== true) {
+                    if ($msg !== null) {
+                        return $msg;
+                    }
                     return $err;
                 }
             }
-        }else{
+        } else {
             //if array, additional parameters
-            if($err = call_user_func_array($function, array_merge(array($value), $options)) ){
-                if($err!==true){
-                    if($msg!==null) return $msg;
+            if ($err = call_user_func_array($function, array_merge([$value], $options))) {
+                if ($err !== true) {
+                    if ($msg !== null) {
+                        return $msg;
+                    }
                     return $err;
                 }
             }
@@ -469,9 +561,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testRegex($value, $regex, $msg=null){
-        if(!preg_match($regex, $value) ){
-            if($msg!==null) return $msg;
+    public function testRegex($value, $regex, $msg = null)
+    {
+        if (!preg_match($regex, $value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Error in field.';
         }
     }
@@ -485,36 +580,57 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testUsername($value, $minLength=4, $maxLength=12, $msg=null){
-        if(!preg_match('/^[a-zA-Z][a-zA-Z.0-9_-]{'. ($minLength-1) .','.$maxLength.'}$/i', $value)){
-            if($msg!==null) return $msg;
+    public function testUsername($value, $minLength = 4, $maxLength = 12, $msg = null)
+    {
+        if (!preg_match('/^[a-zA-Z][a-zA-Z.0-9_-]{' . ($minLength - 1) . ',' . $maxLength . '}$/i', $value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return "User name must be $minLength-$maxLength characters. Only characters, dots, digits, underscore & hyphen are allowed.";
-        }
-        else if(strpos($value, '..')!==False){
-            if($msg!==null) return $msg;
-            return "User name cannot consist of 2 continuous dots.";
-        }
-        else if(strpos($value, '__')!==False){
-            if($msg!==null) return $msg;
-            return "User name cannot consist of 2 continuous underscore.";
-        }
-        else if(strpos($value, '--')!==False){
-            if($msg!==null) return $msg;
-            return "User name cannot consist of 2 continuous dash.";
-        }
-        else if(strpos($value, '.-')!==False || strpos($value, '-.')!==False ||
-                strpos($value, '._')!==False || strpos($value, '_.')!==False ||
-                strpos($value, '_-')!==False || strpos($value, '-_')!==False){
-            if($msg!==null) return $msg;
-            return "User name cannot consist of 2 continuous punctuation.";
-        }
-        else if(ctype_punct($value[0])){
-            if($msg!==null) return $msg;
-            return "User name cannot start with a punctuation.";
-        }
-        else if(ctype_punct( substr($value, strlen($value)-1) )){
-            if($msg!==null) return $msg;
-            return "User name cannot end with a punctuation.";
+        } else {
+            if (strpos($value, '..') !== false) {
+                if ($msg !== null) {
+                    return $msg;
+                }
+                return "User name cannot consist of 2 continuous dots.";
+            } else {
+                if (strpos($value, '__') !== false) {
+                    if ($msg !== null) {
+                        return $msg;
+                    }
+                    return "User name cannot consist of 2 continuous underscore.";
+                } else {
+                    if (strpos($value, '--') !== false) {
+                        if ($msg !== null) {
+                            return $msg;
+                        }
+                        return "User name cannot consist of 2 continuous dash.";
+                    } else {
+                        if (strpos($value, '.-') !== false || strpos($value, '-.') !== false ||
+                            strpos($value, '._') !== false || strpos($value, '_.') !== false ||
+                            strpos($value, '_-') !== false || strpos($value, '-_') !== false) {
+                            if ($msg !== null) {
+                                return $msg;
+                            }
+                            return "User name cannot consist of 2 continuous punctuation.";
+                        } else {
+                            if (ctype_punct($value[0])) {
+                                if ($msg !== null) {
+                                    return $msg;
+                                }
+                                return "User name cannot start with a punctuation.";
+                            } else {
+                                if (ctype_punct(substr($value, strlen($value) - 1))) {
+                                    if ($msg !== null) {
+                                        return $msg;
+                                    }
+                                    return "User name cannot end with a punctuation.";
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -527,9 +643,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testPassword($value, $minLength=6, $maxLength=32, $msg=null){
-        if(!preg_match('/^[a-zA-Z.0-9_-]{'.$minLength.','.$maxLength.'}$/i', $value)){
-            if($msg!==null) return $msg;
+    public function testPassword($value, $minLength = 6, $maxLength = 32, $msg = null)
+    {
+        if (!preg_match('/^[a-zA-Z.0-9_-]{' . $minLength . ',' . $maxLength . '}$/i', $value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return "Only characters, dots, digits, underscore & hyphen are allowed. Password must be at least $minLength characters long.";
         }
     }
@@ -541,9 +660,13 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testPasswordComplex($value, $msg=null){
-        if(!preg_match('/\A(?=[-_a-zA-Z0-9]*?[A-Z])(?=[-_a-zA-Z0-9]*?[a-z])(?=[-_a-zA-Z0-9]*?[0-9])[-_a-zA-Z0-9]{6,32}\Z/', $value)){
-            if($msg!==null) return $msg;
+    public function testPasswordComplex($value, $msg = null)
+    {
+        if (!preg_match('/\A(?=[-_a-zA-Z0-9]*?[A-Z])(?=[-_a-zA-Z0-9]*?[a-z])(?=[-_a-zA-Z0-9]*?[0-9])[-_a-zA-Z0-9]{6,32}\Z/',
+            $value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Password must contain at least one upper case letter, one lower case letter and one digit. It must consists of 6 or more letters, digits, underscores and hyphens.';
         }
     }
@@ -555,12 +678,16 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testEmail($value, $msg=null){
-		// Regex based on best solution from here: http://fightingforalostcause.net/misc/2006/compare-email-regex.php
-        if(!preg_match('/^([\w\!\#$\%\&\'\*\+\-\/\=\?\^\`{\|\}\~]+\.)*[\w\!\#$\%\&\'\*\+\-\/\=\?\^\`{\|\}\~\_]+@((((([a-z0-9]{1}[a-z0-9\-]{0,62}[a-z0-9]{1})|[a-z])\.)+[a-z]{2,6})|(\d{1,3}\.){3}\d{1,3}(\:\d{1,5})?)$/i', $value) ||
-            strpos($value, '--')!==False || strpos($value, '-.')!==False
-        ){
-            if($msg!==null) return $msg;
+    public function testEmail($value, $msg = null)
+    {
+        // Regex based on best solution from here: http://fightingforalostcause.net/misc/2006/compare-email-regex.php
+        if (!preg_match('/^([\w\!\#$\%\&\'\*\+\-\/\=\?\^\`{\|\}\~]+\.)*[\w\!\#$\%\&\'\*\+\-\/\=\?\^\`{\|\}\~\_]+@((((([a-z0-9]{1}[a-z0-9\-]{0,62}[a-z0-9]{1})|[a-z])\.)+[a-z]{2,6})|(\d{1,3}\.){3}\d{1,3}(\:\d{1,5})?)$/i',
+                $value) ||
+            strpos($value, '--') !== false || strpos($value, '-.') !== false
+        ) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid email format!';
         }
     }
@@ -572,9 +699,13 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testUrl($value, $msg=null){
-        if(!preg_match('/^(http|https|ftp):\/\/([A-Z0-9][A-Z0-9_-]*(?:\.[A-Z0-9][A-Z0-9_-]*)+):?(\d+)?\/?/i', $value)){
-            if($msg!==null) return $msg;
+    public function testUrl($value, $msg = null)
+    {
+        if (!preg_match('/^(http|https|ftp):\/\/([A-Z0-9][A-Z0-9_-]*(?:\.[A-Z0-9][A-Z0-9_-]*)+):?(\d+)?\/?/i',
+            $value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid URL!';
         }
     }
@@ -586,10 +717,14 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testIP($value, $msg=null){
+    public function testIP($value, $msg = null)
+    {
         //198.168.1.101
-        if (!preg_match('/^(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/',$value)) {
-            if($msg!==null) return $msg;
+        if (!preg_match('/^(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/',
+            $value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid IP address!';
         }
     }
@@ -601,10 +736,14 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testHostname($value, $msg=null){
+    public function testHostname($value, $msg = null)
+    {
         //1mx.record.com
-        if (!preg_match('/^(?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|\b-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|\b-){0,61}[0-9A-Za-z])?)*\.?$/',$value)) {
-            if($msg!==null) return $msg;
+        if (!preg_match('/^(?=.{1,255}$)[0-9A-Za-z](?:(?:[0-9A-Za-z]|\b-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|\b-){0,61}[0-9A-Za-z])?)*\.?$/',
+            $value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid hostname!';
         }
     }
@@ -616,10 +755,14 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testServerName($value, $msg=null){
+    public function testServerName($value, $msg = null)
+    {
         //server.example.com
-        if (!preg_match('/^[A-Za-z](?:(?:[0-9A-Za-z]|\b-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|\b-){0,61}[0-9A-Za-z])?)*$/',$value)) {
-            if($msg!==null) return $msg;
+        if (!preg_match('/^[A-Za-z](?:(?:[0-9A-Za-z]|\b-){0,61}[0-9A-Za-z])?(?:\.[0-9A-Za-z](?:(?:[0-9A-Za-z]|\b-){0,61}[0-9A-Za-z])?)*$/',
+            $value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid server name!';
         }
     }
@@ -631,10 +774,13 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testSubdomain($value, $msg=null){
+    public function testSubdomain($value, $msg = null)
+    {
         //something.example.com
-        if (!preg_match('/^[a-zA-Z0-9\-]+(\.[a-zA-Z0-9\-]+){2}$/',$value)) {
-            if($msg!==null) return $msg;
+        if (!preg_match('/^[a-zA-Z0-9\-]+(\.[a-zA-Z0-9\-]+){2}$/', $value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid subdomain!';
         }
     }
@@ -646,10 +792,14 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testCreditCard($value, $msg=null){
+    public function testCreditCard($value, $msg = null)
+    {
         //568282246310632
-        if (!preg_match('/^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6011[0-9]{12}|3(?:0[0-5]|[68][0-9])[0-9]{11}|3[47][0-9]{13})$/', $value)) {
-            if($msg!==null) return $msg;
+        if (!preg_match('/^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6011[0-9]{12}|3(?:0[0-5]|[68][0-9])[0-9]{11}|3[47][0-9]{13})$/',
+            $value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid credit card number!';
         }
     }
@@ -661,9 +811,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testCcAmericanExpress($value, $msg=null){
+    public function testCcAmericanExpress($value, $msg = null)
+    {
         if (!preg_match('/^3[47][0-9]{13}$/', $value)) {
-            if($msg!==null) return $msg;
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid American Express credit card number!';
         }
     }
@@ -675,9 +828,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testCcDiscover($value, $msg=null){
+    public function testCcDiscover($value, $msg = null)
+    {
         if (!preg_match('/^6011[0-9]{12}$/', $value)) {
-            if($msg!==null) return $msg;
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid Discover credit card number!';
         }
     }
@@ -689,9 +845,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testCcDinersClub($value, $msg=null){
+    public function testCcDinersClub($value, $msg = null)
+    {
         if (!preg_match('/^3(?:0[0-5]|[68][0-9])[0-9]{11}$/', $value)) {
-            if($msg!==null) return $msg;
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid Diners Club credit card number!';
         }
     }
@@ -703,9 +862,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testCcMasterCard($value, $msg=null){
+    public function testCcMasterCard($value, $msg = null)
+    {
         if (!preg_match('/^5[1-5][0-9]{14}$/', $value)) {
-            if($msg!==null) return $msg;
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid Master Card number!';
         }
     }
@@ -717,9 +879,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testCcVisa($value, $msg=null){
+    public function testCcVisa($value, $msg = null)
+    {
         if (!preg_match('/^4[0-9]{12}(?:[0-9]{3})?$/', $value)) {
-            if($msg!==null) return $msg;
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid Visa card number!';
         }
     }
@@ -731,10 +896,13 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testColorHex($value, $msg=null){
+    public function testColorHex($value, $msg = null)
+    {
         //#ff0000
         if (!preg_match('/^#([0-9a-f]{1,2}){3}$/i', $value)) {
-            if($msg!==null) return $msg;
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid color code!';
         }
     }
@@ -748,12 +916,71 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testDateTime($value, $msg=null){
+    public function testDateTime($value, $msg = null)
+    {
         $rs = strtotime($value);
 
-        if ($rs===false || $rs===-1){
-            if($msg!==null) return $msg;
+        if ($rs === false || $rs === -1) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid date time format!';
+        }
+    }
+
+    /**
+     * Validate Date Time Format
+     *
+     * @param string $value Value of data to be validated
+     * @param string $msg Custom error message
+     * @return string
+     */
+    public function testDateTimeFormat($value, $format = "yyyy-MM-dd HH:mm:ss", $msg = null)
+    {
+        $rs = \DateTimeUtil::parseLocal($value, $format);
+
+        if ($rs <= 0) {
+            if ($msg !== null) {
+                return $msg;
+            }
+            return 'Invalid date time format! Needs to be in format ' . $format;
+        }
+    }
+
+    /**
+     * Validate Date Format
+     *
+     * @param string $value Value of data to be validated
+     * @param string $msg Custom error message
+     * @return string
+     */
+    public function testDateFormat($value, $format = "yyyy-MM-dd", $msg = null)
+    {
+        $rs = \DateTimeUtil::parseLocal($value . ' 00:00:00', $format . ' HH:mm:ss');
+
+        if ($rs <= 0) {
+            if ($msg !== null) {
+                return $msg;
+            }
+            return 'Invalid date time format! Needs to be in format ' . $format;
+        }
+    }
+
+    /**
+     * Validate a 24 hour time format eg. 23:59
+     * @param $value
+     * @param $
+     * @param null $msg
+     * @return null|string
+     */
+    public function testTime24HourFormat($value, $msg = null)
+    {
+        $format = '/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/';
+        if (!preg_match($format, $value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
+            return 'Invalid 24 hour time format!';
         }
     }
 
@@ -768,20 +995,21 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testDate($value, $format='yyyy/mm/dd', $msg=null, $forceYearLength=false){
+    public function testDate($value, $format = 'yyyy/mm/dd', $msg = null, $forceYearLength = false)
+    {
         //Date yyyy-mm-dd, yyyy/mm/dd, yyyy.mm.dd
         //1900-01-01 through 2099-12-31
 
-		$yearFormat = "(19|20)?[0-9]{2}";
-		if ($forceYearLength == true) {
-			if (strpos($format, 'yyyy') !== false) {
-				$yearFormat = "(19|20)[0-9]{2}";
-			} else {
-				$yearFormat = "[0-9]{2}";
-			}
-		}
+        $yearFormat = "(19|20)?[0-9]{2}";
+        if ($forceYearLength == true) {
+            if (strpos($format, 'yyyy') !== false) {
+                $yearFormat = "(19|20)[0-9]{2}";
+            } else {
+                $yearFormat = "[0-9]{2}";
+            }
+        }
 
-        switch($format){
+        switch ($format) {
             case 'dd/mm/yy':
                 $format = "/^\b(0?[1-9]|[12][0-9]|3[01])[- \/.](0?[1-9]|1[012])[- \/.]{$yearFormat}\b$/";
                 break;
@@ -803,7 +1031,9 @@ class DooValidator {
         }
 
         if (!preg_match($format, $value)) {
-            if($msg!==null) return $msg;
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Invalid date format!';
         }
     }
@@ -817,10 +1047,33 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testDateBetween($value, $dateStart, $dateEnd, $msg=null){
-		$value = strtotime($value);
-        if(!( $value > strtotime($dateStart) && $value < strtotime($dateEnd) ) ) {
-            if($msg!==null) return $msg;
+    public function testDateBetween($value, $dateStart, $dateEnd, $msg = null)
+    {
+        $value = strtotime($value);
+        if (!($value > strtotime($dateStart) && $value < strtotime($dateEnd))) {
+            if ($msg !== null) {
+                return $msg;
+            }
+            return "Date must be between $dateStart and $dateEnd";
+        }
+    }
+
+    /**
+     * Validate if given date is between 2 dates inclusive.
+     *
+     * @param string $value Value of data to be validated
+     * @param string $dateStart Starting date
+     * @param string $dateEnd Ending date
+     * @param string $msg Custom error message
+     * @return string
+     */
+    public function testDateBetweenInclusive($value, $dateStart, $dateEnd, $msg = null)
+    {
+        $value = strtotime($value);
+        if (!($value >= strtotime($dateStart) && $value <= strtotime($dateEnd))) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return "Date must be between $dateStart and $dateEnd";
         }
     }
@@ -832,9 +1085,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testInteger($value, $msg=null){
-        if(intval($value)!=$value || strlen(intval($value))!=strlen($value)){
-            if($msg!==null) return $msg;
+    public function testInteger($value, $msg = null)
+    {
+        if (intval($value) != $value || strlen(intval($value)) != strlen($value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Input is not an integer.';
         }
     }
@@ -846,10 +1102,13 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testPrice($value, $msg=null){
+    public function testPrice($value, $msg = null)
+    {
         // 2 decimal
-        if (!preg_match('/^[0-9]*\\.?[0-9]{0,2}$/', $value)){
-            if($msg!==null) return $msg;
+        if (!preg_match('/^[0-9]*\\.?[0-9]{0,2}$/', $value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Input is not a valid price amount.';
         }
     }
@@ -862,10 +1121,13 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testFloat($value, $decimal='', $msg=null){
+    public function testFloat($value, $decimal = '', $msg = null)
+    {
         // any amount of decimal
-        if (!preg_match('/^[-]?[0-9]*\\.?[0-9]{0,'.$decimal.'}$/', $value)){
-            if($msg!==null) return $msg;
+        if (!preg_match('/^[-]?[0-9]*\\.?[0-9]{0,' . $decimal . '}$/', $value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Input is not a valid float value.';
         }
     }
@@ -877,13 +1139,16 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testDigit($value, $msg=null){
-        if(!ctype_digit($value)){
-            if($msg!==null) return $msg;
+    public function testDigit($value, $msg = null)
+    {
+        if (!ctype_digit($value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Input is not a digit.';
         }
     }
-    
+
     /**
      * Validate Alpha numeric values with dashes and space.
      *
@@ -893,15 +1158,19 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testAlphaNumericDashSpace($value, $msg=null){
-        $value = str_replace(' ','',$value);
-        $value = str_replace('-','',$value);
-        
-        if(!ctype_alnum($value)){
-            if($msg!==null) return $msg;
+    public function testAlphaNumericDashSpace($value, $msg = null)
+    {
+        $value = str_replace(' ', '', $value);
+        $value = str_replace('-', '', $value);
+
+        if (!ctype_alnum($value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Input can only consist of letters, digits, dashes or spaces.';
         }
-    }    
+    }
+
     /**
      * Validate Alpha numeric values with dashes.
      *
@@ -911,12 +1180,36 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testAlphaNumericDash($value, $msg=null){
-        $value = str_replace('-','',$value);
-        
-        if(!ctype_alnum($value)){
-            if($msg!==null) return $msg;
+    public function testAlphaNumericDash($value, $msg = null)
+    {
+        $value = str_replace('-', '', $value);
+
+        if (!ctype_alnum($value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Input can only consist of letters, digits or dashes.';
+        }
+    }
+
+    /**
+     * Validate Alpha numeric values with Underscore.
+     *
+     * Input string can only consist of only Letters or Digits.
+     *
+     * @param string $value Value of data to be validated
+     * @param string $msg Custom error message
+     * @return string
+     */
+    public function testAlphaNumericUnderscore($value, $msg = null)
+    {
+        $value = str_replace('_', '', $value);
+
+        if (!ctype_alnum($value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
+            return 'Input can only consist of letters, digits or underscore.';
         }
     }
 
@@ -929,11 +1222,33 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testAlphaNumericSpace($value, $msg=null){
-        $value = str_replace(' ','',$value);
-        if(!ctype_alnum($value)){
-            if($msg!==null) return $msg;
+    public function testAlphaNumericSpace($value, $msg = null)
+    {
+        $value = str_replace(' ', '', $value);
+        if (!ctype_alnum($value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Input can only consist of letters, digits or spaces.';
+        }
+    }
+
+    /**
+     * Validate values with no space.
+     *
+     * Input string can only consist of only Letters or Digits.
+     *
+     * @param string $value Value of data to be validated
+     * @param string $msg Custom error message
+     * @return string
+     */
+    public function testNoSpace($value, $msg = null)
+    {
+        if (strpos($value, ' ') !== false) {
+            if ($msg !== null) {
+                return $msg;
+            }
+            return 'Input cannot only consist of spaces.';
         }
     }
 
@@ -946,9 +1261,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testAlphaNumeric($value, $msg=null){
-        if(!ctype_alnum($value)){
-            if($msg!==null) return $msg;
+    public function testAlphaNumeric($value, $msg = null)
+    {
+        if (!ctype_alnum($value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Input can only consist of letters or digits.';
         }
     }
@@ -962,9 +1280,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testAlpha($value, $msg=null){
-        if(!ctype_alpha($value)){
-            if($msg!==null) return $msg;
+    public function testAlpha($value, $msg = null)
+    {
+        if (!ctype_alpha($value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Input can only consist of letters.';
         }
     }
@@ -978,9 +1299,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testAlphaSpace($value, $msg=null){
-        if(!ctype_alpha(str_replace(' ','',$value))){
-            if($msg!==null) return $msg;
+    public function testAlphaSpace($value, $msg = null)
+    {
+        if (!ctype_alpha(str_replace(' ', '', $value))) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Input can only consist of letters and spaces.';
         }
     }
@@ -995,9 +1319,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testLowercase($value, $msg=null){
-        if(!ctype_lower($value)){
-            if($msg!==null) return $msg;
+    public function testLowercase($value, $msg = null)
+    {
+        if (!ctype_lower($value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Input can only consists of lowercase letters.';
         }
     }
@@ -1011,9 +1338,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testUppercase($value, $msg=null){
-        if(!ctype_upper($value)){
-            if($msg!==null) return $msg;
+    public function testUppercase($value, $msg = null)
+    {
+        if (!ctype_upper($value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Input can only consists of uppercase letters.';
         }
     }
@@ -1025,9 +1355,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testNotEmpty($value, $msg=null){
-        if(empty($value)){
-            if($msg!==null) return $msg;
+    public function testNotEmpty($value, $msg = null)
+    {
+        if (empty($value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Value cannot be empty!';
         }
     }
@@ -1040,9 +1373,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testMaxLength($value, $length=0, $msg=null){
-        if(mb_strlen($value) > $length){
-            if($msg!==null) return $msg;
+    public function testMaxLength($value, $length = 0, $msg = null)
+    {
+        if (mb_strlen($value) > $length) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return "Input cannot be longer than $length characters.";
         }
     }
@@ -1055,9 +1391,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testMinLength($value, $length=0, $msg=null){
-        if(strlen($value) < $length){
-            if($msg!==null) return $msg;
+    public function testMinLength($value, $length = 0, $msg = null)
+    {
+        if (strlen($value) < $length) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return "Input cannot be shorter than $length characters.";
         }
     }
@@ -1069,9 +1408,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testNotNull($value, $msg=null){
-        if(is_null($value)){
-            if($msg!==null) return $msg;
+    public function testNotNull($value, $msg = null)
+    {
+        if (is_null($value)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Value cannot be null.';
         }
     }
@@ -1084,9 +1426,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testMin($value, $min, $msg=null){
-        if( $value < $min){
-            if($msg!==null) return $msg;
+    public function testMin($value, $min, $msg = null)
+    {
+        if ($value < $min) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return "Value cannot be less than $min";
         }
     }
@@ -1099,9 +1444,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testMax($value, $max, $msg=null){
-        if( $value > $max){
-            if($msg!==null) return $msg;
+    public function testMax($value, $max, $msg = null)
+    {
+        if ($value > $max) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return "Value cannot be more than $max";
         }
     }
@@ -1115,9 +1463,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testBetweenInclusive($value, $min, $max, $msg=null){
-        if( $value < $min || $value > $max ){
-            if($msg!==null) return $msg;
+    public function testBetweenInclusive($value, $min, $max, $msg = null)
+    {
+        if ($value < $min || $value > $max) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return "Value must be between $min and $max inclusively.";
         }
     }
@@ -1131,9 +1482,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testBetween($value, $min, $max, $msg=null){
-        if( $value < $min+1 || $value > $max-1 ){
-            if($msg!==null) return $msg;
+    public function testBetween($value, $min, $max, $msg = null)
+    {
+        if ($value < $min + 1 || $value > $max - 1) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return "Value must be between $min and $max.";
         }
     }
@@ -1146,9 +1500,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testGreaterThan($value, $number, $msg=null){
-        if( !($value > $number)){
-            if($msg!==null) return $msg;
+    public function testGreaterThan($value, $number, $msg = null)
+    {
+        if (!($value > $number)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return "Value must be greater than $number.";
         }
     }
@@ -1161,9 +1518,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testGreaterThanOrEqual($value, $number, $msg=null){
-        if( !($value >= $number)){
-            if($msg!==null) return $msg;
+    public function testGreaterThanOrEqual($value, $number, $msg = null)
+    {
+        if (!($value >= $number)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return "Value must be greater than or equal to $number.";
         }
     }
@@ -1176,9 +1536,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testLessThan($value, $number, $msg=null){
-        if( !($value < $number)){
-            if($msg!==null) return $msg;
+    public function testLessThan($value, $number, $msg = null)
+    {
+        if (!($value < $number)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return "Value must be less than $number.";
         }
     }
@@ -1191,9 +1554,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testLessThanOrEqual($value, $number, $msg=null){
-        if( !($value <= $number)){
-            if($msg!==null) return $msg;
+    public function testLessThanOrEqual($value, $number, $msg = null)
+    {
+        if (!($value <= $number)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return "Value must be less than $number.";
         }
     }
@@ -1206,9 +1572,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testEqual($value, $equalValue, $msg=null){
-        if(!($value==$equalValue && strlen($value)==strlen($equalValue))){
-            if($msg!==null) return $msg;
+    public function testEqual($value, $equalValue, $msg = null)
+    {
+        if (!($value == $equalValue && strlen($value) == strlen($equalValue))) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Both values must be the same.';
         }
     }
@@ -1221,41 +1590,52 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testNotEqual($value, $equalValue, $msg=null){
-        if( $value==$equalValue && strlen($value)==strlen($equalValue) ){
-            if($msg!==null) return $msg;
+    public function testNotEqual($value, $equalValue, $msg = null)
+    {
+        if ($value == $equalValue && strlen($value) == strlen($equalValue)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Both values must be different.';
         }
     }
 
-   /**
-    * Validate if value Exists in database
-    *
-    * @param string $value Value of data to be validated
-    * @param string $table Name of the table in DB
-    * @param string $field Name of field you want to check
-    * @return string
-    */
-    public function testDbExist($value, $table, $field, $msg=null) {
-        $result = Doo::db()->fetchRow("SELECT COUNT($field) AS count FROM " . $table . ' WHERE '.$field.' = ? LIMIT 1', array($value));
+    /**
+     * Validate if value Exists in database
+     *
+     * @param string $value Value of data to be validated
+     * @param string $table Name of the table in DB
+     * @param string $field Name of field you want to check
+     * @return string
+     */
+    public function testDbExist($value, $table, $field, $msg = null)
+    {
+        $result = Doo::db()->fetchRow("SELECT COUNT($field) AS count FROM " . $table . ' WHERE ' . $field . ' = ? LIMIT 1',
+            [$value]);
         if ((!isset($result['count'])) || ($result['count'] < 1)) {
-            if($msg!==null) return $msg;
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Value does not exist in database.';
         }
     }
 
-   /**
-    * Validate if value does Not Exist in database
-    *
-    * @param string $value Value of data to be validated
-    * @param string $table Name of the table in DB
-    * @param string $field Name of field you want to check
-    * @return string
-    */
-    public function testDbNotExist($value, $table, $field, $msg=null) {
-        $result = Doo::db()->fetchRow("SELECT COUNT($field) AS count FROM " . $table . ' WHERE '.$field.' = ? LIMIT 1', array($value));
+    /**
+     * Validate if value does Not Exist in database
+     *
+     * @param string $value Value of data to be validated
+     * @param string $table Name of the table in DB
+     * @param string $field Name of field you want to check
+     * @return string
+     */
+    public function testDbNotExist($value, $table, $field, $msg = null)
+    {
+        $result = Doo::db()->fetchRow("SELECT COUNT($field) AS count FROM " . $table . ' WHERE ' . $field . ' = ? LIMIT 1',
+            [$value]);
         if ((isset($result['count'])) && ($result['count'] > 0)) {
-            if($msg!==null) return $msg;
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Same value exists in database.';
         }
     }
@@ -1268,20 +1648,23 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testJsonArrayInList($value, $valueList, $msg=null){
+    public function testJsonArrayInList($value, $valueList, $msg = null)
+    {
         $value = \JSON::decode($value);
-        if(!is_array($value)){
+        if (!is_array($value)) {
             return 'Invalid JSON array';
         }
 
-        if(sizeof($value) < 1){
+        if (sizeof($value) < 1) {
             return 'JSON array is empty';
         }
 
         $arr = array_diff($value, $valueList);
 
-        if(!empty($arr)){
-            if($msg!==null) return $msg;
+        if (!empty($arr)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Values not found in list: ' . implode(', ', $arr);
         }
     }
@@ -1294,10 +1677,13 @@ class DooValidator {
      * @param null $msg
      * @return null|string
      */
-    public function testDelimiterNotEmpty($value, $delimiter=',', $msg=null){
+    public function testDelimiterNotEmpty($value, $delimiter = ',', $msg = null)
+    {
         $arr = explode($delimiter, $value);
-        if(empty($arr)){
-            if($msg!==null) return $msg;
+        if (empty($arr)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'No item found';
         }
     }
@@ -1310,10 +1696,13 @@ class DooValidator {
      * @param null $msg
      * @return null|string
      */
-    public function testDelimiterMaxLength($value, $delimiter=',', $size=1, $msg=null){
+    public function testDelimiterMaxLength($value, $delimiter = ',', $size = 1, $msg = null)
+    {
         $arr = explode($delimiter, $value);
-        if(sizeof($arr) > $size){
-            if($msg!==null) return $msg;
+        if (sizeof($arr) > $size) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Total items exceeded maximum length of ' . $size;
         }
     }
@@ -1326,10 +1715,13 @@ class DooValidator {
      * @param null $msg
      * @return null|string
      */
-    public function testDelimiterMinLength($value, $delimiter=',', $size=1, $msg=null){
+    public function testDelimiterMinLength($value, $delimiter = ',', $size = 1, $msg = null)
+    {
         $arr = explode($delimiter, $value);
-        if(sizeof($arr) < $size){
-            if($msg!==null) return $msg;
+        if (sizeof($arr) < $size) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Total items is less than minimum length of ' . $size;
         }
     }
@@ -1342,22 +1734,46 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testDelimiterInList($value, $valueList, $delimiter=',', $msg=null){
+    public function testDelimiterInList($value, $valueList, $delimiter = ',', $msg = null)
+    {
         $value = explode($delimiter, $value);
-        if(!is_array($value)){
-            return 'List items should be seperated by '. $delimiter;
+        if (!is_array($value)) {
+            return 'List items should be seperated by ' . $delimiter;
         }
 
-        if(sizeof($value) < 1){
+        if (sizeof($value) < 1) {
             return 'List is empty';
         }
 
         $arr = array_diff($value, $valueList);
 
-        if(!empty($arr)){
-            if($msg!==null) return $msg;
+        if (!empty($arr)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Values not found in list: ' . implode(', ', $arr);
         }
+    }
+
+    public function testFileType($value, $valueList, $msg = null)
+    {
+        $type = (isset($value['type'])) ? $value['type'] : '';
+        $type = strtolower($type);
+        $type = explode('/', $type);
+        if (sizeof($type) == 1) {
+            $type = '';
+        }
+        $type = $type[1];
+        return $this->testInList($type, $valueList, $msg);
+    }
+
+    public function testFileSize($value, $max, $msg = null)
+    {
+        $size = (isset($value['size'])) ? $value['size'] : $value;
+        if (!is_int($value)) {
+            $size = intval($size);
+        }
+        return $this->testMax($size, $max, $msg);
     }
 
     /**
@@ -1368,9 +1784,12 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testInList($value, $valueList, $msg=null){
-        if(!(in_array($value, $valueList))){
-            if($msg!==null) return $msg;
+    public function testInList($value, $valueList, $msg = null)
+    {
+        if (!(in_array($value, $valueList))) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Unmatched value.';
         }
     }
@@ -1383,47 +1802,56 @@ class DooValidator {
      * @param string $msg Custom error message
      * @return string
      */
-    public function testNotInList($value, $valueList, $msg=null){
-        if(in_array($value, $valueList)){
-            if($msg!==null) return $msg;
+    public function testNotInList($value, $valueList, $msg = null)
+    {
+        if (in_array($value, $valueList)) {
+            if ($msg !== null) {
+                return $msg;
+            }
             return 'Unmatched value.';
         }
     }
 
-	/**
-	* Validate field if it is equal with some other field from $_GET or $_POST method
-	* This method is used for validating form
-	*
-	* @param string $value Value of data to be validated
-	* @param string $method Method (get or post), default $_POST
-	* @param string $field Name of field that you want to check
-	* @return string
-	*/
-	public function testEqualAs($value, $method, $field, $msg=null) {
-		if ($method == "get") {
-		  $method = $_GET;
-		} else if ($method == "post") {
-		  $method = $_POST;
-		} else {
-		  $method = $_POST;
-		}
-		if (!isset($method[$field]) || $value != $method[$field]) {
-		    if($msg!==null) return $msg;
-            return 'Value '.$value.' is not equal with "'.$field.'".';
-		}
-	}
+    /**
+     * Validate field if it is equal with some other field from $_GET or $_POST method
+     * This method is used for validating form
+     *
+     * @param string $value Value of data to be validated
+     * @param string $method Method (get or post), default $_POST
+     * @param string $field Name of field that you want to check
+     * @return string
+     */
+    public function testEqualAs($value, $method, $field, $msg = null)
+    {
+        if ($method == "get") {
+            $method = $_GET;
+        } else {
+            if ($method == "post") {
+                $method = $_POST;
+            } else {
+                $method = $_POST;
+            }
+        }
+        if (!isset($method[$field]) || $value != $method[$field]) {
+            if ($msg !== null) {
+                return $msg;
+            }
+            return 'Value ' . $value . ' is not equal with "' . $field . '".';
+        }
+    }
 
 
     /**
      * Validate value if it's type of an array.
      *
-     * @param mixed  $value Value of data to be validated
+     * @param mixed $value Value of data to be validated
      * @param string $msg Custom error message
      * @return string
      */
-    public function testArray($value, $msg=null) {
+    public function testArray($value, $msg = null)
+    {
         if (is_array($value) === false) {
-            if($msg === null) {
+            if ($msg === null) {
                 return 'Variable is not type of an array.';
             }
 
@@ -1435,13 +1863,14 @@ class DooValidator {
     /**
      * Validate value if it's type of a boolean.
      *
-     * @param mixed  $value Value of data to be validated
+     * @param mixed $value Value of data to be validated
      * @param string $msg Custom error message
      * @return string
      */
-    public function testBoolean($value, $msg=null) {
+    public function testBoolean($value, $msg = null)
+    {
         if (is_bool($value) === false) {
-            if($msg === null) {
+            if ($msg === null) {
                 return 'Variable is not type of a boolean.';
             }
 
@@ -1453,15 +1882,16 @@ class DooValidator {
     /**
      * Validate domain name.
      *
-     * @param mixed  $value Value of data to be validated
+     * @param mixed $value Value of data to be validated
      * @param string $msg Custom error message
      * @return string
      */
-    public function testDomain($value, $msg=null) {
+    public function testDomain($value, $msg = null)
+    {
         $pattern = '/^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6}$/';
 
-        if ((bool) preg_match($pattern, $value) === false) {
-            if($msg === null) {
+        if ((bool)preg_match($pattern, $value) === false) {
+            if ($msg === null) {
                 return 'Invalid domain name.';
             }
 

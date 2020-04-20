@@ -15,97 +15,145 @@
  * @package doo.session
  * @since 2.0
  */
+
+import io . vertx . core . logging . LoggerFactory;
+import io . vertx . core . Vertx;
+import io . vertx . lang . php .*;
+import io . vertx . lang . php . util .*;
+import io . vertx . core . buffer .*;
+import com . doophp . util .*;
+
+function g($func)
+{
+    return HandlerFactory::createGenericHandler($func);
+}
+
+function v($func)
+{
+    return HandlerFactory::createVoidHandler($func);
+}
+
+function a($func)
+{
+    return HandlerFactory::createAsyncGenericHandler($func);
+}
+
+function jfrom($json)
+{
+    return \PhpTypes::arrayFromJson($json);
+}
+
+function jto($arr)
+{
+    return \PhpTypes::arrayToJsonObject($arr);
+}
+
 require_once '../app/DooConfig.php';
 require_once './DooVertxSession.php';
 require_once './DooVertxSessionServer.php';
+require_once './DooVertxSharedSessionServer.php';
 
-class DooVertxSessionServerVerticle extends DooVertxSessionServer {
+class DooVertxSessionServerVerticle extends DooVertxSessionServer
+{
 
-    public static function start(){
+    public static function start()
+    {
 
-        $config = Vertx::config();
-        $server = new DooVertxSessionServer();
+        $config = jfrom(verticle()->config());
 
-        if($config['log']!=null){
-            $server->logger = Vertx::logger();
+        if ($config['logger'] != null) {
+            $logger = \LoggerFactory::getLogger($config['logger']);
+            $logger->info('Starting session server...');
+            $logger->info('Session config ' . print_r($config, true));
         }
 
-        if($config['timeout']!=null){
+        if ($config['shared'] != null && $config['shared'] === true) {
+            $server = new DooVertxSharedSessionServer();
+            $server->logger = $logger;
+        } else {
+            $server = new DooVertxSessionServer();
+            $server->logger = $logger;
+        }
+
+        if ($config['timeout'] != null) {
             $server->timeout = $config['timeout'];
-        }
-        else{
+        } else {
             $server->timeout = 30 * 60 * 1000;
         }
 
-        if($config['serverId']!=null){
+        if ($config['serverId'] != null) {
             $server->serverId = $config['serverId'];
         }
 
-        if($config['appNamespaceId']!=null){
+        if ($config['appNamespaceId'] != null) {
             $server->appNamespaceId = $config['appNamespaceId'];
         }
 
-        if($config['redis']!=null){
+        if ($config['redis'] != null) {
             $server->redis = $config['redis'];
         }
 
-        if($config['namespace']!=null){
+        if ($config['namespace'] != null) {
             $server->namespace = $config['namespace'];
         }
 
-        if($config['address']!=null){
+        if ($config['address'] != null) {
             $server->address = $config['address'];
         }
 
-        $server->log("Session server started with eventbus address ". $server->getAddress());
-
-        Vertx::eventBus()->registerHandler($server->getAddress(), function($message) use ($server) {
+        $server->log("Session server started with eventbus address " . $server->getAddress());
+//
+        $consumer = getVertx()->eventBus()->consumer($server->getAddress());
+        $consumer->handler(g(function ($message) use ($server) {
             $cmd = $message->body();
+//            $server->logger->debug("[SSERVER]:I have received a message: " . $cmd);
+            $cmd = \jfrom($cmd);
 
             $action = intval($cmd['act']);
 
-            switch($action){
+            switch ($action) {
                 case self::SAVE:
-                    $rs = $server->saveData($cmd['id'], $cmd['data']);
-                    $message->reply($rs);
+                    $server->saveData($cmd['id'], $cmd['data'], function ($rs) use ($message) {
+                        $message->reply($rs);
+                    });
                     break;
                 case self::GET:
-                    $rs = $server->getData($cmd['id'], function($rs) use ($message){
+                    $server->getData($cmd['id'], function ($rs) use ($message) {
                         $message->reply($rs);
                     });
                     break;
                 case self::DESTROY:
-                    $rs = $server->destroyData($cmd['id']);
-                    $message->reply($rs);
+                    $server->destroyData($cmd['id'], function ($rs) use ($message) {
+                        $message->reply($rs);
+                    });
                     break;
                 case self::DESTROY_ALL:
-                    $rs = $server->destroyAll();
-                    $message->reply($rs);
+                    $server->destroyAll(function ($rs) use ($message) {
+                        $message->reply($rs);
+                    });
                     break;
                 case self::SAVE_FAILOVER:
-                    $server->saveDataFailOver($cmd['id'], $cmd['data'], function($rs) use ($message){
+                    $server->saveDataFailOver($cmd['id'], $cmd['data'], function ($rs) use ($message) {
                         $message->reply($rs);
                     });
                     break;
                 case self::GET_FAILOVER:
-                    $server->getDataFailOver($cmd['id'], $cmd['newId'], function($rs) use ($message){
+                    $server->getDataFailOver($cmd['id'], $cmd['newId'], function ($rs) use ($message) {
                         $message->reply($rs);
                     });
                     break;
                 case self::DESTROY_FAILOVER:
-                    $rs = $server->destroyDataFailOver($cmd['id']);
-                    $message->reply($rs);
+                    $server->destroyDataFailOver($cmd['id'], function ($rs) use ($message) {
+                        $message->reply($rs);
+                    });
                     break;
             }
 
-        });
+        }));
 
     }
 
 }
 
-
-
 set_time_limit(0);
-Vertx::logger()->info('Starting session server...');
 DooVertxSessionServerVerticle::start();

@@ -4,8 +4,8 @@
  *
  * @author Leng Sheng Hong <darkredz@gmail.com>
  * @link http://www.doophp.com/
- * @copyright Copyright &copy; 2009-2013 Leng Sheng Hong
- * @license http://www.doophp.com/license-v2
+ * @copyright Copyright &copy; 2009 Leng Sheng Hong
+ * @license http://www.doophp.com/license
  */
 
 
@@ -18,7 +18,7 @@
  * <p>DooMasterSlave <b>DOES NOT</b> send SELECT statement to a random slave. Instead, it is based on calculation with both access time and Slave nodes.</p>
  *
  * <p>To use DB replication, you would have to setup the slave servers in <b>db.conf.php</b></p>
- * 
+ *
  * <code>
  * //This will serve as the Master
  * $dbconfig['dev'] = array('localhost', 'db', 'root', '1234', 'mysql',true);
@@ -40,7 +40,7 @@
  * <code>
  * Doo::useDbReplicate();
  * Doo::db()->setMap($dbmap);
- * Doo::db()->setDb($dbconfig, $config['APP_MODE']);
+ * Doo::db()->setDbConfig($dbconfig, $config['APP_MODE']);
  * </code>
  *
  * @author Leng Sheng Hong <darkredz@gmail.com>
@@ -49,9 +49,8 @@
  * @since 1.1
  */
 
-Doo::loadCore('db/DooSqlMagic');
-
-class DooMasterSlave extends DooSqlMagic {
+class DooMasterSlave extends DooSqlMagic
+{
 
     const MASTER = 'master';
     const SLAVE = 'slave';
@@ -60,64 +59,70 @@ class DooMasterSlave extends DooSqlMagic {
      * Stores the pdo connection for master & slave
      * @var array
      */
-    protected $pdoList = array();
+    protected $pdoList = [];
 
-    protected $autoToggle = True;
+    protected $autoToggle = true;
 
     /**
      * Connects to the database with the default slaves configurations
      */
-    public function connect(){
-        if($this->dbconfig==NULL)return;
+    public function connect($master = false)
+    {
+        if ($this->config == null) {
+            return;
+        }
 
-        $slaves = $this->dbconfig_list['slave'];
+        if ($master) {
+            $this->connectMaster();
+            return;
+        }
+
+        if (!isset($this->configList[$this->configNameUsed]['slave'])) {
+            return;
+        }
+
+        $slaves = $this->configList[$this->configNameUsed]['slave'];
         $totalSlaves = sizeof($slaves);
 
-        $time = round(microtime(true), 2)*100;
-        $time = substr($time, strlen($time)-2);
+        $time = round(microtime(true), 2) * 100;
+        $time = substr($time, strlen($time) - 2);
 
-        $sessionToHandle = 100/$totalSlaves;
+        $sessionToHandle = 100 / $totalSlaves;
 
-        $choosenSlaveIndex = floor($time/$sessionToHandle);
+        $choosenSlaveIndex = floor($time / $sessionToHandle);
 
         $choosenSlave = $slaves[$choosenSlaveIndex];
 
-        if(is_string($choosenSlave)){
-            #echo '<br><br>' . "{$this->dbconfig[4]}:host={$choosenSlave};dbname={$this->dbconfig[1]}";
-            try{
-                $this->pdo = new PDO("{$this->dbconfig[4]}:host={$choosenSlave};dbname={$this->dbconfig[1]}", $this->dbconfig[2], $this->dbconfig[3],array(PDO::ATTR_PERSISTENT => $this->dbconfig[5]));
-                $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $this->connected = true;
-            }catch(PDOException $e){
-                throw new SqlMagicException('Failed to open the DB connection', SqlMagicException::DBConnectionError);
-            }
-        }else{
-            #echo '<br><br>' . "{$choosenSlave[4]}:host={$choosenSlave[0]};dbname={$choosenSlave[1]}";
-            try{
-                $this->pdo = new PDO("{$choosenSlave[4]}:host={$choosenSlave[0]};dbname={$choosenSlave[1]}", $choosenSlave[2], $choosenSlave[3],array(PDO::ATTR_PERSISTENT => $choosenSlave[5]));
-                $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $this->connected = true;
-            }catch(PDOException $e){
-                throw new SqlMagicException('Failed to open the DB connection', SqlMagicException::DBConnectionError);
-            }
+        $this->app->logDebug("DB Connect Slave {$choosenSlave[4]}:host={$choosenSlave[0]};dbname={$choosenSlave[1]}");
+        try {
+            $this->pdo = new PDO("{$choosenSlave[4]}:host={$choosenSlave[0]};dbname={$choosenSlave[1]}",
+                $choosenSlave[2], $choosenSlave[3], [PDO::ATTR_PERSISTENT => $choosenSlave[5]]);
+            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->connected = true;
+        } catch (PDOException $e) {
+            throw new SqlMagicException('Failed to open the DB connection', SqlMagicException::DB_CONN_ERROR);
         }
+
         $this->pdoList[1] = $this->pdo;
+        $this->connected = true;
     }
 
     /**
      * Connects to a slave.
-     * 
+     *
      * Choose an index of the slave configuration to connect as defined in db.conf.php
      * @param int $slaveIndex
      */
-    public function connectSlave($slaveIndex){
-        $choosenSlave = $this->dbconfig_list['slave'][$slaveIndex];
-        try{
-            $this->pdo = new PDO("{$choosenSlave[4]}:host={$choosenSlave[0]};dbname={$choosenSlave[1]}", $choosenSlave[2], $choosenSlave[3],array(PDO::ATTR_PERSISTENT => $choosenSlave[5]));
+    public function connectSlave($slaveIndex)
+    {
+        $choosenSlave = $this->configList[$this->configNameUsed]['slave'][$slaveIndex];
+        try {
+            $this->pdo = new PDO("{$choosenSlave[4]}:host={$choosenSlave[0]};dbname={$choosenSlave[1]}",
+                $choosenSlave[2], $choosenSlave[3], [PDO::ATTR_PERSISTENT => $choosenSlave[5]]);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->connected = true;
-        }catch(PDOException $e){
-            throw new SqlMagicException('Failed to open the DB connection', SqlMagicException::DBConnectionError);
+        } catch (PDOException $e) {
+            throw new SqlMagicException('Failed to open the DB connection', SqlMagicException::DB_CONN_ERROR);
         }
         $this->pdoList[1] = $this->pdo;
     }
@@ -125,13 +130,21 @@ class DooMasterSlave extends DooSqlMagic {
     /**
      * Connects to the database with the default database configurations (master)
      */
-    public function connectMaster(){
-        try{
-            $this->pdo = new PDO("{$this->dbconfig[4]}:host={$this->dbconfig[0]};dbname={$this->dbconfig[1]}", $this->dbconfig[2], $this->dbconfig[3],array(PDO::ATTR_PERSISTENT => $this->dbconfig[5]));
+    public function connectMaster()
+    {
+        $masterConfig = $this->config['master'];
+        $this->app->logDebug("DB Connect Master {$masterConfig[4]}:host={$masterConfig[0]};dbname={$masterConfig[1]}");
+        if (isset($this->pdoList[0])) {
+            $this->pdoList[0];
+            return;
+        }
+        try {
+            $this->pdo = new PDO("{$masterConfig[4]}:host={$masterConfig[0]};dbname={$masterConfig[1]}",
+                $masterConfig[2], $masterConfig[3], [PDO::ATTR_PERSISTENT => $masterConfig[5]]);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->connected = true;
-        }catch(PDOException $e){
-            throw new SqlMagicException('Failed to open the DB connection', SqlMagicException::DBConnectionError);
+        } catch (PDOException $e) {
+            throw new SqlMagicException('Failed to open the DB connection', SqlMagicException::DB_CONN_ERROR);
         }
         $this->pdoList[0] = $this->pdo;
     }
@@ -143,17 +156,20 @@ class DooMasterSlave extends DooSqlMagic {
      *
      * @param string $mode Either 'master' or 'slave'
      */
-    public function useConnection($mode){
-        if($mode=='master'){
-            if( !isset($this->pdoList[0]) )
+    public function useConnection($mode)
+    {
+        if ($mode == 'master') {
+            if (!isset($this->pdoList[0])) {
                 $this->connectMaster();
-            else
+            } else {
                 $this->pdo = $this->pdoList[0];
+            }
+        } else {
+            if ($mode == 'slave') {
+                $this->pdo = $this->pdoList[1];
+            }
         }
-        else if($mode=='slave'){
-            $this->pdo = $this->pdoList[1];
-        }
-        $this->autoToggle = False;
+        $this->autoToggle = false;
     }
 
     /**
@@ -163,18 +179,30 @@ class DooMasterSlave extends DooSqlMagic {
      * @param array $param Values used in the prepared SQL
      * @return PDOStatement
      */
-    public function query($query, $param=null){
-        if($this->autoToggle===True){
-            $isSelect = strtoupper(substr($query, 0, 6)) == 'SELECT';
+    public function query($query, $param = null)
+    {
+        if ($this->autoToggle === true) {
+            $isSelect = intval(strtoupper(substr($query, 0, 6)) == 'SELECT' && substr($query, -10) != 'FOR UPDATE');
+
+            $useSlave = $isSelect && isset($this->configList[$this->configNameUsed]) && isset($this->configList[$this->configNameUsed]['slave']) && !empty($this->configList[$this->configNameUsed]['slave']);
 
             //change to master if update, insert, delete, create connection if not exist
-            if( !isset($this->pdoList[$isSelect]) ){
-                #echo '<h1>Master connected</h1>';
-                $this->connectMaster();
-            }else{
-                $rr = ($isSelect)?'Slave':'Master';
-                #echo '<h1>'.  $rr .' used</h1>';
-                $this->pdo = $this->pdoList[$isSelect];
+            if ($useSlave) {
+                if (!isset($this->pdoList[$isSelect])) {
+                    $this->app->logInfo('connecting to slave');
+                    $this->connect();
+                } else {
+                    $this->app->logInfo('connecting to existing slave');
+                    $this->pdo = $this->pdoList[$isSelect];
+                }
+            } else {
+                if (!isset($this->pdoList[$isSelect])) {
+                    $this->app->logInfo('connecting to master');
+                    $this->connectMaster();
+                } else {
+                    $this->app->logInfo('connecting to existing master');
+                    $this->pdo = $this->pdoList[$isSelect];
+                }
             }
         }
         return parent::query($query, $param);

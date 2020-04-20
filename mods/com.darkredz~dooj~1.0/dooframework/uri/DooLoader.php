@@ -16,61 +16,10 @@
  * @package doo.uri
  * @since 1.0
  */
-class DooLoader {
+class DooLoader
+{
 
-    /**
-     * short hand of Doo::loadCore()
-     * @param string $class_name
-     */
-    public function core($class_name){
-        Doo::loadCore($class_name);
-    }
-
-    /**
-     * short hand of Doo::autoload()
-     * @param string $class_name
-     */
-    public function autoload($class_name){
-        Doo::autoload($class_name);
-    }
-
-    /**
-     * short hand of Doo::loadHelper()
-     * @param string $class_name
-     * @param bool $createObj
-     * @return mixed If $createObj is True, it returns the created Object
-     */
-    public function helper($class_name, $createObj=false){
-        return Doo::loadHelper($class_name, $createObj);
-    }
-
-    /**
-     * short hand of Doo::loadClass()
-     * @param string $class_name
-     * @param bool $createObj
-     * @return mixed If $createObj is True, it returns the created Object
-     */
-    public function classes($class_name, $createObj=false){
-        return Doo::loadClass($class_name, $createObj);
-    }
-
-    /**
-     * short hand of Doo::loadController()
-     * @param string $class_name
-     */
-    public function controller($class_name){
-        Doo::loadController($class_name);
-    }
-
-    /**
-     * short hand of Doo::loadModel()
-     * @param string $class_name
-     * @param bool $createObj
-     * @return mixed If $createObj is True, it returns the created Object
-     */
-    public function model($class_name, $createObj=false){
-        return Doo::loadModel($class_name, $createObj);
-    }
+    public $app;
 
     /**
      * Reads a file and send a header to force download it.
@@ -78,31 +27,33 @@ class DooLoader {
      * @param bool $isLarge If True, the large file will be read chunk by chunk into the memory.
      * @param string $rename Name to replace the file name that would be downloaded
      */
-    public function download($file, $isLarge=FALSE, $rename=NULL){        
-        if($rename==NULL){
-            if(strpos($file, '/')===FALSE && strpos($file, '\\')===FALSE)
+    public function download($file, $isLarge = false, $rename = null)
+    {
+        if ($rename == null) {
+            if (strpos($file, '/') === false && strpos($file, '\\') === false) {
                 $filename = $file;
-            else{
+            } else {
                 $filename = basename($file);
             }
-        }else{
+        } else {
             $filename = $rename;
         }
 
-        Doo::app()->setRawHeader('Content-Description: File Transfer');
-        Doo::app()->setRawHeader('Content-Type: application/octet-stream');
-        Doo::app()->setRawHeader("Content-Disposition: attachment; filename=\"$filename\"");
-        Doo::app()->setRawHeader('Expires: 0');
-        Doo::app()->setRawHeader('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-        Doo::app()->setRawHeader('Pragma: public');
-        Doo::app()->setRawHeader('Content-Length: ' . filesize($file));
+        $this->app->setHeader('Content-Description: File Transfer');
+        $this->app->setHeader('Content-Type: application/octet-stream');
+        $this->app->setHeader("Content-Disposition: attachment; filename=\"$filename\"");
+        $this->app->setHeader('Expires: 0');
+        $this->app->setHeader('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+        $this->app->setHeader('Pragma: public');
+        $this->app->setHeader('Content-Length: ' . filesize($file));
         ob_clean();
         flush();
 
-        if($isLarge)
+        if ($isLarge) {
             $this->readfile_chunked($file);
-        else
+        } else {
             readfile($file);
+        }
     }
 
     /**
@@ -111,9 +62,10 @@ class DooLoader {
      * @param bool $retbytes
      * @return mixed
      */
-    private function readfile_chunked($filename, $retbytes = TRUE, $chunk_size = 1024) {
+    private function readfile_chunked($filename, $retbytes = true, $chunk_size = 1024)
+    {
         $buffer = '';
-        $cnt =0;
+        $cnt = 0;
         // $handle = fopen($filename, 'rb');
         $handle = fopen($filename, 'rb');
         if ($handle === false) {

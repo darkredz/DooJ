@@ -69,7 +69,7 @@
  *
  * <p>Since 1.1, Partial caching in view:</p>
  * <code>
- * <!-- cache('mydata', 60) --> 
+ * <!-- cache('mydata', 60) -->
  * <ul>{{userList}}</ul>
  * <!-- endcache -->
  * </code>
@@ -156,13 +156,14 @@
  * //result:
  * <p>www.doophp.com</p>
  * </code>
- * 
+ *
  * @author Leng Sheng Hong <darkredz@gmail.com>
  * @version $Id: DooView.php 1000 2009-07-7 18:27:22
  * @package doo.view
  * @since 1.0
  */
-class DooView {
+class DooView
+{
     public $controller;
     public $conf;
     public $data;
@@ -179,24 +180,35 @@ class DooView {
      * @param string $class Template tag class name
      * @param string $module Folder name of the module. Define this module name if the tag class is from another module.
      */
-    public function setTagClass($class, $module=Null){
+    public function setTagClass($class, $module = null)
+    {
         $this->tagClassName = $class;
         $this->tagModuleName = $module;
     }
 
     /**
      * Includes the native PHP template file to be output.
-     * 
+     *
      * @param string $file PHP template file name without extension .php
      * @param array $data Associative array of the data to be used in the template view.
      * @param object $controller The controller object, pass this in so that in views you can access the controller.
      * @param bool $includeTagClass If true, DooView will determine which Template tag class to include. Else, no files will be loaded
      */
-    public function renderc($file, $data=NULL, $controller=NULL, $includeTagClass=TRUE){
-        $this->data = $data;
-        $this->controller = $controller;
-        if($includeTagClass===TRUE)
+    public function renderc($file, $data = null, $controller = null, $includeTagClass = true)
+    {
+        $this->data = &$data;
+        $this->controller = &$controller;
+        if (!function_exists('inc')) {
+            function inc($file)
+            {
+                $this->inc($file);
+            }
+
+            ;
+        }
+        if ($includeTagClass === true) {
             $this->loadTagClass();
+        }
         include $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "/viewc/$file.php";
     }
 
@@ -204,18 +216,21 @@ class DooView {
      * Include template view files
      * @param string $file File name without extension (.php)
      */
-    public function inc($file){
+    public function inc($file)
+    {
         include $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "viewc/$file.php";
     }
 
-    public function  __call($name,  $arguments) {
-        if($this->controller!=NULL){
-            return call_user_func_array(array(&$this->controller, $name), $arguments);
+    public function __call($name, $arguments)
+    {
+        if ($this->controller != null) {
+            return call_user_func_array([&$this->controller, $name], $arguments);
         }
     }
 
-    public function  __get($name) {
-        if($this->controller!=NULL){
+    public function __get($name)
+    {
+        if ($this->controller != null) {
             return $this->controller->{$name};
         }
     }
@@ -227,14 +242,15 @@ class DooView {
      * @param array $data Associative array of the data to be used in the Template file. eg. <b>$data['username']</b>, you should use <b>{{username}}</b> in the template.
      * @return string|false The file name of the rendered output saved (html).
      */
-    public function saveRendered($path, $templatefile, $data=NULL){
+    public function saveRendered($path, $templatefile, $data = null)
+    {
         ob_start();
         $this->render($templatefile, $data, null, true);
         $data = ob_get_contents();
         ob_end_clean();
-        if(file_put_contents($path, $data)>0){
-            $filename = explode('/',$path);
-            return $filename[sizeof($filename)-1];
+        if (file_put_contents($path, $data) > 0) {
+            $filename = explode('/', $path);
+            return $filename[sizeof($filename) - 1];
         }
         return false;
     }
@@ -248,14 +264,15 @@ class DooView {
      * @param bool $includeTagClass If true, DooView will determine which Template tag class to include. Else, no files will be loaded
      * @return string|false The file name of the rendered output saved (html).
      */
-    public function saveRenderedC($path, $templatefile, $data=NULL, $controller=NULL, $includeTagClass=TRUE){
+    public function saveRenderedC($path, $templatefile, $data = null, $controller = null, $includeTagClass = true)
+    {
         ob_start();
         $this->renderc($templatefile, $data, $controller, $includeTagClass);
         $data = ob_get_contents();
         ob_end_clean();
-        if(file_put_contents($path, $data)>0){
-            $filename = explode('/',$path);
-            return $filename[sizeof($filename)-1];
+        if (file_put_contents($path, $data) > 0) {
+            $filename = explode('/', $path);
+            return $filename[sizeof($filename) - 1];
         }
         return false;
     }
@@ -267,30 +284,31 @@ class DooView {
      * @param bool $process If TRUE, checks the template's last modified time against the compiled version. Regenerates if template is newer.
      * @param bool $forceCompile Ignores last modified time checking and force compile the template everytime it is visited.
      */
-    public function render($file, $data=NULL, $process=NULL, $forceCompile=false){
+    public function render($file, $data = null, $process = null, $forceCompile = false)
+    {
 
-        if(isset($this->conf->TEMPLATE_COMPILE_ALWAYS) && $this->conf->TEMPLATE_COMPILE_ALWAYS==true){
+        if (isset($this->conf->TEMPLATE_COMPILE_ALWAYS) && $this->conf->TEMPLATE_COMPILE_ALWAYS == true) {
             $process = $forceCompile = true;
-        }
-        //if process not set, then check the app mode, if production mode, skip the process(false) and just include the compiled files
-        else if($process===NULL){
-            $process = ($this->conf->APP_MODE!='prod');
+        } //if process not set, then check the app mode, if production mode, skip the process(false) and just include the compiled files
+        else {
+            if ($process === null) {
+                $process = ($this->conf->APP_MODE != 'prod');
+            }
         }
 
         //just include the compiled file if process is false
-        if($process!=true){
+        if ($process != true) {
             //includes user defined template tags for template use
             $this->loadTagClass();
             include $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "viewc/$file.php";
-        }
-        else{
+        } else {
             $cfilename = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "viewc/$file.php";
             $vfilename = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "view/$file.html";
 
             //if file exist and is not older than the html template file, include the compiled php instead and exit the function
-            if(!$forceCompile){
-                if(file_exists($cfilename)){
-                    if(filemtime($cfilename)>=filemtime($vfilename)){
+            if (!$forceCompile) {
+                if (file_exists($cfilename)) {
+                    if (filemtime($cfilename) >= filemtime($vfilename)) {
                         $this->setTags();
                         include $cfilename;
                         return;
@@ -311,33 +329,34 @@ class DooView {
      * @param bool $process If TRUE, checks the template's last modified time against the compiled version. Regenerates if template is newer.
      * @param bool $forceCompile Ignores last modified time checking and force compile the template everytime it is visited.
      */
-    public function renderLayout($layoutName, $viewFile, $data=NULL, $process=NULL, $forceCompile=false) {
+    public function renderLayout($layoutName, $viewFile, $data = null, $process = null, $forceCompile = false)
+    {
 
         $compiledViewFile = $layoutName . '/' . $viewFile;
 
-        if(isset($this->conf->TEMPLATE_COMPILE_ALWAYS) && $this->conf->TEMPLATE_COMPILE_ALWAYS==true){
+        if (isset($this->conf->TEMPLATE_COMPILE_ALWAYS) && $this->conf->TEMPLATE_COMPILE_ALWAYS == true) {
             $process = $forceCompile = true;
-        }
-        //if process not set, then check the app mode, if production mode, skip the process(false) and just include the compiled files
-        else if($process===NULL){
-            $process = ($this->conf->APP_MODE!='prod');
+        } //if process not set, then check the app mode, if production mode, skip the process(false) and just include the compiled files
+        else {
+            if ($process === null) {
+                $process = ($this->conf->APP_MODE != 'prod');
+            }
         }
 
         //just include the compiled file if process is false
-        if($process!=true){
+        if ($process != true) {
             //includes user defined template tags for template use
             $this->loadTagClass();
             include $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "viewc/$compiledViewFile.php";
-        }
-        else{
+        } else {
             $lfilename = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "layout/$layoutName.html";
             $vfilename = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "view/$viewFile.html";
             $cfilename = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . "viewc/$compiledViewFile.php";
 
             //if file exist and is not older than the html template file AND layout file, include the compiled php instead and exit the function
-            if(!$forceCompile){
-                if(file_exists($cfilename)){
-                    if(filemtime($cfilename)>=filemtime($vfilename) && filemtime($cfilename)>=filemtime($lfilename)){
+            if (!$forceCompile) {
+                if (file_exists($cfilename)) {
+                    if (filemtime($cfilename) >= filemtime($vfilename) && filemtime($cfilename) >= filemtime($lfilename)) {
                         $this->setTags();
                         include $cfilename;
                         return;
@@ -365,18 +384,21 @@ class DooView {
      * @param string $vfilename Full path to the view to be merged into the layout
      * @param string $cfilename Full path of the compiled file to be saved
      */
-    protected function compileLayout($viewFile, $lfilename, $vfilename, $cfilename) {
+    protected function compileLayout($viewFile, $lfilename, $vfilename, $cfilename)
+    {
 
         $layout = file_get_contents($lfilename);
         $view = file_get_contents($vfilename);
 
         // Identify the blocks within a view file
         // <!-- block:NAME -->CONTENT<!-- endblock -->
-        $this->viewBlocks = array();
+        $this->viewBlocks = [];
         // We use \s\S to get ANY character including newlines etc as '.' will not get new lines
         // Also use +? and *? so as to use non greedy matching
-        preg_replace_callback('/<!-- block:([^\t\r\n]+?) -->([\s\S]*?)<!-- endblock -->/', array( &$this, 'storeViewBlock'), $view);
-        $compiledLayoutView = preg_replace_callback('/<!-- placeholder:([^\t\r\n]+?) -->([\s\S]*?)<!-- endplaceholder -->/', array( &$this, 'replacePlaceholder'), $layout);
+        preg_replace_callback('/<!-- block:([^\t\r\n]+?) -->([\s\S]*?)<!-- endblock -->/', [&$this, 'storeViewBlock'],
+            $view);
+        $compiledLayoutView = preg_replace_callback('/<!-- placeholder:([^\t\r\n]+?) -->([\s\S]*?)<!-- endplaceholder -->/',
+            [&$this, 'replacePlaceholder'], $layout);
 
 
         $this->mainRenderFolder = $viewFile;
@@ -385,9 +407,9 @@ class DooView {
         //if no compiled file exist or compiled file is older, generate new one
         $str = $this->compileTags($compiledLayoutView);
 
-		Doo::loadHelper('DooFile');
-		$fileManager = new DooFile(0777);
-		$fileManager->create($cfilename, $str, 'w+');
+        Doo::loadHelper('DooFile');
+        $fileManager = new DooFile(0777);
+        $fileManager->create($cfilename, $str, 'w+');
 
     }
 
@@ -398,93 +420,99 @@ class DooView {
      * @param string $vfilename Full path of the template file
      * @param string $cfilename Full path of the compiled file to be saved
      */
-    protected function compile($file, $vfilename, $cfilename){
+    protected function compile($file, $vfilename, $cfilename)
+    {
         $this->mainRenderFolder = $file;
 
         //--------------------------- Parsing -----------------------------
         //if no compiled file exist or compiled file is older, generate new one
         $str = $this->compileTags(file_get_contents($vfilename));
 
-		Doo::loadHelper('DooFile');
-		$fileManager = new DooFile(0777);
-		$fileManager->create($cfilename, $str, 'w+');
+        Doo::loadHelper('DooFile');
+        $fileManager = new DooFile(0777);
+        $fileManager->create($cfilename, $str, 'w+');
     }
 
     /**
      * Load the template class and returns the class name.
      * @return string Name of the class that is loaded.
      */
-    public function loadTagClass(){
+    public function loadTagClass()
+    {
         /* if include tag class is not defined load TemplateTag for main app
          * else if render() is called from a module, load ModulenameTag */
 
-		$tagFile = '';
+        $tagFile = '';
 
-        if( !isset($this->tagClassName) ){
-            if( !isset($this->conf->PROTECTED_FOLDER_ORI) ){
+        if (!isset($this->tagClassName)) {
+            if (!isset($this->conf->PROTECTED_FOLDER_ORI)) {
                 $tagFile = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . 'plugin/TemplateTag.php';
                 $tagcls = 'TemplateTag';
-            }else{
+            } else {
                 $tagcls = explode('/', $this->conf->PROTECTED_FOLDER);
-                $tagcls = ucfirst($tagcls[sizeof($tagcls)-2]) . 'Tag';
-                $tagFile = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . 'plugin/' . $tagcls .'.php';
+                $tagcls = ucfirst($tagcls[sizeof($tagcls) - 2]) . 'Tag';
+                $tagFile = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . 'plugin/' . $tagcls . '.php';
             }
-        }else{
+        } else {
             //load the main app's TemplateTag if module is '/'
-            if($this->tagModuleName=='/'){
-                $tagFile = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER_ORI . 'plugin/'. $this->tagClassName .'.php';
-            }
-            else if($this->tagModuleName===Null){
-                $tagFile = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . 'plugin/'. $this->tagClassName .'.php';
-            }
-            else{
-                if(isset($this->conf->PROTECTED_FOLDER_ORI))
-                    $tagFile = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER_ORI .'module/'. $this->tagModuleName . '/plugin/'. $this->tagClassName .'.php';
-                else
-                    $tagFile = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER .'module/'. $this->tagModuleName . '/plugin/'. $this->tagClassName .'.php';
+            if ($this->tagModuleName == '/') {
+                $tagFile = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER_ORI . 'plugin/' . $this->tagClassName . '.php';
+            } else {
+                if ($this->tagModuleName === null) {
+                    $tagFile = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . 'plugin/' . $this->tagClassName . '.php';
+                } else {
+                    if (isset($this->conf->PROTECTED_FOLDER_ORI)) {
+                        $tagFile = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER_ORI . 'module/' . $this->tagModuleName . '/plugin/' . $this->tagClassName . '.php';
+                    } else {
+                        $tagFile = $this->conf->SITE_PATH . $this->conf->PROTECTED_FOLDER . 'module/' . $this->tagModuleName . '/plugin/' . $this->tagClassName . '.php';
+                    }
+                }
             }
             $tagcls = $this->tagClassName;
         }
-		if (file_exists($tagFile)) {
-			require_once $tagFile;
-			return $tagcls;
-		} else {
-			return false;
-		}
+        if (file_exists($tagFile)) {
+            require_once $tagFile;
+            return $tagcls;
+        } else {
+            return false;
+        }
     }
 
-    private function setTags(){
+    private function setTags()
+    {
         $tagcls = $this->loadTagClass();
 
-		if ($tagcls === false) {
-			$template_tags = array();
-		} else {
+        if ($tagcls === false) {
+            $template_tags = [];
+        } else {
 
-			$tagMethod = get_class_methods($tagcls);
+            $tagMethod = get_class_methods($tagcls);
 
-			if(!empty($tagMethod)){
-				if( !empty($this->conf->TEMPLATE_GLOBAL_TAGS) )
-					$template_tags = array_merge($this->conf->TEMPLATE_GLOBAL_TAGS, $tagMethod);
-				else
-					$template_tags = $tagMethod;
+            if (!empty($tagMethod)) {
+                if (!empty($this->conf->TEMPLATE_GLOBAL_TAGS)) {
+                    $template_tags = array_merge($this->conf->TEMPLATE_GLOBAL_TAGS, $tagMethod);
+                } else {
+                    $template_tags = $tagMethod;
+                }
 
-				$template_tags['_methods'] = $tagMethod;
-				$template_tags['_class'] = $tagcls;
-			}
-			else if( !empty($this->conf->TEMPLATE_GLOBAL_TAGS) ){
-				$template_tags = $this->conf->TEMPLATE_GLOBAL_TAGS;
-			}
-			else{
-				$template_tags = array();
-			}
+                $template_tags['_methods'] = $tagMethod;
+                $template_tags['_class'] = $tagcls;
+            } else {
+                if (!empty($this->conf->TEMPLATE_GLOBAL_TAGS)) {
+                    $template_tags = $this->conf->TEMPLATE_GLOBAL_TAGS;
+                } else {
+                    $template_tags = [];
+                }
+            }
 
-			foreach($template_tags as $k=>$v ){
-				if(is_int($k))
-					$template_tags[$k] = strtolower($v);
-				else
-					$template_tags[$k] = $v;
-			}
-		}
+            foreach ($template_tags as $k => $v) {
+                if (is_int($k)) {
+                    $template_tags[$k] = strtolower($v);
+                } else {
+                    $template_tags[$k] = $v;
+                }
+            }
+        }
         $this->conf->add('TEMPLATE_TAGS', $template_tags);
         return $template_tags;
     }
@@ -494,23 +522,24 @@ class DooView {
      * @param string $str This is the html template markup from View files
      * @return string The PHP markedup version of the View file
      */
-    private function compileTags($str) {
+    private function compileTags($str)
+    {
 
         //includes user defined template tags and checks for the tag and compile.
-        if($this->tags===NULL){
-            if(!isset($this->conf->TEMPLATE_TAGS)){
+        if ($this->tags === null) {
+            if (!isset($this->conf->TEMPLATE_TAGS)) {
                 $this->tags = $this->setTags();
-            }else{
+            } else {
                 $this->tags = $this->conf->TEMPLATE_TAGS;
             }
         }
 
-        if( isset($this->conf->TEMPLATE_ALLOW_PHP) ){
-            if( $this->conf->TEMPLATE_ALLOW_PHP === False ){
+        if (isset($this->conf->TEMPLATE_ALLOW_PHP)) {
+            if ($this->conf->TEMPLATE_ALLOW_PHP === false) {
                 $str = preg_replace('/<\?(php|\=|\+)?([\S|\s]*)\?>/Ui', '', $str);
             }
-        }else{
-            $str = preg_replace_callback('/<\?(php|\=|\+)?([\S|\s]*)\?>/Ui', array( &$this, 'convertPhpFunction'), $str);
+        } else {
+            $str = preg_replace_callback('/<\?(php|\=|\+)?([\S|\s]*)\?>/Ui', [&$this, 'convertPhpFunction'], $str);
         }
 
         //convert end loop
@@ -520,27 +549,29 @@ class DooView {
         $str = str_replace('<!-- endfor -->', '<?php endforeach; ?>', $str);
 
         //convert variables to static string <p>{{+username}}</p> becomes <p>myusernamevalue</p>
-        $str = preg_replace_callback('/{{\+([^ \t\r\n\(\)\.}]+)}}/', array( &$this, 'writeStaticVar'), $str);
+        $str = preg_replace_callback('/{{\+([^ \t\r\n\(\)\.}]+)}}/', [&$this, 'writeStaticVar'], $str);
 
         //convert variables {{username}}
         $str = preg_replace('/{{([^ \t\r\n\(\)\.}]+)}}/', "<?php echo \$data['$1']; ?>", $str);
 
-		//convert non $data key variables {{$user.john}} {{$user.total.male}}
-        $str = preg_replace_callback('/{{\$([^ \t\r\n\(\)\.}]+)\.([^ \t\r\n\(\)}]+)}}/', array( &$this, 'convertNonDataVarKey'), $str);
+        //convert non $data key variables {{$user.john}} {{$user.total.male}}
+        $str = preg_replace_callback('/{{\$([^ \t\r\n\(\)\.}]+)\.([^ \t\r\n\(\)}]+)}}/',
+            [&$this, 'convertNonDataVarKey'], $str);
 
         //convert key variables {{user.john}} {{user.total.male}}
-        $str = preg_replace_callback('/{{([^ \t\r\n\(\)\.}]+)\.([^ \t\r\n\(\)}]+)}}/', array( &$this, 'convertVarKey'), $str);
+        $str = preg_replace_callback('/{{([^ \t\r\n\(\)\.}]+)\.([^ \t\r\n\(\)}]+)}}/', [&$this, 'convertVarKey'], $str);
 
         //convert start loop <!--# loop users --> <!--# loop users' value --> <!--# loop users' value' value -->
-        $str = preg_replace_callback('/<!-- loop ([^ \t\r\n\(\)}\']+).* -->/', array( &$this, 'convertLoop'), $str);
+        $str = preg_replace_callback('/<!-- loop ([^ \t\r\n\(\)}\']+).* -->/', [&$this, 'convertLoop'], $str);
 
         //convert variable in loop {{user' value}}  {{user' value' value}}
-        $str = preg_replace_callback('/{{([^ \t\r\n\(\)\.}\']+)([^\t\r\n\(\)}{]+)}}/', array( &$this, 'convertVarLoop'), $str);
+        $str = preg_replace_callback('/{{([^ \t\r\n\(\)\.}\']+)([^\t\r\n\(\)}{]+)}}/', [&$this, 'convertVarLoop'],
+            $str);
 
-		$str = preg_replace_callback('/{{([^ \t\r\n\(\)}]+?)\((.*?)\)}}/', array( &$this, 'convertFunction'), $str);
+        $str = preg_replace_callback('/{{([^ \t\r\n\(\)}]+?)\((.*?)\)}}/', [&$this, 'convertFunction'], $str);
 
         //convert start of for loop
-        $str = preg_replace_callback('/<!-- for ([^\t\r\n\(\)}{]+) -->/', array( &$this, 'convertFor'), $str);
+        $str = preg_replace_callback('/<!-- for ([^\t\r\n\(\)}{]+) -->/', [&$this, 'convertFor'], $str);
 
         //convert else
         $str = str_replace('<!-- else -->', '<?php else: ?>', $str);
@@ -549,10 +580,10 @@ class DooView {
         $str = str_replace('<!-- endif -->', '<?php endif; ?>', $str);
 
         // convert set
-        $str = preg_replace_callback('/<!-- set ([^ \t\r\n\(\)\.}]+) as (.*?) -->/U', array( &$this, 'convertSet'), $str);
+        $str = preg_replace_callback('/<!-- set ([^ \t\r\n\(\)\.}]+) as (.*?) -->/U', [&$this, 'convertSet'], $str);
 
         //convert if and else if condition <!-- if expression --> <!-- elseif expression -->  only functions in template_tags are allowed
-        $str = preg_replace_callback('/<!-- (if|elseif) ([^\t\r\n}]+) -->/U', array( &$this, 'convertCond'), $str);
+        $str = preg_replace_callback('/<!-- (if|elseif) ([^\t\r\n}]+) -->/U', [&$this, 'convertCond'], $str);
 
         //convert else
         $str = str_replace('<!-- continue -->', '<?php continue; ?>', $str);
@@ -564,14 +595,15 @@ class DooView {
         $str = str_replace('<!-- endcache -->', "\n<?php Doo::cache('front')->end(); ?>\n<?php endif; ?>", $str);
 
         //convert cache <!-- cache('partial_id', 60) -->
-        $str = preg_replace_callback('/<!-- cache\(([^\t\r\n}\)]+)\) -->/', array( &$this, 'convertCache'), $str);
+        $str = preg_replace_callback('/<!-- cache\(([^\t\r\n}\)]+)\) -->/', [&$this, 'convertCache'], $str);
 
         //convert include to php include and parse & compile the file, if include file not exist Echo error and exit application
         // <?php echo $data['file']; chars allowed for the grouping
-        $str = preg_replace_callback('/<!-- include [\'\"]{1}([^\t\r\n\"]+).*[\'\"]{1} -->/', array( &$this, 'convertInclude'), $str);
+        $str = preg_replace_callback('/<!-- include [\'\"]{1}([^\t\r\n\"]+).*[\'\"]{1} -->/',
+            [&$this, 'convertInclude'], $str);
 
         //remove comments
-        if(!isset($this->conf->TEMPLATE_SHOW_COMMENT) || $this->conf->TEMPLATE_SHOW_COMMENT!=true){
+        if (!isset($this->conf->TEMPLATE_SHOW_COMMENT) || $this->conf->TEMPLATE_SHOW_COMMENT != true) {
             //$str = preg_replace('/<!-- comment -->.+<!-- endcomment -->/s', '', $str);
             $str = str_replace('<!-- comment -->', '<?php /** ', $str);
             $str = str_replace('<!-- endcomment -->', ' */ ?>', $str);
@@ -580,81 +612,110 @@ class DooView {
         return $str;
     }
 
-    private function writeStaticVar($matches){
+    private function writeStaticVar($matches)
+    {
         return $this->data[$matches[1]];
     }
 
-    private function convertPhpFunction($matches){
-        if(stripos($matches[0], '<?php')!==0 && strpos($matches[0], '<?=')!==0 && strpos($matches[0], '<?+')!==0  && strpos($matches[0], '<? ')!==0 ){
+    private function convertPhpFunction($matches)
+    {
+        if (stripos($matches[0], '<?php') !== 0 && strpos($matches[0], '<?=') !== 0 && strpos($matches[0],
+                '<?+') !== 0 && strpos($matches[0], '<? ') !== 0) {
             return $matches[0];
         }
 
-        $str = preg_replace_callback('/([^ \t\r\n\(\)}]+)([\s\t]*?)\(/', array( &$this, 'parseFunc'), $matches[2]);
-        if(strpos($str, 'php')===0)
+        $str = preg_replace_callback('/([^ \t\r\n\(\)}]+)([\s\t]*?)\(/', [&$this, 'parseFunc'], $matches[2]);
+        if (strpos($str, 'php') === 0) {
             $str = substr($str, 3);
+        }
 
         //if short tag <?=, convert to <?php echo
-        if($matches[2][0]=='='){
+        if ($matches[2][0] == '=') {
             $str = substr($str, 1);
-            return '<?php echo ' . $str .' ?>';
-        }
-        //write the variable value
-        else if($matches[2][0]=='+'){
-            $str = substr($str, 1);
-            return eval('return ' . $str);
+            return '<?php echo ' . $str . ' ?>';
+        } //write the variable value
+        else {
+            if ($matches[2][0] == '+') {
+                $str = substr($str, 1);
+                return eval('return ' . $str);
+            }
         }
 
-        return '<?php ' . $str .' ?>';
+        return '<?php ' . $str . ' ?>';
     }
 
-    private function parseFunc($matches){
+    private function parseFunc($matches)
+    {
         //matches and check function name against template tag
-        if(!empty($matches[1])){
+        if (!empty($matches[1])) {
             $funcname = trim(strtolower($matches[1]));
-            if($funcname[0]=='+' || $funcname[0]=='=')
+            if ($funcname[0] == '+' || $funcname[0] == '=') {
                 $funcname = substr($funcname, 1);
+            }
 
-            $controls = array('if','elseif','else if','while','switch','for','foreach','switch','return','include','require','include_once','require_once','declare','define','defined','die','constant','array');
+            $controls = [
+                'if',
+                'elseif',
+                'else if',
+                'while',
+                'switch',
+                'for',
+                'foreach',
+                'switch',
+                'return',
+                'include',
+                'require',
+                'include_once',
+                'require_once',
+                'declare',
+                'define',
+                'defined',
+                'die',
+                'constant',
+                'array',
+            ];
 
             //skip checking static method usage: TemplateTag::go(), $this->conf
-            if(stripos($funcname, $this->tags['_class'] . '::')===False && stripos($funcname, 'Doo')===False){
+            if (stripos($funcname, $this->tags['_class'] . '::') === false && stripos($funcname, 'Doo') === false) {
                 //$funcname = str_ireplace($this->tags['_class'] . '::', '', $funcname);
-                if(!in_array($funcname, $controls)){
-                    if(!in_array($funcname, $this->tags)) {
+                if (!in_array($funcname, $controls)) {
+                    if (!in_array($funcname, $this->tags)) {
                         return 'function_deny(';
                     }
                 }
             }
         }
-        return $matches[1].'(';
+        return $matches[1] . '(';
     }
 
-    private function stripCommaStr($matches){
-        $str = implode('\/\.\;', explode(',', $matches[0]) );
-        $str = substr($str, 1, strlen($str)-2);
-        return "'".$str."'";
+    private function stripCommaStr($matches)
+    {
+        $str = implode('\/\.\;', explode(',', $matches[0]));
+        $str = substr($str, 1, strlen($str) - 2);
+        return "'" . $str . "'";
     }
 
-    private function convertFunction($matches) {
-        if($matches[1][0]=='+'){
+    private function convertFunction($matches)
+    {
+        if ($matches[1][0] == '+') {
             $matches[1] = substr($matches[1], 1);
             $writeStaticValue = true;
         }
-        if(!in_array(strtolower($matches[1]), $this->tags)) {
-            return '<span style="color:#ff0000;">Function '.$matches[1].'() Denied</span>';
+        if (!in_array(strtolower($matches[1]), $this->tags)) {
+            return '<span style="color:#ff0000;">Function ' . $matches[1] . '() Denied</span>';
         }
 
         $functionName = $matches[1];
-        if(isset($this->tags['_methods']) && in_array($functionName, $this->tags['_methods'])===True){
+        if (isset($this->tags['_methods']) && in_array($functionName, $this->tags['_methods']) === true) {
             $functionName = $this->tags['_class'] . '::' . $functionName;
         }
 
         //replace , to something else if it's in a string parameter
-        if(strpos($matches[2], ',')!==False){
-            $matches[2] = preg_replace_callback('/\"(.+)\"/', array( &$this, 'stripCommaStr'), $matches[2]);
+        if (strpos($matches[2], ',') !== false) {
+            $matches[2] = preg_replace_callback('/\"(.+)\"/', [&$this, 'stripCommaStr'], $matches[2]);
         }
 
-		$stmt = str_replace('<?php echo ', '', $matches[2]);
+        $stmt = str_replace('<?php echo ', '', $matches[2]);
         $stmt = str_replace('; ?>', '', $stmt);
         $parameters = explode(',', $stmt);
 
@@ -669,22 +730,19 @@ class DooView {
             // Is a number
             if (preg_match('/^[0-9]*\\.?[0-9]{0,}$/', $param)) {
                 $args .= $param;
-            }
-            // Is a string 'anything' OR "anything"
+            } // Is a string 'anything' OR "anything"
             elseif (preg_match('/^[\'\"].*[\'\"]$/', $param)) {
                 $args .= str_replace('\/\.\;', ',', $param);
-            }
-            elseif (strtolower($param)=='true' || strtolower($param)=='false') {
+            } elseif (strtolower($param) == 'true' || strtolower($param) == 'false') {
                 $args .= $param;
-            }
-            // Got parameter values to handle
+            } // Got parameter values to handle
             else {
                 $args .= $this->extractObjectVariables($param);
             }
         }
 
         //if + in front, write the value of the function call
-        if(!empty($writeStaticValue)){
+        if (!empty($writeStaticValue)) {
             return eval("return {$functionName}($args);");
         }
 
@@ -692,41 +750,47 @@ class DooView {
 
     }
 
-    private function checkFuncAllowed($matches){
-        if(!in_array(strtolower($matches[1]), $this->tags))
-            return 'function_deny('. $matches[2] .')';
-        return $matches[1].'('. $matches[2] .')';
+    private function checkFuncAllowed($matches)
+    {
+        if (!in_array(strtolower($matches[1]), $this->tags)) {
+            return 'function_deny(' . $matches[2] . ')';
+        }
+        return $matches[1] . '(' . $matches[2] . ')';
     }
 
-    private function storeViewBlock($matches){
+    private function storeViewBlock($matches)
+    {
         // Store blocks as blockName => blockContent
         $this->viewBlocks[$matches[1]] = $matches[2];
         return '';
     }
 
-    private function replacePlaceholder($matches) {
+    private function replacePlaceholder($matches)
+    {
         $blockName = $matches[1];
         // If the block has been defined in the view then use it otherwise
         // use the default from the layout
-        if (isset( $this->viewBlocks[$matches[1]] )) {
+        if (isset($this->viewBlocks[$matches[1]])) {
             return $this->viewBlocks[$matches[1]];
         } else {
             return $matches[2];
         }
     }
 
-    private function convertCache($matches){
-		$data = str_replace(array('<?php echo ', '; ?>'), '', $matches[1]);
+    private function convertCache($matches)
+    {
+        $data = str_replace(['<?php echo ', '; ?>'], '', $matches[1]);
         $data = explode(',', $data);
-        if(sizeof($data)==2){
+        if (sizeof($data) == 2) {
             $data[1] = intval($data[1]);
             return "<?php if (!Doo::cache('front')->getPart({$data[0]}, {$data[1]})): ?>\n<?php Doo::cache('front')->start({$data[0]}); ?>";
-        }else{
+        } else {
             return "<?php if (!Doo::cache('front')->getPart({$data[0]})): ?>\n<?php Doo::cache('front')->start({$data[0]}); ?>";
         }
     }
 
-    private function convertCond($matches){
+    private function convertCond($matches)
+    {
         //echo '<h1>'.str_replace('>', '&gt;', str_replace('<', '&lt;', $matches[2])).'</h1>';
         $stmt = str_replace('<?php echo ', '', $matches[2]);
         $stmt = str_replace('; ?>', '', $stmt);
@@ -734,212 +798,235 @@ class DooView {
 
         //prevent malicious HTML designers to use function with spaces
         //eg. unlink        ( 'allmyfiles.file'  ), php allows this to happen!!
-        $stmt = preg_replace_callback('/([a-z0-9\-_]+)[ ]*\([ ]*([^ \t\r\n}]+)\)/i', array( &$this, 'checkFuncAllowed'), $stmt);
+        $stmt = preg_replace_callback('/([a-z0-9\-_]+)[ ]*\([ ]*([^ \t\r\n}]+)\)/i', [&$this, 'checkFuncAllowed'],
+            $stmt);
 
         //echo '<h1>'.$stmt.'</h1>';
-        switch($matches[1]){
+        switch ($matches[1]) {
             case 'if':
-                return '<?php if( '.$stmt.' ): ?>';
+                return '<?php if( ' . $stmt . ' ): ?>';
             case 'elseif':
-                return '<?php elseif( '.$stmt.' ): ?>';
+                return '<?php elseif( ' . $stmt . ' ): ?>';
         }
     }
 
-    private function convertFor($matches) {
+    private function convertFor($matches)
+    {
         $expr = str_replace('<?php echo ', '', $matches[1]);
         $expr = str_replace('; ?>', '', $expr);
 
         //for: i from 0 to 10
-		if (preg_match('/([a-z0-9\-_]+?) from ([^ \t\r\n\(\)}]+) to ([^ \t\r\n\(\)}]+)( step ([^ \t\r\n\(\)}]+))?/i', $expr)){
-			$expr = preg_replace_callback('/([a-z0-9\-_]+?) from ([^ \t\r\n\(\)}]+) to ([^ \t\r\n\(\)}]+)( step ([^ \t\r\n\(\)}]+))?/i', array( &$this, 'buildRangeForLoop'), $expr);
-		}
-		// for: 'myArray as key=>val'
-		else if (preg_match('/([a-z0-9\-_]+?) as ([a-z0-9\-_]+)[ ]?=>[ ]?([a-z0-9\-_]+)/i', $expr)) {
-			$expr = preg_replace_callback('/([a-z0-9\-_]+?) as ([a-z0-9\-_]+)[ ]?=>[ ]?([a-z0-9\-_]+)/i', array( &$this, 'buildKeyValForLoop'), $expr);
-		}
-		// for: 'myArray as val'
-		else if (preg_match('/([a-z0-9\-_]+?) as ([a-z0-9\-_]+)/i', $expr)) {
-			$expr = preg_replace_callback('/([a-z0-9\-_]+?) as ([a-z0-9\-_]+)/i', array( &$this, 'buildValForLoop'), $expr);
-		}
+        if (preg_match('/([a-z0-9\-_]+?) from ([^ \t\r\n\(\)}]+) to ([^ \t\r\n\(\)}]+)( step ([^ \t\r\n\(\)}]+))?/i',
+            $expr)) {
+            $expr = preg_replace_callback('/([a-z0-9\-_]+?) from ([^ \t\r\n\(\)}]+) to ([^ \t\r\n\(\)}]+)( step ([^ \t\r\n\(\)}]+))?/i',
+                [&$this, 'buildRangeForLoop'], $expr);
+        } // for: 'myArray as key=>val'
+        else {
+            if (preg_match('/([a-z0-9\-_]+?) as ([a-z0-9\-_]+)[ ]?=>[ ]?([a-z0-9\-_]+)/i', $expr)) {
+                $expr = preg_replace_callback('/([a-z0-9\-_]+?) as ([a-z0-9\-_]+)[ ]?=>[ ]?([a-z0-9\-_]+)/i',
+                    [&$this, 'buildKeyValForLoop'], $expr);
+            } // for: 'myArray as val'
+            else {
+                if (preg_match('/([a-z0-9\-_]+?) as ([a-z0-9\-_]+)/i', $expr)) {
+                    $expr = preg_replace_callback('/([a-z0-9\-_]+?) as ([a-z0-9\-_]+)/i', [&$this, 'buildValForLoop'],
+                        $expr);
+                }
+            }
+        }
         return $expr;
     }
 
-    private function buildRangeForLoop($matches) {
+    private function buildRangeForLoop($matches)
+    {
         $stepBy = isset($matches[5]) ? $matches[5] : 1;
         return '<?php foreach(range(' . $matches[2] . ', ' . $matches[3] . ', ' . $stepBy . ') as $data[\'' . $matches[1] . '\']): ?>';
     }
 
-	private function buildKeyValForLoop($matches) {
-		return '<?php foreach($data[\''.$matches[1].'\'] as $'.$matches[2].'=>$'.$matches[3].'): ?>';
-	}
+    private function buildKeyValForLoop($matches)
+    {
+        return '<?php foreach($data[\'' . $matches[1] . '\'] as $' . $matches[2] . '=>$' . $matches[3] . '): ?>';
+    }
 
-	private function buildValForLoop($matches) {
-		return '<?php foreach($data[\''.$matches[1].'\'] as $'.$matches[2].'): ?>';
-	}
+    private function buildValForLoop($matches)
+    {
+        return '<?php foreach($data[\'' . $matches[1] . '\'] as $' . $matches[2] . '): ?>';
+    }
 
-    private function convertLoop($matches){
+    private function convertLoop($matches)
+    {
         $looplevel = sizeof(explode('\' ', $matches[0]));
-        if(strpos($matches[0], "' ")!==FALSE){
-            $strValue = str_repeat("' value", $looplevel-1);
+        if (strpos($matches[0], "' ") !== false) {
+            $strValue = str_repeat("' value", $looplevel - 1);
             $loopStr = "<!-- loop {$matches[1]}$strValue.";
-            if( strpos($matches[0], $loopStr)===0){
+            if (strpos($matches[0], $loopStr) === 0) {
                 $loopStr = substr($matches[0], strlen($loopStr));
                 $loopStr = str_replace(' -->', '', $loopStr);
                 $param = explode('.', $loopStr);
-                $varBck ='';
-                foreach($param as $pa){
-                    if(strpos($pa, '@')===0){
+                $varBck = '';
+                foreach ($param as $pa) {
+                    if (strpos($pa, '@') === 0) {
                         $varBck .= '->' . substr($pa, 1);
-                    }else{
+                    } else {
                         $varBck .= "['$pa']";
                     }
                 }
-                $thislvl = $looplevel-1;
+                $thislvl = $looplevel - 1;
                 $loopname = "\$v$thislvl$varBck";
-            }else{
-                $loopname = ($looplevel<2)? '$data[\''.$matches[1].'\']' : '$v'. ($looplevel-1);
+            } else {
+                $loopname = ($looplevel < 2) ? '$data[\'' . $matches[1] . '\']' : '$v' . ($looplevel - 1);
+            }
+        } else {
+            if (strpos($matches[1], '.@') !== false) {
+                $varname = str_replace('.@', '->', $matches[1]);
+                $varname = explode('->', $varname);
+                $firstname = $varname[0];
+                array_splice($varname, 0, 1);
+                $loopname = '$data[\'' . $firstname . '\']->' . implode('->', $varname);
+            } else {
+                if (strpos($matches[1], '.') !== false) {
+                    $varname = explode('.', $matches[1]);
+                    $firstname = $varname[0];
+                    array_splice($varname, 0, 1);
+                    $loopname = '$data[\'' . $firstname . '\'][\'' . implode("']['", $varname) . '\']';
+                } else {
+                    $loopname = ($looplevel < 2) ? '$data[\'' . $matches[1] . '\']' : '$v' . ($looplevel - 1);
+                }
             }
         }
-        else if(strpos($matches[1], '.@')!==FALSE){
-            $varname = str_replace('.@', '->', $matches[1]);
-            $varname = explode('->', $varname);
-            $firstname = $varname[0];
-            array_splice($varname, 0, 1);
-            $loopname =  '$data[\''.$firstname.'\']->' . implode('->', $varname) ;
-        }
-        else if(strpos($matches[1], '.')!==FALSE){
-            $varname = explode('.',$matches[1]);
-            $firstname = $varname[0];
-            array_splice($varname, 0, 1);
-            $loopname =  '$data[\''.$firstname .'\'][\''. implode("']['", $varname) .'\']';
-        }
-        else{
-            $loopname = ($looplevel<2)? '$data[\''.$matches[1].'\']' : '$v'. ($looplevel-1);
-        }
-        return '<?php foreach('.$loopname.' as $k'.$looplevel.'=>$v'.$looplevel.'): ?>';
+        return '<?php foreach(' . $loopname . ' as $k' . $looplevel . '=>$v' . $looplevel . '): ?>';
     }
 
-    private function convertInclude($matches){
+    private function convertInclude($matches)
+    {
         $file = $matches[1];
 
         /*include file is a Variable <!-- include "{{file}}" -->,
          *modify the converted string <?php echo $data['file']; ?> to $data['file']; and return it to be written to file
          * <!-- include "<?php echo $data['file']; ?>" --> after convert to var */
         $includeVarPos = strpos($file, '<?php echo $data');
-        if($includeVarPos===0){
+        if ($includeVarPos === 0) {
             $file = str_replace('<?php echo ', '', $file);
             $file = str_replace('; ?>', '', $file);
-            $dynamicFilename = '<?php include "{'.$file.'}.php"; ?>';
+            $dynamicFilename = '<?php include "{' . $file . '}.php"; ?>';
 
             //get the real template file name from $data passed in by users
-            $file = $this->data[str_replace('\']', '', str_replace('$data[\'', '', $file) )];
+            $file = $this->data[str_replace('\']', '', str_replace('$data[\'', '', $file))];
         }
 
         //if first char is '/' then load the files in view root 'view' folder, <!-- '/admin/index' --> view/admin/index.html
-        if(substr($file, 0,1)=='/'){
+        if (substr($file, 0, 1) == '/') {
             $file = substr($file, 1);
-            $cfilename = str_replace('\\', '/', $this->conf->SITE_PATH) . $this->conf->PROTECTED_FOLDER . "viewc/$file.php";
-            $vfilename = str_replace('\\', '/', $this->conf->SITE_PATH) . $this->conf->PROTECTED_FOLDER . "view/$file.html";
-        }
-        else{
+            $cfilename = str_replace('\\', '/',
+                    $this->conf->SITE_PATH) . $this->conf->PROTECTED_FOLDER . "viewc/$file.php";
+            $vfilename = str_replace('\\', '/',
+                    $this->conf->SITE_PATH) . $this->conf->PROTECTED_FOLDER . "view/$file.html";
+        } else {
             $folders = explode('/', $this->mainRenderFolder);
-            $file = implode('/', array_splice($folders, 0, -1)).'/'.$file;
-            $cfilename = str_replace('\\', '/', $this->conf->SITE_PATH) . $this->conf->PROTECTED_FOLDER . "viewc/$file.php";
-            $vfilename = str_replace('\\', '/', $this->conf->SITE_PATH) . $this->conf->PROTECTED_FOLDER . "view/$file.html";
+            $file = implode('/', array_splice($folders, 0, -1)) . '/' . $file;
+            $cfilename = str_replace('\\', '/',
+                    $this->conf->SITE_PATH) . $this->conf->PROTECTED_FOLDER . "viewc/$file.php";
+            $vfilename = str_replace('\\', '/',
+                    $this->conf->SITE_PATH) . $this->conf->PROTECTED_FOLDER . "view/$file.html";
         }
 
-        if(!file_exists($vfilename)){
+        if (!file_exists($vfilename)) {
             echo "<span style=\"color:#ff0000\">Include view file <strong>$file.html</strong> not found</span>";
             exit;
-        }else{
-            if(file_exists($cfilename)){
-                if(filemtime($vfilename)>filemtime($cfilename)){
+        } else {
+            if (file_exists($cfilename)) {
+                if (filemtime($vfilename) > filemtime($cfilename)) {
                     $this->compile($file, $vfilename, $cfilename);
                 }
-            }else{
+            } else {
                 $this->compile($file, $vfilename, $cfilename);
             }
         }
 
-        if(isset ($dynamicFilename) )
+        if (isset ($dynamicFilename)) {
             return $dynamicFilename;
+        }
 
-        return '<?php include $this->conf->SITE_PATH .  $this->conf->PROTECTED_FOLDER . "viewc/'.$file.'.php"; ?>';
+        return '<?php include $this->conf->SITE_PATH .  $this->conf->PROTECTED_FOLDER . "viewc/' . $file . '.php"; ?>';
     }
 
-    private function convertSet($matches) {
+    private function convertSet($matches)
+    {
 
         $expr = str_replace('<?php echo ', '', $matches[2]);
         $expr = str_replace('; ?>', '', $expr);
-        $expr = preg_replace_callback('/([a-z0-9\-_]+)[ ]*\([ ]*([^ \t\r\n}]+)\)/i', array( &$this, 'checkFuncAllowed'), $expr);
-        
+        $expr = preg_replace_callback('/([a-z0-9\-_]+)[ ]*\([ ]*([^ \t\r\n}]+)\)/i', [&$this, 'checkFuncAllowed'],
+            $expr);
+
         return '<?php $data[\'' . $matches[1] . '\'] = ' . $expr . '; ?>';
     }
 
-    private function extractObjectVariables($str) {
+    private function extractObjectVariables($str)
+    {
 
         $varname = '';
         $args = '';
 
-        if(strpos($str, '.@')!==FALSE){
+        if (strpos($str, '.@') !== false) {
             $properties = explode('.@', $str);
-            
-            if(strpos($properties[0], "' ")!==FALSE){
+
+            if (strpos($properties[0], "' ") !== false) {
                 $looplevel = sizeof(explode('\' ', $properties[0]));
 
                 //if ' key found that it's a key $k1
-                if(strpos($properties[0],"' key")!==FALSE || strpos($properties[0],"' k")!==FALSE){
-                    $varname = '$k' . ($looplevel-1);
-                }else{
-                    $varname = '$v' . ($looplevel-1);
+                if (strpos($properties[0], "' key") !== false || strpos($properties[0], "' k") !== false) {
+                    $varname = '$k' . ($looplevel - 1);
+                } else {
+                    $varname = '$v' . ($looplevel - 1);
 
                     //remove the variable part with the ' key or  ' value
                     array_splice($properties, 0, 1);
 
                     //join it up as array $v1['attachment']['pdf']   from  {{upper(msgdetails' value.attachment.pdf)}}
-                    $varname .= "->". implode("->", $properties);
+                    $varname .= "->" . implode("->", $properties);
                 }
-            }else{
+            } else {
                 $objname = $properties[0];
                 array_splice($properties, 0, 1);
-                $varname .= "\$data['$objname']->". implode("->", $properties);
+                $varname .= "\$data['$objname']->" . implode("->", $properties);
             }
 
-        } else if(strpos($str, '.')!==FALSE){
-            $properties = explode('.', $str);
-            if(strpos($properties[0], "' ")!==FALSE){
-                $looplevel = sizeof(explode('\' ', $properties[0]));
-
-                //if ' key found that it's a key $k1
-                if(strpos($properties[0],"' key")!==FALSE || strpos($properties[0],"' k")!==FALSE){
-                    $varname = '$k' . ($looplevel-1);
-                }else{
-                    $varname = '$v' . ($looplevel-1);
-
-                    //remove the variable part with the ' key or  ' value
-                    array_splice($properties, 0, 1);
-
-                    //join it up as array $v1['attachment']['pdf']   from  {{upper(msgdetails' value.attachment.pdf)}}
-                    $varname .= "['". implode("']['", $properties) ."']";
-                }
-            }else{
-                $varname .= "\$data['". implode("']['", $properties) ."']";
-            }
         } else {
-            //if the function found used with a key or value in a loop, then use $k1,$k2 or $v1,$v2 instead of $data
-            if(strpos($str, "' ")!==FALSE){
-                $looplevel = sizeof(explode('\' ', $str));
+            if (strpos($str, '.') !== false) {
+                $properties = explode('.', $str);
+                if (strpos($properties[0], "' ") !== false) {
+                    $looplevel = sizeof(explode('\' ', $properties[0]));
 
-                //if ' key found that it's a key $k1
-                if(strpos($str,"' key")!==FALSE || strpos($str,"' k")!==FALSE){
-                    $varname = '$k' . ($looplevel-1);
-                }else{
-                    $varname = '$v' . ($looplevel-1);
+                    //if ' key found that it's a key $k1
+                    if (strpos($properties[0], "' key") !== false || strpos($properties[0], "' k") !== false) {
+                        $varname = '$k' . ($looplevel - 1);
+                    } else {
+                        $varname = '$v' . ($looplevel - 1);
+
+                        //remove the variable part with the ' key or  ' value
+                        array_splice($properties, 0, 1);
+
+                        //join it up as array $v1['attachment']['pdf']   from  {{upper(msgdetails' value.attachment.pdf)}}
+                        $varname .= "['" . implode("']['", $properties) . "']";
+                    }
+                } else {
+                    $varname .= "\$data['" . implode("']['", $properties) . "']";
                 }
-            }else{
-                $varname = "\$data['".$str."']";
-            }
+            } else {
+                //if the function found used with a key or value in a loop, then use $k1,$k2 or $v1,$v2 instead of $data
+                if (strpos($str, "' ") !== false) {
+                    $looplevel = sizeof(explode('\' ', $str));
 
+                    //if ' key found that it's a key $k1
+                    if (strpos($str, "' key") !== false || strpos($str, "' k") !== false) {
+                        $varname = '$k' . ($looplevel - 1);
+                    } else {
+                        $varname = '$v' . ($looplevel - 1);
+                    }
+                } else {
+                    $varname = "\$data['" . $str . "']";
+                }
+
+            }
         }
 
         $varname = str_replace("\$data[''", "'", $varname);
@@ -948,82 +1035,86 @@ class DooView {
         return $varname;
     }
 
-	private function convertNonDataVarKey($matches) {
+    private function convertNonDataVarKey($matches)
+    {
 
-		$varname = '';
+        $varname = '';
         //if more than 1 dots, eg. users.total.pdf
-        if(strpos($matches[2], '@')!==FALSE){
+        if (strpos($matches[2], '@') !== false) {
             $varname = str_replace('@', '->', $matches[2]);
             $varname = str_replace('.', '', $varname);
-        }
-        else if(strpos($matches[2], '.')!==FALSE){
-            $properties = explode('.', $matches[2]);
-            $varname .= "['". implode("']['", $properties) ."']";
-        }
-        //only 1 dot, users.john
-        else{
-            $varname = "['".$matches[2]."']";
+        } else {
+            if (strpos($matches[2], '.') !== false) {
+                $properties = explode('.', $matches[2]);
+                $varname .= "['" . implode("']['", $properties) . "']";
+            } //only 1 dot, users.john
+            else {
+                $varname = "['" . $matches[2] . "']";
+            }
         }
         return "<?php echo \${$matches[1]}{$varname}; ?>";
 
-	}
-    
-    private function convertVarKey($matches){
+    }
+
+    private function convertVarKey($matches)
+    {
         $varname = '';
         //if more than 1 dots, eg. users.total.pdf
-        if(strpos($matches[2], '@')!==FALSE){
+        if (strpos($matches[2], '@') !== false) {
             $varname = str_replace('@', '->', $matches[2]);
             $varname = str_replace('.', '', $varname);
-        }
-        else if(strpos($matches[2], '.')!==FALSE){
-            $properties = explode('.', $matches[2]);
-            $varname .= "['". implode("']['", $properties) ."']";
-        }
-        //only 1 dot, users.john
-        else{
-            $varname = "['".$matches[2]."']";
+        } else {
+            if (strpos($matches[2], '.') !== false) {
+                $properties = explode('.', $matches[2]);
+                $varname .= "['" . implode("']['", $properties) . "']";
+            } //only 1 dot, users.john
+            else {
+                $varname = "['" . $matches[2] . "']";
+            }
         }
         return "<?php echo \$data['{$matches[1]}']$varname; ?>";
     }
 
-    private function convertVarLoop($matches){
+    private function convertVarLoop($matches)
+    {
         $looplevel = sizeof(explode('\' ', $matches[0]));
-        
+
         //if ' key found that it's a key $k1
-        if(strpos($matches[0],"' key")!==FALSE || strpos($matches[0],"' k")!==FALSE)
-            $varname = 'k' . ($looplevel-1);
-        else{
-            $varname = 'v' . ($looplevel-1);
+        if (strpos($matches[0], "' key") !== false || strpos($matches[0], "' k") !== false) {
+            $varname = 'k' . ($looplevel - 1);
+        } else {
+            $varname = 'v' . ($looplevel - 1);
             // This lets us use $data['key'] values as element indexes
             $matches[2] = str_replace('<?php echo ', '', $matches[2]);
             $matches[2] = str_replace('; ?>', '', $matches[2]);
             //remove the first variable if the ' is found, we dunwan the loop name
-            if(strpos($matches[2], "' ")!==FALSE){
+            if (strpos($matches[2], "' ") !== false) {
                 $matches[2] = explode("' ", $matches[2]);
                 array_splice($matches[2], 0, 1);
-                $matches[2] = "' ".implode("' ", $matches[2] );
+                $matches[2] = "' " . implode("' ", $matches[2]);
             }
 
             //users' value.uname  becomes  $v1['uname']
             //users' value.posts.latest  becomes  $v1['posts']['latest']
             //users' value.@uname  becomes  $v1->uname
             //users' value.@posts.@latest  becomes  $v1->posts->latest
-            if(strpos($matches[2], '.@')!==FALSE){
+            if (strpos($matches[2], '.@') !== false) {
                 $varname .= str_replace('.@', '->', $matches[2]);
-                $varname = str_replace("' value",'', $varname);
-                $varname = str_replace("' v",'', $varname);
-            }
-            else if(strpos($matches[2], '.')!==FALSE){
-                $properties = explode('.', $matches[2]);
-                if(sizeof($properties)===2)
-                    $varname .= "['".$properties[1]."']";
-                else{
-                    array_splice($properties, 0, 1);
-                    $varname .= "['". implode("']['", $properties) ."']";
+                $varname = str_replace("' value", '', $varname);
+                $varname = str_replace("' v", '', $varname);
+            } else {
+                if (strpos($matches[2], '.') !== false) {
+                    $properties = explode('.', $matches[2]);
+                    if (sizeof($properties) === 2) {
+                        $varname .= "['" . $properties[1] . "']";
+                    } else {
+                        array_splice($properties, 0, 1);
+                        $varname .= "['" . implode("']['", $properties) . "']";
+                    }
                 }
             }
         }
-        return '<?php echo $'.$varname.'; ?>';
+        return '<?php echo $' . $varname . '; ?>';
     }
 
 }

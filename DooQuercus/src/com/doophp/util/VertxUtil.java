@@ -4,6 +4,7 @@ import com.caucho.json.JsonArray;
 import com.caucho.quercus.env.Callable;
 import com.caucho.quercus.env.Env;
 import com.caucho.quercus.env.Value;
+import com.doophp.db.SQLClient;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.net.*;
@@ -14,7 +15,9 @@ import io.vertx.lang.php.util.PhpTypes;
  */
 public class VertxUtil {
 
-    public static void init(Env env, Callable handler) {
+    public static void initForPhp(Env env, VertxImpl vertx, Value configValue, String poolName, Callable handler) {
+        SQLClient db = new SQLClient(env, vertx, configValue, poolName);
+        db.initForPhp(env, handler);
         handler.call(env, PhpTypes.arrayFromJson(env, new io.vertx.core.json.JsonArray().add(true)));
     }
 

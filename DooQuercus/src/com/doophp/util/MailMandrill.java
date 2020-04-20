@@ -107,12 +107,12 @@ public class MailMandrill {
 
     public void logInfo(Object obj, Object obj2) {
         if (logger == null) return;
-        logDebug(prefixLogInfo + obj, obj2);
+        logger.info(prefixLogInfo + obj, obj2);
     }
 
     public void logInfo(Object obj) {
         if (logger == null) return;
-        logDebug(prefixLogInfo + obj);
+        logger.info(prefixLogInfo + obj);
     }
 
     public void logDebug(Object obj, Object obj2) {
@@ -122,7 +122,7 @@ public class MailMandrill {
 
     public void logDebug(Object obj) {
         if (logger == null || !debugEnabled) return;
-        logDebug(prefixLogDebug + obj);
+        this.logger.debug(prefixLogDebug + obj);
     }
 
     public void logError(Object obj, Object obj2) {
@@ -132,7 +132,7 @@ public class MailMandrill {
 
     public void logError(Object obj) {
         if (logger == null) return;
-        logError(prefixLogError + obj);
+        logger.error(prefixLogError + obj);
     }
 
 //    public static Value getFrom(ObjectExtValue obj, String key)
@@ -229,7 +229,8 @@ public class MailMandrill {
 
         mailJson.put("message", msgJson);
 
-        final String body = mailJson.toString();
+        final String body = mailJson.encode();
+        logDebug("Mandrill sent json");
         logDebug(body);
 
         HttpClientOptions httpOpt = new HttpClientOptions().setDefaultHost("mandrillapp.com").setDefaultPort(443).setSsl(true).setConnectTimeout(10000).setTrustAll(true).setTryUseCompression(true);
@@ -267,7 +268,7 @@ public class MailMandrill {
         });
 
         request.putHeader("User-Agent", "Mandrill-Curl/1.0")
-            .putHeader("Content-Type", "application/json")
+            .putHeader("Content-Type", "application/json; charset=utf-8")
             .putHeader("Content-Length", body.length() + "")
             .write(body).end();
         client.close();
